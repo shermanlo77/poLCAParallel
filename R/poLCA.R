@@ -1,6 +1,8 @@
 poLCA <-
 function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
-                na.rm=TRUE,probs.start=NULL,nrep=1,verbose=TRUE,calc.se=TRUE) {
+                na.rm=TRUE,probs.start=NULL,nrep=1,verbose=TRUE,
+                calc.se=FALSE, calc.chisq=FALSE) {
+    print("poLCAParallel")
     starttime <- Sys.time()
     mframe <- model.frame(formula,data,na.action=NULL)
     mf <- model.response(mframe)
@@ -84,9 +86,9 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 prior <- poLCA.updatePrior(b,x,R)
                 if ((!probs.start.ok) | (is.null(probs.start)) | (!firstrun) | (repl>1)) { # only use the specified probs.start in the first nrep
                     probs <- list()
-                    for (j in 1:J) { 
+                    for (j in 1:J) {
                         probs[[j]] <- matrix(runif(R*K.j[j]),nrow=R,ncol=K.j[j])
-                        probs[[j]] <- probs[[j]]/rowSums(probs[[j]]) 
+                        probs[[j]] <- probs[[j]]/rowSums(probs[[j]])
                     }
                     probs.init <- probs
                 }
@@ -114,7 +116,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                         error <- TRUE
                     }
                 }
-                if (!error) { 
+                if (!error) {
                     if (calc.se) {
                         se <- poLCA.se(y,x,poLCA.unvectorize(vp),prior,rgivy)
                     } else {
@@ -161,7 +163,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
     ret$aic <- (-2 * ret$llik) + (2 * ret$npar)         # Akaike Information Criterion
     ret$bic <- (-2 * ret$llik) + (log(N) * ret$npar)    # Schwarz-Bayesian Information Criterion
     ret$Nobs <- sum(rowSums(y==0)==0)                   # number of fully observed cases (if na.rm=F)
-    if (all(rowSums(y==0)>0)) { # if no rows are fully observed
+    if ((all(rowSums(y==0)>0)) | !calc.chisq) {  # if no rows are fully observed or chi squared not requested
         ret$Chisq <- NA
         ret$Gsq <- NA
         ret$predcell <- NA
@@ -170,7 +172,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
         datacell <- compy$datamat
         rownames(datacell) <- NULL
         freq <- compy$freq
-	ylik <- poLCA.ylik.C(poLCA.vectorize(ret$probs),datacell) 
+	ylik <- poLCA.ylik.C(poLCA.vectorize(ret$probs),datacell)
         if (!na.rm) {
             fit <- matrix(ret$Nobs/.Machine$double.xmax * (ylik  %*% ret$P))
             ret$Chisq <- sum((freq-fit)^2/fit) + (ret$Nobs-sum(fit)) # Pearson Chi-square goodness of fit statistic for fitted vs. observed multiway tables
