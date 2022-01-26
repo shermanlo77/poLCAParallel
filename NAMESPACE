@@ -12,4 +12,4 @@ S3method(plot, poLCA)
 S3method(coef, poLCA)
 S3method(vcov, poLCA)
 
-useDynLib(poLCA)
+useDynLib(poLCAParallel)

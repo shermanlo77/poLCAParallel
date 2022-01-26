@@ -1,4 +1,4 @@
-Package: poLCA
+Package: poLCAParallel
 Type: Package
 Title: Polytomous variable Latent Class Analysis
 Version: 1.5.0
