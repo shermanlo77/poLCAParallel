@@ -2,7 +2,7 @@ poLCA <-
 function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 na.rm=TRUE,probs.start=NULL,nrep=1,verbose=TRUE,
                 calc.se=FALSE, calc.chisq=FALSE) {
-    print("poLCAParallel")
+    cat("\nUsing parallel version of poLCA")
     starttime <- Sys.time()
     mframe <- model.frame(formula,data,na.action=NULL)
     mf <- model.response(mframe)
@@ -82,8 +82,6 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
             probs <- probs.init <- probs.start
             while (error) { # error trap
                 error <- FALSE
-                b <- rep(0,S*(R-1))
-                prior <- poLCA.updatePrior(b,x,R)
                 if ((!probs.start.ok) | (is.null(probs.start)) | (!firstrun) | (repl>1)) { # only use the specified probs.start in the first nrep
                     probs <- list()
                     for (j in 1:J) {
@@ -93,29 +91,15 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                     probs.init <- probs
                 }
                 vp <- poLCA.vectorize(probs)
-                iter <- 1
-                llik <- matrix(NA,nrow=maxiter,ncol=1)
-                llik[iter] <- -Inf
-                dll <- Inf
-                while ((iter <= maxiter) & (dll > tol) & (!error)) {
-                    iter <- iter+1
-                    rgivy <- poLCA.postClass.C(prior,vp,y)      # calculate posterior
-                    vp$vecprobs <- poLCA.probHat.C(rgivy,y,vp)  # update probs
-                    if (S>1) {
-                        dd <- poLCA.dLL2dBeta.C(rgivy,prior,x)
-                        b <- b + ginv(-dd$hess) %*% dd$grad     # update betas
-                        prior <- poLCA.updatePrior(b,x,R)       # update prior
-                    } else {
-                        prior <- matrix(colMeans(rgivy),nrow=N,ncol=R,byrow=TRUE)
-                    }
-                    llik[iter] <- sum(log(rowSums(prior*poLCA.ylik.C(vp,y))) - log(.Machine$double.xmax))
-                    dll <- llik[iter]-llik[iter-1]
-                    if (is.na(dll)) {
-                        error <- TRUE
-                    } else if ((S>1) & (dll < -1e-7)) {
-                        error <- TRUE
-                    }
-                }
+                
+                emResults <- emFit(x, y, vp$vecprobs, N, S, J, K.j, R, maxiter, tol)
+                rgivy = emResults[[1]]
+                prior = emResults[[2]]
+                vp$vecprobs = emResults[[3]]
+                b = emResults[[4]]
+                lnL = emResults[[5]]
+                nIter = emResults[[6]]
+                
                 if (!error) {
                     if (calc.se) {
                         se <- poLCA.se(y,x,poLCA.unvectorize(vp),prior,rgivy)
@@ -127,9 +111,9 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 }
                 firstrun <- FALSE
             } # finish estimating model without triggering error
-            ret$attempts <- c(ret$attempts,llik[iter])
-            if (llik[iter] > ret$llik) {
-                ret$llik <- llik[iter]             # maximum value of the log-likelihood
+            ret$attempts <- c(ret$attempts, lnL)
+            if (lnL > ret$llik) {
+                ret$llik <- lnL             # maximum value of the log-likelihood
                 ret$probs.start <- probs.init      # starting values of class-conditional response probabilities
                 ret$probs <- poLCA.unvectorize(vp) # estimated class-conditional response probabilities
                 ret$probs.se <- se$probs           # standard errors of class-conditional response probabilities
@@ -137,7 +121,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 ret$posterior <- rgivy             # NxR matrix of posterior class membership probabilities
                 ret$predclass <- apply(ret$posterior,1,which.max)   # Nx1 vector of predicted class memberships, by modal assignment
                 ret$P <- colMeans(ret$posterior)   # estimated class population shares
-                ret$numiter <- iter-1              # number of iterations until reaching convergence
+                ret$numiter <- nIter              # number of iterations until reaching convergence
                 ret$probs.start.ok <- probs.start.ok # if starting probs specified, logical indicating proper entry format
                 if (S>1) {
                     b <- matrix(b,nrow=S)
@@ -153,7 +137,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 }
                 ret$eflag <- eflag                 # error flag, true if estimation algorithm ever needed to restart with new initial values
             }
-            if (nrep>1 & verbose) { cat("Model ",repl,": llik = ",llik[iter]," ... best llik = ",ret$llik,"\n",sep=""); flush.console() }
+            if (nrep>1 & verbose) { cat("Model ",repl,": llik = ",lnL," ... best llik = ",ret$llik,"\n",sep=""); flush.console() }
         } # end replication loop
     }
     names(ret$probs) <- colnames(y)

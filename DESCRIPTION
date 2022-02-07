@@ -7,6 +7,8 @@ Author: Drew Linzer <drew@votamatic.org>,
         Jeffrey Lewis <jblewis@ucla.edu>.
 Maintainer: Drew Linzer <drew@votamatic.org>
 Depends: scatterplot3d, MASS
+Imports: Rcpp (>= 1.0.7)
+LinkingTo: Rcpp, RcppArmadillo
 Description: Latent class analysis and latent class regression models 
     for polytomous outcome variables.  Also known as latent structure analysis.
 License: GPL (>= 2)
