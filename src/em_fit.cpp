@@ -1,6 +1,7 @@
 #include "RcppArmadillo.h"
 
 #include "em_algorithm.h"
+#include "poLCA.c"
 
 using namespace Rcpp;
 
@@ -88,4 +89,13 @@ List emFit(
   to_return.push_back(ln_l);
   to_return.push_back(n_iter);
   return to_return;
+}
+
+// [[Rcpp::export]]
+NumericVector ylik(NumericVector probs, IntegerVector y, int obs, int items,
+	  IntegerVector numChoices, int classes) {
+
+  NumericVector lik(obs*classes);
+  ylik(probs.begin(), y.begin(), &obs, &items, numChoices.begin(), &classes, lik.begin());
+	return lik;
 }

@@ -229,5 +229,3 @@ void d2lldbeta2(double *rgivy, double *prior, double *x, int *obs,
 		}
 	}
 }
-
-
