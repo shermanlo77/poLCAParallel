@@ -90,9 +90,9 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                     }
                     probs.init <- probs
                 }
-                vp <- poLCA.vectorize(probs)
+                vp <- poLCAParallel.vectorize(probs)
                 
-                emResults <- emFit(x, y, vp$vecprobs, N, S, J, K.j, R, maxiter, tol)
+                emResults <- emFit(x, t(y), vp$vecprobs, N, S, J, K.j, R, maxiter, tol)
                 rgivy = emResults[[1]]
                 prior = emResults[[2]]
                 vp$vecprobs = emResults[[3]]
@@ -102,7 +102,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 
                 if (!error) {
                     if (calc.se) {
-                        se <- poLCA.se(y,x,poLCA.unvectorize(vp),prior,rgivy)
+                        se <- poLCA.se(y,x,poLCAParallel.unvectorize(vp),prior,rgivy)
                     } else {
                         se <- list(probs=NA,P=NA,b=NA,var.b=NA)
                     }
@@ -115,7 +115,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
             if (lnL > ret$llik) {
                 ret$llik <- lnL             # maximum value of the log-likelihood
                 ret$probs.start <- probs.init      # starting values of class-conditional response probabilities
-                ret$probs <- poLCA.unvectorize(vp) # estimated class-conditional response probabilities
+                ret$probs <- poLCAParallel.unvectorize(vp) # estimated class-conditional response probabilities
                 ret$probs.se <- se$probs           # standard errors of class-conditional response probabilities
                 ret$P.se <- se$P                   # standard errors of class population shares
                 ret$posterior <- rgivy             # NxR matrix of posterior class membership probabilities

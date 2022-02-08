@@ -4,7 +4,9 @@ export(poLCA,
        poLCA.table, 
        poLCA.entropy, 
        poLCA.predcell, 
-       poLCA.posterior, 
+       poLCA.posterior,
+       poLCAParallel.vectorize,
+       poLCAParallel.unvectorize,
        rmulti)
        
 S3method(print, poLCA)

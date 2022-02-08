@@ -8,13 +8,13 @@ using namespace Rcpp;
 // Fit using the EM algorithm
 // Args:
   // features: design matrix of features
-  // responses: design matrix of responses
+  // responses: design matrix transpose of responses
   // initial_prob: vector of response probabilities for each cluster, flatten
     // list of matrices, from the return value of poLCA.vectorize.R
     // flatten list of matrices
       // dim 0: for each outcome
-      // dim 1: for each cluster
-      // dim 2: for each category
+      // dim 1: for each category
+      // dim 2: for each cluster
   // n_data: number of data points
   // n_feature: number of features
   // n_category: number of categories

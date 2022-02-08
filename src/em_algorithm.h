@@ -10,14 +10,15 @@ using namespace arma;
 
 class EmAlgorithm {
 
-protected:
+  protected:
     double* features_;  // design matrix of features, matrix n_data x n_feature
-    int* responses_;  // design matrix of responses, matrix n_data x n_category
+    // design matrix transpose of responses, matrix n_category x n_data
+    int* responses_;
     // vector of initial probabilities for each category and responses,
     // flatten list of matrices
       // dim 0: for each outcome
-      // dim 1: for each cluster
-      // dim 2: for each category
+      // dim 1: for each category
+      // dim 2: for each model
     double* initial_prob_;
     int n_data_;  // number of data points
     int n_feature_;  // number of features
@@ -196,7 +197,7 @@ protected:
       // consider summing over log probabilities  rather than multiplying
       // probabilities
     void EStep() {
-      double* estimated_prob_j;  // for pointing to elements in estimated_prob_
+      double* estimated_prob;  // for pointing to elements in estimated_prob_
       int n_outcome;  // number of outcomes while iterating through categories
       // used for conditioned on cluster m likelihood calculation
         // for a data point
@@ -215,17 +216,17 @@ protected:
 
         // normaliser noramlise over cluster, so loop over cluster here
         normaliser = 0;
-        for (int m=0; m<this->n_cluster_; m++) {
 
+        estimated_prob = this->estimated_prob_;
+        for (int m=0; m<this->n_cluster_; m++) {
           // calculate conditioned on cluster m likelihood
-          estimated_prob_j = this->estimated_prob_;
           p = 1;
           for (int j=0; j<this->n_category_; j++) {
             n_outcome = this->n_outcomes_[j];
-            y = this->responses_[j*this->n_data_ + i];
-            p *= *(estimated_prob_j + m*n_outcome + y - 1);
+            y = this->responses_[i*this->n_category_ + j];
+            p *= estimated_prob[y - 1];
             // increment to point to the next category
-            estimated_prob_j += this->n_cluster_ * n_outcome;
+            estimated_prob += n_outcome;
           }
           // posterior = likelihood x prior
           posterior_iter = p * this->GetPrior(i, m);
@@ -256,7 +257,8 @@ protected:
       std::memcpy(this->prior_, prior.begin(), this->n_cluster_*sizeof(double));
 
       int y;  // for getting a response from responses_
-      double* estimated_prob_j;  // for pointing to elements in estimated_prob_
+      double* estimated_prob;  // for pointing to elements in estimated_prob_
+      double* estimated_prob_m; // points to estimated_prob_ for given cluster
       int n_outcome;  // number of outcomes while iterating through categories
       double posterior_iter;
 
@@ -266,31 +268,30 @@ protected:
       }
 
       // for each cluster
+      estimated_prob = this->estimated_prob_;
+      estimated_prob_m = estimated_prob;
       for (int m=0; m<this->n_cluster_; m++) {
-
         // estimate outcome probabilities
-        estimated_prob_j = this->estimated_prob_;
-        for (int j=0; j<this->n_category_; j++) {
-          n_outcome = this->n_outcomes_[j];
-          for (int i=0; i<this->n_data_; i++) {
-            y = this->responses_[j*this->n_data_ + i];
+        for (int i=0; i<this->n_data_; i++) {
+          estimated_prob = estimated_prob_m;
+          for (int j=0; j<this->n_category_; j++) {
+            n_outcome = this->n_outcomes_[j];
+            y = this->responses_[i*this->n_category_ + j];
             posterior_iter = this->posterior_[m*this->n_data_ + i];
-            estimated_prob_j[m*n_outcome + y - 1] += posterior_iter;
+            estimated_prob[y - 1] += posterior_iter;
+            estimated_prob += n_outcome;
           }
-          estimated_prob_j += this->n_cluster_ * n_outcome;
         }
-
         // normalise by the sum of posteriors
           // calculations can be reused as the prior is the mean of posteriors
           // from the E step
-        estimated_prob_j = this->estimated_prob_;
         for (int j=0; j<this->n_category_; j++) {
           n_outcome = this->n_outcomes_[j];
           for (int k=0; k<n_outcome; k++) {
-            estimated_prob_j[m*n_outcome + k] /=
+            estimated_prob_m[k] /=
                 ((double) this->n_data_) * this->prior_[m];
           }
-          estimated_prob_j += this->n_cluster_ * n_outcome;
+          estimated_prob_m += n_outcome;
         }
       }
     }
