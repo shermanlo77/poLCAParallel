@@ -3,13 +3,13 @@ Type: Package
 Title: Polytomous variable Latent Class Analysis
 Version: 1.5.0
 Date: 2016-06-04
-Author: Drew Linzer <drew@votamatic.org>, 
+Author: Drew Linzer <drew@votamatic.org>,
         Jeffrey Lewis <jblewis@ucla.edu>.
 Maintainer: Drew Linzer <drew@votamatic.org>
-Depends: scatterplot3d, MASS
+Depends: scatterplot3d, MASS, parallel
 Imports: Rcpp (>= 1.0.7)
 LinkingTo: Rcpp, RcppArmadillo
-Description: Latent class analysis and latent class regression models 
+Description: Latent class analysis and latent class regression models
     for polytomous outcome variables.  Also known as latent structure analysis.
 License: GPL (>= 2)
 URL: http://dlinzer.github.com/poLCA

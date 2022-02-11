@@ -1,7 +1,7 @@
 poLCA <-
 function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 na.rm=TRUE,probs.start=NULL,nrep=1,verbose=TRUE,
-                calc.se=FALSE, calc.chisq=FALSE) {
+                calc.se=FALSE, calc.chisq=FALSE, n.thread=detectCores()) {
     cat("\nUsing parallel version of poLCA")
     starttime <- Sys.time()
     mframe <- model.frame(formula,data,na.action=NULL)
@@ -75,70 +75,71 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 if (sum(round(sapply(probs.start,rowSums),4)==1) != (R*J)) probs.start.ok <- FALSE
             }
         }
-        ret$llik <- -Inf
-        ret$attempts <- NULL
-        for (repl in 1:nrep) { # automatically reestimate the model multiple times to locate the global max llik
-            error <- TRUE; firstrun <- TRUE
-            probs <- probs.init <- probs.start
-            while (error) { # error trap
-                error <- FALSE
-                if ((!probs.start.ok) | (is.null(probs.start)) | (!firstrun) | (repl>1)) { # only use the specified probs.start in the first nrep
-                    probs <- list()
-                    for (j in 1:J) {
-                        probs[[j]] <- matrix(runif(R*K.j[j]),nrow=R,ncol=K.j[j])
-                        probs[[j]] <- probs[[j]]/rowSums(probs[[j]])
-                    }
-                    probs.init <- probs
+
+        initial_prob <- list();
+        initial_prob_vector = c();
+        irep = 1;
+        if (probs.start.ok & !is.null(probs.start)) {
+            initial_prob[[1]] <- poLCAParallel.vectorize(probs.start)
+            initial_prob_vector = c(initial_prob_vector, initial_prob[[1]]$vecprobs)
+            irep = irep + 1
+        }
+
+        if (nrep > 1 | irep == 1) {
+            for (repl in irep:nrep) {
+                probs <- list()
+                for (j in 1:J) {
+                    probs[[j]] <- matrix(runif(R*K.j[j]),nrow=R,ncol=K.j[j])
+                    probs[[j]] <- probs[[j]]/rowSums(probs[[j]])
                 }
-                vp <- poLCAParallel.vectorize(probs)
-                
-                emResults <- emFit(x, t(y), vp$vecprobs, N, S, J, K.j, R, maxiter, tol)
-                rgivy = emResults[[1]]
-                prior = emResults[[2]]
-                vp$vecprobs = emResults[[3]]
-                b = emResults[[4]]
-                lnL = emResults[[5]]
-                nIter = emResults[[6]]
-                
-                if (!error) {
-                    if (calc.se) {
-                        se <- poLCA.se(y,x,poLCAParallel.unvectorize(vp),prior,rgivy)
-                    } else {
-                        se <- list(probs=NA,P=NA,b=NA,var.b=NA)
-                    }
-                } else {
-                    eflag <- TRUE
-                }
-                firstrun <- FALSE
-            } # finish estimating model without triggering error
-            ret$attempts <- c(ret$attempts, lnL)
-            if (lnL > ret$llik) {
-                ret$llik <- lnL             # maximum value of the log-likelihood
-                ret$probs.start <- probs.init      # starting values of class-conditional response probabilities
-                ret$probs <- poLCAParallel.unvectorize(vp) # estimated class-conditional response probabilities
-                ret$probs.se <- se$probs           # standard errors of class-conditional response probabilities
-                ret$P.se <- se$P                   # standard errors of class population shares
-                ret$posterior <- rgivy             # NxR matrix of posterior class membership probabilities
-                ret$predclass <- apply(ret$posterior,1,which.max)   # Nx1 vector of predicted class memberships, by modal assignment
-                ret$P <- colMeans(ret$posterior)   # estimated class population shares
-                ret$numiter <- nIter              # number of iterations until reaching convergence
-                ret$probs.start.ok <- probs.start.ok # if starting probs specified, logical indicating proper entry format
-                if (S>1) {
-                    b <- matrix(b,nrow=S)
-                    rownames(b) <- colnames(x)
-                    rownames(se$b) <- colnames(x)
-                    ret$coeff <- b                 # coefficient estimates (when estimated)
-                    ret$coeff.se <- se$b           # standard errors of coefficient estimates (when estimated)
-                    ret$coeff.V <- se$var.b        # covariance matrix of coefficient estimates (when estimated)
-                } else {
-                    ret$coeff <- NA
-                    ret$coeff.se <- NA
-                    ret$coeff.V <- NA
-                }
-                ret$eflag <- eflag                 # error flag, true if estimation algorithm ever needed to restart with new initial values
+                initial_prob[[repl]] <- poLCAParallel.vectorize(probs)
+                initial_prob_vector = c(initial_prob_vector, initial_prob[[repl]]$vecprobs)
             }
-            if (nrep>1 & verbose) { cat("Model ",repl,": llik = ",lnL," ... best llik = ",ret$llik,"\n",sep=""); flush.console() }
-        } # end replication loop
+        }
+
+        emResults <- emFit(x, t(y), initial_prob_vector, N, S, J, K.j, R, nrep, n.thread, maxiter, tol)
+        rgivy = emResults[[1]]
+        prior = emResults[[2]]
+        estimated_prob = emResults[[3]]
+        b = emResults[[4]]
+        ret$attempts = emResults[[5]]
+        best_rep_index = emResults[[6]]
+        nIter = emResults[[7]]
+
+        lnL = ret$attempts[best_rep_index]
+
+        vp = initial_prob[[1]]
+        vp$vecprobs = estimated_prob
+
+        if (calc.se) {
+            se <- poLCA.se(y,x,poLCAParallel.unvectorize(vp),prior,rgivy)
+        } else {
+            se <- list(probs=NA,P=NA,b=NA,var.b=NA)
+        }
+
+        ret$llik <- lnL             # maximum value of the log-likelihood
+        ret$probs.start <- initial_prob      # starting values of class-conditional response probabilities
+        ret$probs <- poLCAParallel.unvectorize(vp) # estimated class-conditional response probabilities
+        ret$probs.se <- se$probs           # standard errors of class-conditional response probabilities
+        ret$P.se <- se$P                   # standard errors of class population shares
+        ret$posterior <- rgivy             # NxR matrix of posterior class membership probabilities
+        ret$predclass <- apply(ret$posterior,1,which.max)   # Nx1 vector of predicted class memberships, by modal assignment
+        ret$P <- colMeans(ret$posterior)   # estimated class population shares
+        ret$numiter <- nIter              # number of iterations until reaching convergence
+        ret$probs.start.ok <- probs.start.ok # if starting probs specified, logical indicating proper entry format
+        if (S>1) {
+            b <- matrix(b,nrow=S)
+            rownames(b) <- colnames(x)
+            rownames(se$b) <- colnames(x)
+            ret$coeff <- b                 # coefficient estimates (when estimated)
+            ret$coeff.se <- se$b           # standard errors of coefficient estimates (when estimated)
+            ret$coeff.V <- se$var.b        # covariance matrix of coefficient estimates (when estimated)
+        } else {
+            ret$coeff <- NA
+            ret$coeff.se <- NA
+            ret$coeff.V <- NA
+        }
+        ret$eflag <- FALSE                 # error flag, true if estimation algorithm ever needed to restart with new initial values
     }
     names(ret$probs) <- colnames(y)
     if (calc.se) { names(ret$probs.se) <- colnames(y) }

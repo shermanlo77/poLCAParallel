@@ -1,6 +1,6 @@
 #include "RcppArmadillo.h"
 
-#include "em_algorithm.h"
+#include "em_algorithm_array.h"
 #include "poLCA.c"
 
 using namespace Rcpp;
@@ -21,6 +21,7 @@ using namespace Rcpp;
   // n_category: number of categories
   // n_outcomes: vector, number of possible responses for each category
   // n_cluster: number of clusters, or classes, to fit
+  // n_rep: number of repetitions
   // max_iter: maximum number of iterations for EM algorithm
   // tolerance: stop fitting the log likelihood change less than this
 // Return a list:
@@ -42,6 +43,8 @@ List emFit(
     int n_category,
     IntegerVector n_outcomes,
     int n_cluster,
+    int n_rep,
+    int n_thread,
     int max_iter,
     double tolerance) {
 
@@ -55,8 +58,9 @@ List emFit(
   NumericMatrix prior(n_data, n_cluster);
   NumericVector estimated_prob(sum_outcomes*n_cluster);
   NumericVector regress_coeff(n_feature*(n_cluster-1));
+  NumericVector ln_l_array(n_rep);
 
-  EmAlgorithm* fitter = new EmAlgorithm(
+  EmAlgorithmArray* fitter = new EmAlgorithmArray(
       features.begin(),
       responses.begin(),
       initial_prob.begin(),
@@ -66,17 +70,20 @@ List emFit(
       n_outcomes.begin(),
       sum_outcomes,
       n_cluster,
+      n_rep,
+      n_thread,
       max_iter,
       tolerance,
       posterior.begin(),
       prior.begin(),
       estimated_prob.begin(),
-      regress_coeff.begin()
+      regress_coeff.begin(),
+      ln_l_array.begin()
   );
 
   fitter->Fit();
 
-  double ln_l = fitter->get_ln_l();
+  int best_rep_index = fitter->get_best_rep_index();
   int n_iter = fitter->get_n_iter();
 
   delete fitter;
@@ -86,7 +93,8 @@ List emFit(
   to_return.push_back(prior);
   to_return.push_back(estimated_prob);
   to_return.push_back(regress_coeff);
-  to_return.push_back(ln_l);
+  to_return.push_back(ln_l_array);
+  to_return.push_back(best_rep_index+1);
   to_return.push_back(n_iter);
   return to_return;
 }

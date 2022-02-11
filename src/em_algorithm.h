@@ -10,7 +10,7 @@ using namespace arma;
 
 class EmAlgorithm {
 
-  protected:
+  public:
     double* features_;  // design matrix of features, matrix n_data x n_feature
     // design matrix transpose of responses, matrix n_category x n_data
     int* responses_;
@@ -144,16 +144,6 @@ class EmAlgorithm {
 
       // reformat prior
       this->FinalPrior();
-    }
-
-    // getter function for log likelihood
-    double get_ln_l() {
-      return this->ln_l_;
-    }
-
-    // getter function for number of iterations
-    int get_n_iter() {
-      return this->n_iter_;
     }
 
   protected:
