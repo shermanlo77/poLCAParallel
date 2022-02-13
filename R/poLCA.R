@@ -2,7 +2,7 @@ poLCA <-
 function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 na.rm=TRUE,probs.start=NULL,nrep=1,verbose=TRUE,
                 calc.se=FALSE, calc.chisq=FALSE, n.thread=detectCores()) {
-    cat("\nUsing parallel version of poLCA")
+    cat("\nUsing parallel version of poLCA\n")
     starttime <- Sys.time()
     mframe <- model.frame(formula,data,na.action=NULL)
     mf <- model.response(mframe)
@@ -111,6 +111,10 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
         vp = initial_prob[[1]]
         vp$vecprobs = estimated_prob
 
+        if (any(is.na(lnL[0]))) {
+            eflag <- TRUE;
+        }
+
         if (calc.se) {
             se <- poLCA.se(y,x,poLCAParallel.unvectorize(vp),prior,rgivy)
         } else {
@@ -118,7 +122,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
         }
 
         ret$llik <- lnL             # maximum value of the log-likelihood
-        ret$probs.start <- initial_prob      # starting values of class-conditional response probabilities
+        ret$probs.start <- lapply(initial_prob, poLCAParallel.unvectorize)  # starting values of class-conditional response probabilities
         ret$probs <- poLCAParallel.unvectorize(vp) # estimated class-conditional response probabilities
         ret$probs.se <- se$probs           # standard errors of class-conditional response probabilities
         ret$P.se <- se$P                   # standard errors of class population shares
@@ -139,7 +143,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
             ret$coeff.se <- NA
             ret$coeff.V <- NA
         }
-        ret$eflag <- FALSE                 # error flag, true if estimation algorithm ever needed to restart with new initial values
+        ret$eflag <- eflag                 # error flag, true if estimation algorithm ever needed to restart with new initial values
     }
     names(ret$probs) <- colnames(y)
     if (calc.se) { names(ret$probs.se) <- colnames(y) }

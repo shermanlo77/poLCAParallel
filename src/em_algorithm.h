@@ -116,6 +116,7 @@ class EmAlgorithm {
       std::memcpy(this->estimated_prob_, this->initial_prob_,
           this->n_cluster_*this->sum_outcomes_*sizeof(double));
 
+      double ln_l;
       double ln_l_difference;
       double ln_l_before = -INFINITY;
       bool isError = false;
@@ -131,12 +132,19 @@ class EmAlgorithm {
         // E step updates ln_l_array_, use that to calculate log likelihood
         // use log likelihood to determine stopping condition
         Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false);
-        this->ln_l_ = sum(ln_l_array);
-        ln_l_difference = this->ln_l_ - ln_l_before;
+        ln_l = sum(ln_l_array);
+        this->ln_l_ = ln_l;
+
+        // check for any errors
+        if (isnan(ln_l)) {
+          break;
+        }
+
+        ln_l_difference = ln_l - ln_l_before;
         if (ln_l_difference < this->tolerance_) {
           break;
         }
-        ln_l_before = this->ln_l_;
+        ln_l_before = ln_l;
 
         // M step updates posterior probabilities and estimated probabilities
         this->MStep();
