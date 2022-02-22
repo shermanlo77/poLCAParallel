@@ -34,7 +34,7 @@ using namespace Rcpp;
   // ln_l: log likelihood
   // n_iter: number of iterations taken
 // [[Rcpp::export]]
-List emFit(
+List EmAlgorithmRcpp(
     NumericMatrix features,
     IntegerMatrix responses,
     NumericVector initial_prob,

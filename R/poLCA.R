@@ -97,7 +97,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
             }
         }
 
-        emResults <- emFit(x, t(y), initial_prob_vector, N, S, J, K.j, R, nrep, n.thread, maxiter, tol)
+        emResults <- EmAlgorithmRcpp(x, t(y), initial_prob_vector, N, S, J, K.j, R, nrep, n.thread, maxiter, tol)
         rgivy = emResults[[1]]
         prior = emResults[[2]]
         estimated_prob = emResults[[3]]
