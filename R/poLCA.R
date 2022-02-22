@@ -152,26 +152,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
     ret$aic <- (-2 * ret$llik) + (2 * ret$npar)         # Akaike Information Criterion
     ret$bic <- (-2 * ret$llik) + (log(N) * ret$npar)    # Schwarz-Bayesian Information Criterion
     ret$Nobs <- sum(rowSums(y==0)==0)                   # number of fully observed cases (if na.rm=F)
-    if ((all(rowSums(y==0)>0)) | !calc.chisq) {  # if no rows are fully observed or chi squared not requested
-        ret$Chisq <- NA
-        ret$Gsq <- NA
-        ret$predcell <- NA
-    } else {
-        compy <- poLCA.compress(y[(rowSums(y==0)==0),])
-        datacell <- compy$datamat
-        rownames(datacell) <- NULL
-        freq <- compy$freq
-	    ylik <- poLCA.ylik.C(poLCA.vectorize(ret$probs),datacell)
-        if (!na.rm) {
-            fit <- matrix(ret$Nobs * (ylik  %*% ret$P))
-            ret$Chisq <- sum((freq-fit)^2/fit) + (ret$Nobs-sum(fit)) # Pearson Chi-square goodness of fit statistic for fitted vs. observed multiway tables
-        } else {
-            fit <- matrix(N * (ylik %*% ret$P))
-            ret$Chisq <- sum((freq-fit)^2/fit) + (N-sum(fit))
-        }
-        ret$predcell <- data.frame(datacell,observed=freq,expected=round(fit,3)) # Table that gives observed vs. predicted cell counts
-        ret$Gsq <- 2 * sum(freq*log(freq/fit))  # Likelihood ratio/deviance statistic
-    }
+    
     y[y==0] <- NA
     ret$y <- data.frame(y)             # outcome variables
     ret$x <- data.frame(x)             # covariates, if specified
@@ -186,6 +167,16 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
         }
     }
     ret$N <- N                         # number of observations
+    
+    if ((all(rowSums(y==0)>0)) | !calc.chisq) {  # if no rows are fully observed or chi squared not requested
+        ret$Chisq <- NA
+        ret$Gsq <- NA
+        ret$predcell <- NA
+    } else {
+        ret = poLCAParallel.goodnessfit(ret)
+    }
+    
+    
     ret$maxiter <- maxiter             # maximum number of iterations specified by user
     ret$resid.df <- min(ret$N,(prod(K.j)-1))-ret$npar # number of residual degrees of freedom
     class(ret) <- "poLCA"
