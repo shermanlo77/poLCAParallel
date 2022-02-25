@@ -8,6 +8,10 @@
 
 using namespace arma;
 
+// EM ALGORITHM
+// For fitting using EM algorithm for a given initial value
+// Member variables are made public for the sake of convenience so that
+    // EmAlgorithmArray can access and modify instances of EmAlgorithm
 class EmAlgorithm {
 
   public:
@@ -18,7 +22,7 @@ class EmAlgorithm {
     // flatten list of matrices
       // dim 0: for each outcome
       // dim 1: for each category
-      // dim 2: for each model
+      // dim 2: for each cluster
     double* initial_prob_;
     int n_data_;  // number of data points
     int n_feature_;  // number of features

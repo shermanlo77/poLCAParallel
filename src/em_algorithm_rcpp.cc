@@ -11,7 +11,7 @@ using namespace Rcpp;
   // features: design matrix of features
   // responses: design matrix transpose of responses
   // initial_prob: vector of response probabilities for each cluster, flatten
-    // list of matrices, from the return value of poLCA.vectorize.R
+    // list of matrices, from the return value of poLCAParallel.vectorize.R
     // flatten list of matrices
       // dim 0: for each outcome
       // dim 1: for each category
@@ -48,18 +48,20 @@ List EmAlgorithmRcpp(
     int max_iter,
     double tolerance) {
 
-  int sum_outcomes = 0;
+  int sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
   for (int i=0; i<n_category; i++) {
     sum_outcomes += n_outcomes_array[i];
   }
 
+  // allocate matrices to pass pointers to C++ code
   NumericMatrix posterior(n_data, n_cluster);
   NumericMatrix prior(n_data, n_cluster);
   NumericVector estimated_prob(sum_outcomes*n_cluster);
   NumericVector regress_coeff(n_feature*(n_cluster-1));
   NumericVector ln_l_array(n_rep);
 
+  // fit using EM algorithm
   EmAlgorithmArray* fitter = new EmAlgorithmArray(
       features.begin(),
       responses.begin(),
@@ -99,11 +101,13 @@ List EmAlgorithmRcpp(
   return to_return;
 }
 
+// Original author's likelihood
+// (for some reason, cannot get the original C code to be regonised by R)
 // [[Rcpp::export]]
 NumericVector ylik(NumericVector probs, IntegerVector y, int obs, int items,
 	  IntegerVector numChoices, int classes) {
-
   NumericVector lik(obs*classes);
-  ylik(probs.begin(), y.begin(), &obs, &items, numChoices.begin(), &classes, lik.begin());
+  ylik(probs.begin(), y.begin(), &obs, &items, numChoices.begin(), &classes,
+      lik.begin());
 	return lik;
 }

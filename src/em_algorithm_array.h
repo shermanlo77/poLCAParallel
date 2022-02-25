@@ -9,6 +9,7 @@
 // EM ALGORITHM ARRAY
 // For using EM algorithm for multiple inital probabilities, use to find the
   // global maximum
+// Each thread runs a repetition
 class EmAlgorithmArray {
 
   private:
@@ -29,6 +30,49 @@ class EmAlgorithmArray {
     std::mutex* optimial_fitter_lock_;
 
   public:
+
+    // CONSTRUCTOR
+    // Parameters:
+      // features: design matrix of features, matrix n_data x n_feature
+      // responses: design matrix transpose of responses,
+          // matrix n_category x n_data
+      // initial_prob: vector of initial probabilities for each outcome,
+          // for each category, for each cluster and for each repetition
+          // flatten list of matrices
+            // dim 0: for each outcome
+            // dim 1: for each category
+            // dim 2: for each cluster
+            // dim 3: for each repetition
+      // n_data: number of data points
+      // n_feature: number of features
+      // n_category: number of categories
+      // n_outcomes: array of number of outcomes, for each category
+      // sum_outcomes: sum of all integers in n_outcomes
+      // n_cluster: number of clusters to fit
+      // n_rep: number of repetitions to do, length of dim 3 for initial_prob
+      // n_thread: number of threads to use
+      // max_iter: maximum number of iterations for EM algorithm
+      // tolerance: tolerance for difference in log likelihood, used for
+          // stopping condition
+      // posterior: to store results, design matrix of posterior probabilities
+          // (also called responsibility), probability data point is in cluster
+          // m given responses
+        // matrix, dim 0: for each data, dim 1: for each cluster
+      // prior: to store results, design matrix of prior probabilities,
+          // probability data point is in cluster m NOT given responses
+        // dim 0: for each data, dim 1: for each cluster
+      // estimated_prob: to store results, vector of estimated response
+          // probabilities for each category,
+        // flatten list of matrices
+          // dim 0: for each outcome
+          // dim 1: for each cluster
+          // dim 2: for each category
+      // regress_coeff: to store results, vector length
+          // n_features_*(n_cluster-1), linear regression coefficient in matrix
+          // form, to be multiplied to the features and linked to the prior
+          // using softmax
+      // ln_l_array: to store results, vector, maxmimum log likelihood for each
+          // repetition
     EmAlgorithmArray(
         double* features,
         int* responses,
@@ -89,12 +133,15 @@ class EmAlgorithmArray {
       delete this->optimial_fitter_lock_;
     }
 
+    // FIT USING EM (in parallel)
+    // To be called right after construction
     void Fit() {
       // parallel run FitThread
       std::thread thread_array[this->n_thread_-1];
       for (int i=0; i<this->n_thread_-1; i++) {
         thread_array[i] = std::thread(&EmAlgorithmArray::FitThread, this);
       }
+      // main thread run
       this->FitThread();
       // join threads
       for (int i=0; i<this->n_thread_-1; i++) {
@@ -102,11 +149,15 @@ class EmAlgorithmArray {
       }
     }
 
+    // FIT THREAD
+    // To be run by a thread(s)
+    // For each initial probability, fit using EM algorithm
     void FitThread() {
 
       EmAlgorithm* fitter;
       bool is_working = true;
-      int initial_prob_index;  // which initial probability working on
+      // which initial probability this thread is working on
+      int initial_prob_index;
       double ln_l;
 
       int n_data = this->optimal_fitter_->n_data_;
@@ -114,6 +165,7 @@ class EmAlgorithmArray {
       int sum_outcomes = this->optimal_fitter_->sum_outcomes_;
       int n_cluster = this->optimal_fitter_->n_cluster_;
 
+      // allocate memory for this thread
       double* posterior = new double[n_data * n_cluster];
       double* prior = new double[n_data * n_cluster];
       double* estimated_prob = new double[sum_outcomes * n_cluster];
@@ -121,13 +173,17 @@ class EmAlgorithmArray {
 
       while (is_working) {
 
+        // lock to retrive initial probability
+        // shall be unlocked in both if and else branches
         this->initial_prob_lock_->lock();
         if (this->n_initial_prob_done_ < this->n_rep_) {
           initial_prob_index = this->n_initial_prob_done_;
+          // increment for the next worker to work on
           this->n_initial_prob_done_++;
           this->initial_prob_lock_->unlock();
 
-          // transfer pointer to data and where to store results, em fit
+          // transfer pointer to data and where to store results
+          // em fit
           fitter = new EmAlgorithm(
               this->optimal_fitter_->features_,
               this->optimal_fitter_->responses_,
@@ -153,7 +209,7 @@ class EmAlgorithmArray {
           this->optimial_fitter_lock_->lock();
           if (ln_l > this->optimal_fitter_->ln_l_) {
             this->best_rep_index_ = initial_prob_index;
-            this->optimal_fitter_->ln_l_ = fitter->ln_l_;
+            this->optimal_fitter_->ln_l_ = ln_l;
             this->optimal_fitter_->n_iter_ = fitter->n_iter_;
             memcpy(this->optimal_fitter_->posterior_, posterior,
                 n_data*n_cluster*sizeof(double));
