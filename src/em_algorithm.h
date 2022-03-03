@@ -2,6 +2,7 @@
 #define EM_ALGORITHM_H
 
 #include <math.h>
+#include <random>
 
 // [[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
@@ -14,7 +15,7 @@ using namespace arma;
     // EmAlgorithmArray can access and modify instances of EmAlgorithm
 class EmAlgorithm {
 
-  public:
+  protected:
     double* features_;  // design matrix of features, matrix n_data x n_feature
     // design matrix transpose of responses, matrix n_category x n_data
     int* responses_;
@@ -44,22 +45,28 @@ class EmAlgorithm {
       // during the start and calculations, it may take on a different form,
       // use the method GetPrior() to get the prior for a data point and cluster
     double* prior_;
-    // vector of estimated response probabilities for each category,
+    // vector of estimated response probabilities, conditioned on cluster, for
+      // each category,
     // flatten list of matrices
       // dim 0: for each outcome
-      // dim 1: for each cluster
-      // dim 2: for each category
+      // dim 1: for each category
+      // dim 2: for each cluster
     double* estimated_prob_;
     // vector length n_features_*(n_cluster-1), linear regression coefficient
       // in matrix form, to be multiplied to the features and linked to the
       // prior using softmax
     double* regress_coeff_;
 
-    double ln_l_;  // log likelihood, updated at each iteration of EM
+    // log likelihood, updated at each iteration of EM
+    double ln_l_ = -INFINITY;
     // vector, for each data point, log likelihood for each data point
       // the log likelihood is the sum
     double* ln_l_array_;
-    int n_iter_;  // number of iterations done right now
+    int n_iter_ = 0;  // number of iterations done right now
+    // indicate if it needed to use new initial values during a fit, can happen
+      // if a matrix is singular
+    bool has_restarted_ = false;
+    unsigned seed_ = 0;  // seed for random number generator
 
   public:
 
@@ -116,49 +123,113 @@ class EmAlgorithm {
       // ln_l_
       // n_iter_
     void Fit() {
-      //copy initial prob to estimated prob
-      std::memcpy(this->estimated_prob_, this->initial_prob_,
-          this->n_cluster_*this->sum_outcomes_*sizeof(double));
+
+      bool is_first_run = true;
+      bool is_success = false;
 
       double ln_l;
       double ln_l_difference;
-      double ln_l_before = -INFINITY;
-      bool isError = false;
+      double ln_l_before;
 
-      // initalise prior probabilities, for each cluster
-      this->InitPrior();
+      std::mt19937_64 rng(this->seed_);
+      std::uniform_real_distribution<double> uniform(0.0, 1.0);
 
-      // do EM algorithm
-      for (this->n_iter_=0; this->n_iter_<this->max_iter_; this->n_iter_++) {
-        //E step updates prior probabilities
-        this->EStep();
+      while (!is_success) {
 
-        // E step updates ln_l_array_, use that to calculate log likelihood
-        // use log likelihood to determine stopping condition
-        Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false);
-        ln_l = sum(ln_l_array);
-        this->ln_l_ = ln_l;
-
-        // check for any errors
-        if (isnan(ln_l)) {
-          break;
+        if (is_first_run) {
+          //copy initial prob to estimated prob
+          std::memcpy(this->estimated_prob_, this->initial_prob_,
+              this->n_cluster_*this->sum_outcomes_*sizeof(double));
+        } else {
+          // reach this condition if the first run has a problem
+          // reset all required parameters
+          this->Reset(&rng, &uniform);
         }
 
-        ln_l_difference = ln_l - ln_l_before;
-        if (ln_l_difference < this->tolerance_) {
-          break;
-        }
-        ln_l_before = ln_l;
+        ln_l_before = -INFINITY;
 
-        // M step updates posterior probabilities and estimated probabilities
-        this->MStep();
+        // initalise prior probabilities, for each cluster
+        this->InitPrior();
+
+        // do EM algorithm
+        // assume successful until find error
+        is_success = true;
+        for (this->n_iter_=0; this->n_iter_<this->max_iter_; this->n_iter_++) {
+          //E step updates prior probabilities
+          this->EStep();
+
+          // E step updates ln_l_array_, use that to calculate log likelihood
+          Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false);
+          this->ln_l_ = sum(ln_l_array);
+
+          // check for any errors
+          ln_l_difference = this->ln_l_ - ln_l_before;
+          if (this->IsInvalidLikelihood(ln_l_difference)) {
+            is_success = false;
+            break;
+          }
+
+          // check stopping condition
+          if (ln_l_difference < this->tolerance_) {
+            break;
+          }
+          ln_l_before = this->ln_l_;
+
+          // M step updates posterior probabilities and estimated probabilities
+          // break if m step has an error
+          if (this->MStep()) {
+            is_success = false;
+            break;
+          }
+        }
+        is_first_run = false;
       }
 
       // reformat prior
       this->FinalPrior();
     }
 
+    double get_ln_l() {
+      return this->ln_l_;
+    }
+
+    int get_n_iter() {
+      return this->n_iter_;
+    }
+
+    bool get_has_restarted() {
+      return this->has_restarted_;
+    }
+
+    void set_seed(unsigned seed) {
+      this->seed_ = seed;
+    }
+
   protected:
+
+    // Reset parameters for a re-run
+    // Reset the parameters estimated_prob_ with random values
+    virtual void Reset(std::mt19937_64* rng,
+                       std::uniform_real_distribution<double>* uniform) {
+      // generate random number for estimated_prob_
+      this->has_restarted_ = true;
+      for (double* ptr=this->estimated_prob_;
+          ptr<this->estimated_prob_+this->n_cluster_*this->sum_outcomes_;
+          ptr++) {
+        *ptr = (*uniform)(*rng);
+      }
+      // normalise to probabilities
+      double* estimated_prob = estimated_prob_;
+      int n_outcome;
+      for (int m=0; m<this->n_cluster_; m++) {
+        for (int j=0; j<this->n_category_; j++) {
+          n_outcome = this->n_outcomes_[j];
+          Col<double> prob_vector(estimated_prob, n_outcome, false);
+          prob_vector /= sum(prob_vector);
+          estimated_prob += n_outcome;
+        }
+      }
+    }
 
     // Initalise prior probabilities
     // Modify the content of prior_ which contains prior probabilities for each
@@ -244,11 +315,16 @@ class EmAlgorithm {
       }
     }
 
+    // Check if the likelihood is invalid
+    virtual bool IsInvalidLikelihood(double ln_l_difference) {
+      return isnan(this->ln_l_);
+    }
+
     // M Step
     // update the prior probabilities and estimated response probabilities
       // given the posterior probabilities
     // modifies the member variables prior_ and estimated_prob_
-    virtual void MStep() {
+    virtual bool MStep() {
 
       // estimate prior
       // for this implementation, the mean posterior, taking the mean over data
@@ -258,6 +334,16 @@ class EmAlgorithm {
       Row<double> prior = mean(posterior_arma, 0);
       std::memcpy(this->prior_, prior.begin(), this->n_cluster_*sizeof(double));
 
+      // estimate outcome probabilities
+      this->EstimateProbability();
+
+      return false;
+    }
+
+    // Estimate probability
+    // updates and modify the member variable estimated_prob_ using the
+      // posterior
+    void EstimateProbability() {
       int y;  // for getting a response from responses_
       double* estimated_prob;  // for pointing to elements in estimated_prob_
       double* estimated_prob_m; // points to estimated_prob_ for given cluster
@@ -270,31 +356,73 @@ class EmAlgorithm {
       }
 
       // for each cluster
-      estimated_prob = this->estimated_prob_;
-      estimated_prob_m = estimated_prob;
       for (int m=0; m<this->n_cluster_; m++) {
         // estimate outcome probabilities
-        for (int i=0; i<this->n_data_; i++) {
-          estimated_prob = estimated_prob_m;
-          for (int j=0; j<this->n_category_; j++) {
-            n_outcome = this->n_outcomes_[j];
-            y = this->responses_[i*this->n_category_ + j];
-            posterior_iter = this->posterior_[m*this->n_data_ + i];
-            estimated_prob[y - 1] += posterior_iter;
-            estimated_prob += n_outcome;
-          }
-        }
-        // normalise by the sum of posteriors
-          // calculations can be reused as the prior is the mean of posteriors
-          // from the E step
+        this->WeightedSumProb(m);
+        this->NormalWeightedSumProb(m);
+      }
+    }
+
+    // Weighted Sum for Outcome Probability Estimation
+    // Calculates sum over data points of a observed outcome, weighted by the
+      // posterior. This is done for all outcomes. The member variable
+      // estimated_prob_ is updated with the results. 
+    // Parameters:
+      // cluster_index: which cluster to consider
+    void WeightedSumProb(int cluster_index) {
+      int n_outcome;
+      int y;
+      double posterior_iter;
+      // point to outcome probabilites for given cluster
+      double* estimated_prob_m = this->estimated_prob_
+          + cluster_index*this->sum_outcomes_;
+      double* estimated_prob;
+      for (int i=0; i<this->n_data_; i++) {
+        estimated_prob = estimated_prob_m;
         for (int j=0; j<this->n_category_; j++) {
           n_outcome = this->n_outcomes_[j];
-          for (int k=0; k<n_outcome; k++) {
-            estimated_prob_m[k] /=
-                ((double) this->n_data_) * this->prior_[m];
-          }
-          estimated_prob_m += n_outcome;
+          y = this->responses_[i*this->n_category_ + j];
+          posterior_iter = this->posterior_[cluster_index*this->n_data_ + i];
+          estimated_prob[y - 1] += posterior_iter;
+          // point to next category
+          estimated_prob += n_outcome;
         }
+      }
+    }
+
+    // Normalised Weighted Sum for Outcome Porbability Estimation
+    // After calling WeightedSumProb, call this to normalise the weighted sum so
+      // that the member variable estimated_prob_ contain estimated
+      // probabilities for each outcome
+    // Can be overridden as the sum of weights can be calculated differently
+    // Parameters:
+      // cluster_index: which cluster to consider
+    virtual void NormalWeightedSumProb(int cluster_index) {
+      this->NormalWeightedSumProb(cluster_index,
+          ((double) this->n_data_) * this->prior_[cluster_index]);
+    }
+    
+    // Normalised Weighted Sum for Outcome Porbability Estimation
+    // After calling WeightedSumProb, call this to normalise the weighted sum so
+      // that the member variable estimated_prob_ contain estimated
+      // probabilities for each outcome
+    // Parameters:
+      // cluster_index: which cluster to consider
+      // normaliser: sum of weights
+    void NormalWeightedSumProb(int cluster_index, double normaliser) {
+      int n_outcome;
+      // point to outcome probabilites for given cluster
+      double* estimated_prob = this->estimated_prob_
+          + cluster_index*this->sum_outcomes_;
+      // normalise by the sum of posteriors
+      // calculations can be reused as the prior is the mean of posteriors
+        // from the E step
+      for (int j=0; j<this->n_category_; j++) {
+        n_outcome = this->n_outcomes_[j];
+        for (int k=0; k<n_outcome; k++) {
+          estimated_prob[k] /= normaliser;
+        }
+        estimated_prob += n_outcome;
       }
     }
 };

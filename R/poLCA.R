@@ -97,7 +97,20 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
             }
         }
 
-        emResults <- EmAlgorithmRcpp(x, t(y), initial_prob_vector, N, S, J, K.j, R, nrep, n.thread, maxiter, tol)
+        seed = sample.int(as.integer(.Machine$integer.max), 5, replace=TRUE)
+        emResults <- EmAlgorithmRcpp(x,
+                                     t(y),
+                                     initial_prob_vector,
+                                     N,
+                                     S,
+                                     J,
+                                     K.j,
+                                     R,
+                                     nrep,
+                                     n.thread,
+                                     maxiter,
+                                     tol,
+                                     seed)
         rgivy = emResults[[1]]
         prior = emResults[[2]]
         estimated_prob = emResults[[3]]
@@ -105,15 +118,12 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
         ret$attempts = emResults[[5]]
         best_rep_index = emResults[[6]]
         nIter = emResults[[7]]
+        eflag = emResults[[8]]
 
         lnL = ret$attempts[best_rep_index]
 
         vp = initial_prob[[1]]
         vp$vecprobs = estimated_prob
-
-        if (any(is.na(ret$attempts))) {
-            eflag <- TRUE;
-        }
 
         if (calc.se) {
             se <- poLCA.se(y,x,poLCAParallel.unvectorize(vp),prior,rgivy)
@@ -152,7 +162,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
     ret$aic <- (-2 * ret$llik) + (2 * ret$npar)         # Akaike Information Criterion
     ret$bic <- (-2 * ret$llik) + (log(N) * ret$npar)    # Schwarz-Bayesian Information Criterion
     ret$Nobs <- sum(rowSums(y==0)==0)                   # number of fully observed cases (if na.rm=F)
-    
+
     y[y==0] <- NA
     ret$y <- data.frame(y)             # outcome variables
     ret$x <- data.frame(x)             # covariates, if specified
@@ -167,7 +177,7 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
         }
     }
     ret$N <- N                         # number of observations
-    
+
     if ((all(rowSums(y==0)>0)) | !calc.chisq) {  # if no rows are fully observed or chi squared not requested
         ret$Chisq <- NA
         ret$Gsq <- NA
@@ -175,8 +185,8 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
     } else {
         ret = poLCAParallel.goodnessfit(ret)
     }
-    
-    
+
+
     ret$maxiter <- maxiter             # maximum number of iterations specified by user
     ret$resid.df <- min(ret$N,(prod(K.j)-1))-ret$npar # number of residual degrees of freedom
     class(ret) <- "poLCA"

@@ -2,9 +2,11 @@
 #define EM_ALGORITHM_ARRAY_H
 
 #include <thread>
+#include <memory>
 #include <mutex>
 
 #include "em_algorithm.h"
+#include "em_algorithm_regress.h"
 
 // EM ALGORITHM ARRAY
 // For using EM algorithm for multiple inital probabilities, use to find the
@@ -13,9 +15,29 @@
 class EmAlgorithmArray {
 
   private:
+
+    double* features_;  // features to provide EmAlgorithm with
+    int* responses_;  // reponses to provide EmAlgorithm with
+    int n_data_;  // number of data points
+    int n_feature_;  // number of features
+    int n_category_;  // number of categories
+    int* n_outcomes_;  // vector of number of outcomes for each category
+    int sum_outcomes_;  // sum of n_outcomes
+    int n_cluster_;  // number of clusters (classes in lit) to fit
+    int max_iter_;  // maximum number of iterations for EM algorithm
+    double tolerance_;  // to provide to EmAlgorithm
+    double* posterior_;  // to store posterior results
+    double* prior_;  // to store prior results
+    double* estimated_prob_;  // to store estimated prob results
+    double* regress_coeff_;  // to store regression coefficient results
+
     int n_rep_;  // number of initial values to tries
-    // dummy EmAlgorithm object, for storing values for the best optima so far
-    EmAlgorithm* optimal_fitter_;
+    // the best log likelihood found so far
+    double optimal_ln_l_;
+    // number of iterations optimal fitter has done
+    int n_iter_;
+    // true if the EM algorithm has to ever restart
+    bool has_restarted_ = false;
     // array of initial probabilities
       // each reptition uses sum_outcomes*n_cluster probabilities
     double* initial_prob_;
@@ -25,8 +47,11 @@ class EmAlgorithmArray {
     int best_rep_index_;
     int n_thread_;  // number of threads
 
+    // array of seeds, for each repetition
+    std::unique_ptr<unsigned[]> seed_array_ = NULL;
+
     std::mutex* initial_prob_lock_;  // for locking n_initial_prob_done_
-    // for locking ln_l_array_ and optimal_fitter_
+    // for locking optimal_ln_l_, best_rep_index_, n_iter_ and has_restarted_
     std::mutex* optimial_fitter_lock_;
 
   public:
@@ -95,24 +120,20 @@ class EmAlgorithmArray {
 
       this->n_rep_ = n_rep;
 
-      // dummy em algorithm doesn't need initial probabilities, use NULL
-      this->optimal_fitter_ = new EmAlgorithm(
-          features,
-          responses,
-          NULL,
-          n_data,
-          n_feature,
-          n_category,
-          n_outcomes,
-          sum_outcomes,
-          n_cluster,
-          max_iter,
-          tolerance,
-          posterior,
-          prior,
-          estimated_prob,
-          regress_coeff
-      );
+      this->features_ = features;
+      this->responses_ = responses;
+      this->n_data_ = n_data;
+      this->n_feature_ = n_feature;
+      this->n_category_ = n_category;
+      this->n_outcomes_ = n_outcomes;
+      this->sum_outcomes_ = sum_outcomes;
+      this->n_cluster_ = n_cluster;
+      this->max_iter_ = max_iter;
+      this->tolerance_ = tolerance;
+      this->posterior_ = posterior;
+      this->prior_ = prior;
+      this->estimated_prob_ = estimated_prob;
+      this->regress_coeff_ = regress_coeff;
 
       if (n_thread > n_rep) {
         n_thread = n_rep;
@@ -120,7 +141,7 @@ class EmAlgorithmArray {
 
       this->initial_prob_ = initial_prob;
       this->n_initial_prob_done_ = 0;
-      this->optimal_fitter_->ln_l_ = -INFINITY;
+      this->optimal_ln_l_ = -INFINITY;
       this->ln_l_array_ = ln_l_array;
       this->n_thread_ = n_thread;
       this->initial_prob_lock_ = new std::mutex();
@@ -128,7 +149,6 @@ class EmAlgorithmArray {
     }
 
     ~EmAlgorithmArray() {
-      delete this->optimal_fitter_;
       delete this->initial_prob_lock_;
       delete this->optimial_fitter_lock_;
     }
@@ -149,6 +169,28 @@ class EmAlgorithmArray {
       }
     }
 
+    // Set Seed
+    // Set the member variable seed_array_ with seeds for each repetition
+    void SetSeed(std::seed_seq* seed) {
+      this->seed_array_ = std::unique_ptr<unsigned[]>(
+          new unsigned[this->n_rep_]);
+      unsigned* seed_array = this->seed_array_.get();
+      seed->generate(seed_array, seed_array+this->n_rep_);
+    }
+
+    int get_best_rep_index() {
+      return this->best_rep_index_;
+    }
+
+    int get_n_iter() {
+      return this->n_iter_;
+    }
+
+    bool get_has_restarted() {
+      return this->has_restarted_;
+    }
+  
+  private:
     // FIT THREAD
     // To be run by a thread(s)
     // For each initial probability, fit using EM algorithm
@@ -160,10 +202,10 @@ class EmAlgorithmArray {
       int initial_prob_index;
       double ln_l;
 
-      int n_data = this->optimal_fitter_->n_data_;
-      int n_feature = this->optimal_fitter_->n_feature_;
-      int sum_outcomes = this->optimal_fitter_->sum_outcomes_;
-      int n_cluster = this->optimal_fitter_->n_cluster_;
+      int n_data = this->n_data_;
+      int n_feature = this->n_feature_;
+      int sum_outcomes = this->sum_outcomes_;
+      int n_cluster = this->n_cluster_;
 
       // allocate memory for this thread
       double* posterior = new double[n_data * n_cluster];
@@ -184,40 +226,62 @@ class EmAlgorithmArray {
 
           // transfer pointer to data and where to store results
           // em fit
-          fitter = new EmAlgorithm(
-              this->optimal_fitter_->features_,
-              this->optimal_fitter_->responses_,
-              this->initial_prob_ + initial_prob_index*sum_outcomes*n_cluster,
-              n_data,
-              n_feature,
-              this->optimal_fitter_->n_category_,
-              this->optimal_fitter_->n_outcomes_,
-              sum_outcomes,
-              n_cluster,
-              this->optimal_fitter_->max_iter_,
-              this->optimal_fitter_->tolerance_,
-              posterior,
-              prior,
-              estimated_prob,
-              regress_coeff
-          );
+          if (n_feature == 1) {
+            fitter = new EmAlgorithm(
+                this->features_,
+                this->responses_,
+                this->initial_prob_ + initial_prob_index*sum_outcomes*n_cluster,
+                n_data,
+                n_feature,
+                this->n_category_,
+                this->n_outcomes_,
+                sum_outcomes,
+                n_cluster,
+                this->max_iter_,
+                this->tolerance_,
+                posterior,
+                prior,
+                estimated_prob,
+                regress_coeff);
+          } else {
+            fitter = new EmAlgorithmRegress(
+                this->features_,
+                this->responses_,
+                this->initial_prob_ + initial_prob_index*sum_outcomes*n_cluster,
+                n_data,
+                n_feature,
+                this->n_category_,
+                this->n_outcomes_,
+                sum_outcomes,
+                n_cluster,
+                this->max_iter_,
+                this->tolerance_,
+                posterior,
+                prior,
+                estimated_prob,
+                regress_coeff);
+          }
+          if (this->seed_array_ != NULL) {
+            fitter->set_seed(this->seed_array_[initial_prob_index]);
+          }
           fitter->Fit();
-          ln_l = fitter->ln_l_;
+          ln_l = fitter->get_ln_l();
           this->ln_l_array_[initial_prob_index] = ln_l;
 
           // copy results if log likelihood improved
           this->optimial_fitter_lock_->lock();
-          if (ln_l > this->optimal_fitter_->ln_l_) {
+          this->has_restarted_ |= fitter->get_has_restarted();
+          if (ln_l > this->optimal_ln_l_) {
             this->best_rep_index_ = initial_prob_index;
-            this->optimal_fitter_->ln_l_ = ln_l;
-            this->optimal_fitter_->n_iter_ = fitter->n_iter_;
-            memcpy(this->optimal_fitter_->posterior_, posterior,
+            this->optimal_ln_l_ = ln_l;
+            this->n_iter_ = fitter->get_n_iter();
+            memcpy(this->posterior_, posterior,
                 n_data*n_cluster*sizeof(double));
-            memcpy(this->optimal_fitter_->prior_, prior,
+            memcpy(this->prior_, prior,
                 n_data*n_cluster*sizeof(double));
-            memcpy(this->optimal_fitter_->estimated_prob_, estimated_prob,
+            memcpy(this->estimated_prob_, estimated_prob,
                 sum_outcomes*n_cluster*sizeof(double));
-            memcpy(this->optimal_fitter_->regress_coeff_, regress_coeff,
+            memcpy(this->regress_coeff_, regress_coeff,
                 n_feature*(n_cluster-1)*sizeof(double));
           }
           this->optimial_fitter_lock_->unlock();
@@ -236,14 +300,6 @@ class EmAlgorithmArray {
       delete[] estimated_prob;
       delete[] regress_coeff;
 
-    }
-
-    int get_best_rep_index() {
-      return this->best_rep_index_;
-    }
-
-    int get_n_iter() {
-      return this->optimal_fitter_->n_iter_;
     }
 
 };

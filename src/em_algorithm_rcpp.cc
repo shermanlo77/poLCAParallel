@@ -1,3 +1,7 @@
+#define ARMA_WARN_LEVEL 1
+
+#include <memory>
+
 #include "RcppArmadillo.h"
 
 #include "em_algorithm_array.h"
@@ -24,6 +28,7 @@ using namespace Rcpp;
   // n_rep: number of repetitions
   // max_iter: maximum number of iterations for EM algorithm
   // tolerance: stop fitting the log likelihood change less than this
+  // seed: array of integers to seed rng
 // Return a list:
   // posterior: matrix of posterior probabilities, dim 0: for each data point,
     // dim 1: for each cluster
@@ -33,6 +38,7 @@ using namespace Rcpp;
     // format as initial_prob
   // ln_l: log likelihood
   // n_iter: number of iterations taken
+  // eflag: true if the em algorithm has to ever restart
 // [[Rcpp::export]]
 List EmAlgorithmRcpp(
     NumericMatrix features,
@@ -46,7 +52,8 @@ List EmAlgorithmRcpp(
     int n_rep,
     int n_thread,
     int max_iter,
-    double tolerance) {
+    double tolerance,
+    IntegerVector seed) {
 
   int sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
@@ -83,10 +90,14 @@ List EmAlgorithmRcpp(
       ln_l_array.begin()
   );
 
+  std::seed_seq seed_seq(seed.begin(), seed.end());
+  fitter->SetSeed(&seed_seq);
+
   fitter->Fit();
 
   int best_rep_index = fitter->get_best_rep_index();
   int n_iter = fitter->get_n_iter();
+  bool has_restarted = fitter->get_has_restarted();
 
   delete fitter;
 
@@ -98,6 +109,7 @@ List EmAlgorithmRcpp(
   to_return.push_back(ln_l_array);
   to_return.push_back(best_rep_index+1);
   to_return.push_back(n_iter);
+  to_return.push_back(has_restarted);
   return to_return;
 }
 
