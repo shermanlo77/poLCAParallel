@@ -103,7 +103,7 @@ class EmAlgorithm {
     }
 
     virtual ~EmAlgorithm() {
-      delete this->ln_l_array_;
+      delete[] this->ln_l_array_;
     }
 
     // fit data to model using EM algorithm
