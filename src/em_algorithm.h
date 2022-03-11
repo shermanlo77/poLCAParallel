@@ -1,6 +1,7 @@
 #ifndef EM_ALGORITHM_H
 #define EM_ALGORITHM_H
 
+#include <chrono>
 #include <math.h>
 #include <random>
 
@@ -56,7 +57,15 @@ class EmAlgorithm {
       // in matrix form, to be multiplied to the features and linked to the
       // prior using softmax
     double* regress_coeff_;
-
+    // vector of INITIAL response probabilities used to get the maximum log
+      // likelihood, conditioned on cluster, for each category
+    // this member variable is optional, set to NULL if not used
+    // flatten list of matrices
+      // dim 0: for each outcome
+      // dim 1: for each category
+      // dim 2: for each cluster
+    double* best_initial_prob_ = NULL;
+    
     // log likelihood, updated at each iteration of EM
     double ln_l_ = -INFINITY;
     // vector, for each data point, log likelihood for each data point
@@ -66,7 +75,9 @@ class EmAlgorithm {
     // indicate if it needed to use new initial values during a fit, can happen
       // if a matrix is singular
     bool has_restarted_ = false;
-    unsigned seed_ = 0;  // seed for random number generator
+    // seed for random number generator
+    unsigned seed_ =
+        std::chrono::system_clock::now().time_since_epoch().count();
 
   public:
 
@@ -146,6 +157,12 @@ class EmAlgorithm {
           this->Reset(&rng, &uniform);
         }
 
+        // make a copy initial probabilities if requested
+        if (this->best_initial_prob_ != NULL) {
+          std::memcpy(this->best_initial_prob_, this->estimated_prob_,
+              this->n_cluster_*this->sum_outcomes_*sizeof(double));
+        }
+
         ln_l_before = -INFINITY;
 
         // initalise prior probabilities, for each cluster
@@ -153,8 +170,16 @@ class EmAlgorithm {
 
         // do EM algorithm
         // assume successful until find error
+        //
+        // iteration goes:
+          // initial E step (after which, n_iter=0, no effective iterations)
+          // M step, E step (after which, n_iter=1, one effective iterations)
+          // M step, E step (after which, n_iter=2, two effective iterations)
+          // and so on until stopping condition
+          // or when after an E step and n_iter=max_iter, making max_iter
+            // effective iterations
         is_success = true;
-        for (this->n_iter_=0; this->n_iter_<this->max_iter_; this->n_iter_++) {
+        for (this->n_iter_=0; this->n_iter_<=this->max_iter_; this->n_iter_++) {
           //E step updates prior probabilities
           this->EStep();
 
@@ -169,8 +194,11 @@ class EmAlgorithm {
             break;
           }
 
-          // check stopping condition
+          // check stopping conditions
           if (ln_l_difference < this->tolerance_) {
+            break;
+          }
+          if (this->n_iter_ == this->max_iter_) {
             break;
           }
           ln_l_before = this->ln_l_;
@@ -187,6 +215,11 @@ class EmAlgorithm {
 
       // reformat prior
       this->FinalPrior();
+    }
+
+    // Set where to store initial probabilities (optional)
+    void set_best_initial_prob(double* best_initial_prob) {
+      this->best_initial_prob_ = best_initial_prob;
     }
 
     double get_ln_l() {

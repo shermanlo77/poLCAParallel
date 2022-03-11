@@ -67,6 +67,7 @@ List EmAlgorithmRcpp(
   NumericVector estimated_prob(sum_outcomes*n_cluster);
   NumericVector regress_coeff(n_feature*(n_cluster-1));
   NumericVector ln_l_array(n_rep);
+  NumericVector best_initial_prob(sum_outcomes*n_cluster);
 
   // fit using EM algorithm
   EmAlgorithmArray* fitter = new EmAlgorithmArray(
@@ -92,6 +93,7 @@ List EmAlgorithmRcpp(
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   fitter->SetSeed(&seed_seq);
+  fitter->set_best_initial_prob(best_initial_prob.begin());
 
   fitter->Fit();
 
@@ -109,6 +111,7 @@ List EmAlgorithmRcpp(
   to_return.push_back(ln_l_array);
   to_return.push_back(best_rep_index+1);
   to_return.push_back(n_iter);
+  to_return.push_back(best_initial_prob);
   to_return.push_back(has_restarted);
   return to_return;
 }

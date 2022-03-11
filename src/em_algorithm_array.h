@@ -30,6 +30,8 @@ class EmAlgorithmArray {
     double* prior_;  // to store prior results
     double* estimated_prob_;  // to store estimated prob results
     double* regress_coeff_;  // to store regression coefficient results
+    // optional, to store initial prob to obtain max likelihood
+    double* best_initial_prob_ = NULL;
 
     int n_rep_;  // number of initial values to tries
     // the best log likelihood found so far
@@ -178,6 +180,11 @@ class EmAlgorithmArray {
       seed->generate(seed_array, seed_array+this->n_rep_);
     }
 
+    // Set where to store initial probabilities (optional)
+    void set_best_initial_prob(double* best_initial_prob) {
+      this->best_initial_prob_ = best_initial_prob;
+    }
+
     int get_best_rep_index() {
       return this->best_rep_index_;
     }
@@ -212,6 +219,12 @@ class EmAlgorithmArray {
       double* prior = new double[n_data * n_cluster];
       double* estimated_prob = new double[sum_outcomes * n_cluster];
       double* regress_coeff = new double [n_feature * (n_cluster-1)];
+      double* best_initial_prob;
+      // allocate optional memory
+      bool is_get_initial_prob = this->best_initial_prob_ != NULL;
+      if (is_get_initial_prob) {
+        best_initial_prob = new double[sum_outcomes * n_cluster];
+      }
 
       while (is_working) {
 
@@ -264,6 +277,9 @@ class EmAlgorithmArray {
           if (this->seed_array_ != NULL) {
             fitter->set_seed(this->seed_array_[initial_prob_index]);
           }
+          if (is_get_initial_prob) {
+            fitter->set_best_initial_prob(best_initial_prob);
+          }
           fitter->Fit();
           ln_l = fitter->get_ln_l();
           this->ln_l_array_[initial_prob_index] = ln_l;
@@ -283,6 +299,10 @@ class EmAlgorithmArray {
                 sum_outcomes*n_cluster*sizeof(double));
             memcpy(this->regress_coeff_, regress_coeff,
                 n_feature*(n_cluster-1)*sizeof(double));
+            if (is_get_initial_prob) {
+              memcpy(this->best_initial_prob_, best_initial_prob,
+                sum_outcomes*n_cluster*sizeof(double));
+            }
           }
           this->optimial_fitter_lock_->unlock();
 
@@ -299,6 +319,9 @@ class EmAlgorithmArray {
       delete[] prior;
       delete[] estimated_prob;
       delete[] regress_coeff;
+      if (is_get_initial_prob) {
+        delete[] best_initial_prob;
+      }
 
     }
 
