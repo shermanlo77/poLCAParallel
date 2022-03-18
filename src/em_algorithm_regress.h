@@ -1,19 +1,18 @@
-#ifndef EM_ALGORITHM_REGRESS_H
-#define EM_ALGORITHM_REGRESS_H
-
-#include "em_algorithm.h"
+#ifndef EM_ALGORITHM_REGRESS_H_
+#define EM_ALGORITHM_REGRESS_H_
 
 #include "RcppArmadillo.h"
 
-using namespace arma;
+#include "em_algorithm.h"
+
+namespace polca_parallel {
 
 // EM ALGORITHM REGRESS
 // For fitting using EM algorithm for a given initial value, prior probabilities
-    // are softmax
+  // are softmax
 // Member variables are made public for the sake of convenience so that
-    // EmAlgorithmArray can access and modify instances of EmAlgorithm
-class EmAlgorithmRegress : public EmAlgorithm {
-
+  // EmAlgorithmArray can access and modify instances of EmAlgorithm
+class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   private:
     int n_parameters_;  // number of parameters to estimate for the softmax
     // vector, length n_parameters_, gradient of the log likelihood
@@ -38,7 +37,7 @@ class EmAlgorithmRegress : public EmAlgorithm {
         double* prior,
         double* estimated_prob,
         double* regress_coeff)
-        : EmAlgorithm(
+        : polca_parallel::EmAlgorithm(
             features,
             responses,
             initial_prob,
@@ -71,7 +70,7 @@ class EmAlgorithmRegress : public EmAlgorithm {
       // regress_coeff to zero
     void Reset(std::mt19937_64* rng,
                std::uniform_real_distribution<double>* uniform) override {
-      this->EmAlgorithm::Reset(rng, uniform);
+      this->polca_parallel::EmAlgorithm::Reset(rng, uniform);
       this->init_regress_coeff();
     }
 
@@ -79,11 +78,11 @@ class EmAlgorithmRegress : public EmAlgorithm {
       // matrix multiply: eta = features x regress_coeff
         // then into softmax, ie prior probability proportional to exp(eta)
       // restrict regress_coeff for the 0th cluster to be 0
-      Mat<double> features(
+      arma::Mat<double> features(
           this->features_, this->n_data_, this->n_feature_, false);
-      Mat<double> regress_coeff(
+      arma::Mat<double> regress_coeff(
           this->regress_coeff_, this->n_feature_, this->n_cluster_-1, false);
-      Mat<double> prior = features * regress_coeff;
+      arma::Mat<double> prior = features * regress_coeff;
       prior = exp(prior);
 
       // for the 0th cluster, eta = 0, prior for 0th cluster propto 1
@@ -94,9 +93,9 @@ class EmAlgorithmRegress : public EmAlgorithm {
              prior.size()*sizeof(double));
 
       // normalise so that prior_ are probabilities
-      Mat<double> prior_arma(
+      arma::Mat<double> prior_arma(
           this->prior_, this->n_data_, this->n_cluster_, false);
-      Col<double> normaliser = sum(prior_arma, 1);
+      arma::Col<double> normaliser = sum(prior_arma, 1);
       double* prior_ptr = this->prior_;
       for (int m=0; m<this->n_cluster_; m++) {
         for (int i=0; i<this->n_data_; i++) {
@@ -117,7 +116,8 @@ class EmAlgorithmRegress : public EmAlgorithm {
     bool IsInvalidLikelihood(double ln_l_difference) override {
       // comparing nan may be unclear, check nan first
       // check if the newton step decreases the log likelihood
-      if (this->EmAlgorithm::IsInvalidLikelihood(ln_l_difference)) {
+      if (this->polca_parallel::EmAlgorithm::IsInvalidLikelihood(
+          ln_l_difference)) {
         return true;
       } else {
         return ln_l_difference < -1e-7;
@@ -140,13 +140,14 @@ class EmAlgorithmRegress : public EmAlgorithm {
       this->CalcHess();
 
       // single Newton step
-      Col<double> regress_coeff(this->regress_coeff_, this->n_parameters_,
+      arma::Col<double> regress_coeff(this->regress_coeff_, this->n_parameters_,
           false);
-      Col<double> gradient(this->gradient_, this->n_parameters_, false);
-      Mat<double> hessian(this->hessian_, this->n_parameters_,
+      arma::Col<double> gradient(this->gradient_, this->n_parameters_, false);
+      arma::Mat<double> hessian(this->hessian_, this->n_parameters_,
           this->n_parameters_, false);
       try {
-        regress_coeff -= solve(hessian, gradient, solve_opts::likely_sympd);
+        regress_coeff -= arma::solve(
+            hessian, gradient, arma::solve_opts::likely_sympd);
       } catch (const std::runtime_error) {
         return true;
       }
@@ -160,10 +161,12 @@ class EmAlgorithmRegress : public EmAlgorithm {
     void NormalWeightedSumProb(int cluster_index) override {
       // override as the normaliser cannot be calculated using prior
       // using sum of posterior instead
-      Col<double> posterior(this->posterior_ + cluster_index*this->n_data_,
+      arma::Col<double> posterior(
+          this->posterior_ + cluster_index*this->n_data_,
           this->n_data_, false);
-      double normaliser = sum(posterior);
-      this->EmAlgorithm::NormalWeightedSumProb(cluster_index, normaliser);
+      double normaliser = arma::sum(posterior);
+      this->polca_parallel::EmAlgorithm::NormalWeightedSumProb(
+          cluster_index, normaliser);
     }
 
   private:
@@ -179,15 +182,15 @@ class EmAlgorithmRegress : public EmAlgorithm {
     void CalcGrad() {
       double* gradient = this->gradient_;
       for (int m=1; m<this->n_cluster_; m++) {
-        Col<double>posterior_m(
+        arma::Col<double>posterior_m(
             this->posterior_ + m*this->n_data_, this->n_data_, false);
-        Col<double>prior_m(
+        arma::Col<double>prior_m(
             this->prior_ + m*this->n_data_, this->n_data_, false);
-        Col<double> post_minus_prior = posterior_m - prior_m;
+        arma::Col<double> post_minus_prior = posterior_m - prior_m;
         for (int p=0; p<this->n_feature_; p++) {
-          Col<double> x_p(
+          arma::Col<double> x_p(
               this->features_ + p*this->n_data_, this->n_data_, false);
-          *gradient = dot(x_p, post_minus_prior);
+          *gradient = arma::dot(x_p, post_minus_prior);
           gradient++;
         }
       }
@@ -218,19 +221,19 @@ class EmAlgorithmRegress : public EmAlgorithm {
       // when retriving the prior and posterior, use cluster_index + 1 because
         // the hessian does not consider the 0th cluster as the regression
         // coefficient for the 0th cluster is set to zero
-      Col<double> posterior0(
+      arma::Col<double> posterior0(
           this->posterior_ + (cluster_index_0+1)*this->n_data_,
           this->n_data_, false);
-      Col<double> prior0(
+      arma::Col<double> prior0(
           this->prior_ + (cluster_index_0+1)*this->n_data_,
           this->n_data_, false);
 
       // for the same cluster, copy over results as they will be modified
       bool is_same_cluster = cluster_index_0 == cluster_index_1;
-      Col<double> posterior1(
+      arma::Col<double> posterior1(
           this->posterior_ + (cluster_index_1+1)*this->n_data_,
           this->n_data_, is_same_cluster);
-      Col<double> prior1(
+      arma::Col<double> prior1(
           this->prior_ + (cluster_index_1+1)*this->n_data_,
           this->n_data_, is_same_cluster);
 
@@ -242,7 +245,8 @@ class EmAlgorithmRegress : public EmAlgorithm {
         posterior1 -= 1;
         prior1 -= 1;
       }
-      Col<double> prior_post_inter = prior0 % prior1 - posterior0 % posterior1;
+      arma::Col<double> prior_post_inter =
+          prior0 % prior1 - posterior0 % posterior1;
 
       double hess_element;
       // iterate through features i, j, working out the elements of the hessian
@@ -284,12 +288,14 @@ class EmAlgorithmRegress : public EmAlgorithm {
     // Return:
       // value of an element of the Hessian
     double CalcHessElement(int feature_index_0, int feature_index_1,
-                           Col<double>* prior_post_inter) {
-      Col<double> feature0(this->features_ + feature_index_0*this->n_data_,
-                           this->n_data_, false);
-      Col<double> feature1(this->features_ + feature_index_1*this->n_data_,
-                           this->n_data_, false);
-      return sum(feature0 % feature1 % *prior_post_inter);
+                           arma::Col<double>* prior_post_inter) {
+      arma::Col<double> feature0(
+          this->features_ + feature_index_0*this->n_data_,
+          this->n_data_, false);
+      arma::Col<double> feature1(
+          this->features_ + feature_index_1*this->n_data_,
+          this->n_data_, false);
+      return arma::sum(feature0 % feature1 % *prior_post_inter);
     }
 
     // Get pointer of Hessian at specificed indexes
@@ -313,5 +319,7 @@ class EmAlgorithmRegress : public EmAlgorithm {
           + feature_index_0;
     }
 };
+
+}
 
 #endif

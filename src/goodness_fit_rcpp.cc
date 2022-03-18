@@ -5,8 +5,6 @@
 
 #include "goodness_fit.h"
 
-using namespace Rcpp;
-
 // GOODNESS OF FIT STATISTICS
 // Get goodness of fit statistics given fitted probabilities
 // Args:
@@ -28,18 +26,18 @@ using namespace Rcpp;
   // ln_l_ratio
   // chi_squared
 // [[Rcpp::export]]
-List GoodnessFitRcpp(
-    IntegerMatrix responses,
-    NumericVector prior,
-    NumericVector outcome_prob,
+Rcpp::List GoodnessFitRcpp(
+    Rcpp::IntegerMatrix responses,
+    Rcpp::NumericVector prior,
+    Rcpp::NumericVector outcome_prob,
     int n_data,
     int n_category,
-    IntegerVector n_outcomes,
+    Rcpp::IntegerVector n_outcomes,
     int n_cluster) {
 
   // get observed and expected frequencies for each unique response
-  std::map<std::vector<int>, Frequency>* unique_freq =
-      new std::map<std::vector<int>, Frequency>();
+  std::map<std::vector<int>, polca_parallel::Frequency>* unique_freq =
+      new std::map<std::vector<int>, polca_parallel::Frequency>();
   GetUniqueObserved(responses.begin(), n_data, n_category, unique_freq);
   GetExpected(responses.begin(),
               prior.begin(),
@@ -56,12 +54,12 @@ List GoodnessFitRcpp(
       // unique_freq_table
   // last two columns for observed and expected frequency
   int n_unique = unique_freq->size();
-  NumericMatrix unique_freq_table(n_unique, n_category+2);
+  Rcpp::NumericMatrix unique_freq_table(n_unique, n_category+2);
   double* unique_freq_ptr = unique_freq_table.begin();
   std::vector<int> response_i;
 
   int data_index = 0;
-  Frequency frequency;
+  polca_parallel::Frequency frequency;
   double expected, observed;
   for (auto iter=unique_freq->begin();
       iter!=unique_freq->end(); iter++) {
@@ -81,7 +79,7 @@ List GoodnessFitRcpp(
     data_index++;
   }
 
-  List to_return;
+  Rcpp::List to_return;
   to_return.push_back(unique_freq_table);
   to_return.push_back(stats[0]);
   to_return.push_back(stats[1]);

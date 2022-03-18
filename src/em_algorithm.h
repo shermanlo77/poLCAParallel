@@ -1,21 +1,19 @@
-#ifndef EM_ALGORITHM_H
-#define EM_ALGORITHM_H
+#ifndef EM_ALGORITHM_H_
+#define EM_ALGORITHM_H_
 
 #include <chrono>
 #include <math.h>
 #include <random>
 
-// [[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
 
-using namespace arma;
+namespace polca_parallel {
 
 // EM ALGORITHM
 // For fitting using EM algorithm for a given initial value
 // Member variables are made public for the sake of convenience so that
-    // EmAlgorithmArray can access and modify instances of EmAlgorithm
+  // EmAlgorithmArray can access and modify instances of EmAlgorithm
 class EmAlgorithm {
-
   protected:
     double* features_;  // design matrix of features, matrix n_data x n_feature
     // design matrix transpose of responses, matrix n_category x n_data
@@ -80,7 +78,6 @@ class EmAlgorithm {
         std::chrono::system_clock::now().time_since_epoch().count();
 
   public:
-
     // for arguments for this constructor, see description of the member
       // variables
     // the following content pointed too shall modified:
@@ -184,7 +181,7 @@ class EmAlgorithm {
           this->EStep();
 
           // E step updates ln_l_array_, use that to calculate log likelihood
-          Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false);
+          arma::Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false);
           this->ln_l_ = sum(ln_l_array);
 
           // check for any errors
@@ -239,7 +236,6 @@ class EmAlgorithm {
     }
 
   protected:
-
     // Reset parameters for a re-run
     // Reset the parameters estimated_prob_ with random values
     virtual void Reset(std::mt19937_64* rng,
@@ -257,7 +253,7 @@ class EmAlgorithm {
       for (int m=0; m<this->n_cluster_; m++) {
         for (int j=0; j<this->n_category_; j++) {
           n_outcome = this->n_outcomes_[j];
-          Col<double> prob_vector(estimated_prob, n_outcome, false);
+          arma::Col<double> prob_vector(estimated_prob, n_outcome, false);
           prob_vector /= sum(prob_vector);
           estimated_prob += n_outcome;
         }
@@ -321,12 +317,12 @@ class EmAlgorithm {
       for (int i=0; i<this->n_data_; i++) {
 
         // normaliser noramlise over cluster, so loop over cluster here
-        normaliser = 0;
+        normaliser = 0.0;
 
         estimated_prob = this->estimated_prob_;
         for (int m=0; m<this->n_cluster_; m++) {
           // calculate conditioned on cluster m likelihood
-          p = 1;
+          p = 1.0;
           for (int j=0; j<this->n_category_; j++) {
             n_outcome = this->n_outcomes_[j];
             y = this->responses_[i*this->n_category_ + j];
@@ -362,9 +358,9 @@ class EmAlgorithm {
       // estimate prior
       // for this implementation, the mean posterior, taking the mean over data
         // points
-      Mat<double> posterior_arma(this->posterior_, this->n_data_,
-                                 this->n_cluster_, false);
-      Row<double> prior = mean(posterior_arma, 0);
+      arma::Mat<double> posterior_arma(this->posterior_, this->n_data_,
+                                       this->n_cluster_, false);
+      arma::Row<double> prior = mean(posterior_arma, 0);
       std::memcpy(this->prior_, prior.begin(), this->n_cluster_*sizeof(double));
 
       // estimate outcome probabilities
@@ -385,7 +381,7 @@ class EmAlgorithm {
 
       // set all estimated response probability to zero
       for (int i=0; i<this->n_cluster_*this->sum_outcomes_; i++) {
-        this->estimated_prob_[i] = 0;
+        this->estimated_prob_[i] = 0.0;
       }
 
       // for each cluster
@@ -459,5 +455,7 @@ class EmAlgorithm {
       }
     }
 };
+
+}
 
 #endif

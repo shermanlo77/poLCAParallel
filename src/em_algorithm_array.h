@@ -1,5 +1,5 @@
-#ifndef EM_ALGORITHM_ARRAY_H
-#define EM_ALGORITHM_ARRAY_H
+#ifndef EM_ALGORITHM_ARRAY_H_
+#define EM_ALGORITHM_ARRAY_H_
 
 #include <thread>
 #include <memory>
@@ -8,14 +8,14 @@
 #include "em_algorithm.h"
 #include "em_algorithm_regress.h"
 
+namespace polca_parallel {
+
 // EM ALGORITHM ARRAY
 // For using EM algorithm for multiple inital probabilities, use to find the
   // global maximum
 // Each thread runs a repetition
 class EmAlgorithmArray {
-
   private:
-
     double* features_;  // features to provide EmAlgorithm with
     int* responses_;  // reponses to provide EmAlgorithm with
     int n_data_;  // number of data points
@@ -43,7 +43,7 @@ class EmAlgorithmArray {
     // array of initial probabilities
       // each reptition uses sum_outcomes*n_cluster probabilities
     double* initial_prob_;
-    int n_initial_prob_done_;  // which initial value is being worked on
+    int n_rep_done_;  // which initial value is being worked on
     double* ln_l_array_;  // maximum log likelihood for each reptition
     // index of which inital value has the best log likelihood
     int best_rep_index_;
@@ -52,24 +52,23 @@ class EmAlgorithmArray {
     // array of seeds, for each repetition
     std::unique_ptr<unsigned[]> seed_array_ = NULL;
 
-    std::mutex* initial_prob_lock_;  // for locking n_initial_prob_done_
+    std::mutex* n_rep_done_lock_;  // for locking n_rep_done_
     // for locking optimal_ln_l_, best_rep_index_, n_iter_ and has_restarted_
-    std::mutex* optimial_fitter_lock_;
+    std::mutex* results_lock_;
 
   public:
-
     // CONSTRUCTOR
     // Parameters:
       // features: design matrix of features, matrix n_data x n_feature
       // responses: design matrix transpose of responses,
-          // matrix n_category x n_data
+        // matrix n_category x n_data
       // initial_prob: vector of initial probabilities for each outcome,
-          // for each category, for each cluster and for each repetition
-          // flatten list of matrices
-            // dim 0: for each outcome
-            // dim 1: for each category
-            // dim 2: for each cluster
-            // dim 3: for each repetition
+        // for each category, for each cluster and for each repetition
+        // flatten list of matrices
+          // dim 0: for each outcome
+          // dim 1: for each category
+          // dim 2: for each cluster
+          // dim 3: for each repetition
       // n_data: number of data points
       // n_feature: number of features
       // n_category: number of categories
@@ -80,26 +79,26 @@ class EmAlgorithmArray {
       // n_thread: number of threads to use
       // max_iter: maximum number of iterations for EM algorithm
       // tolerance: tolerance for difference in log likelihood, used for
-          // stopping condition
+        // stopping condition
       // posterior: to store results, design matrix of posterior probabilities
-          // (also called responsibility), probability data point is in cluster
-          // m given responses
+        // (also called responsibility), probability data point is in cluster
+        // m given responses
         // matrix, dim 0: for each data, dim 1: for each cluster
       // prior: to store results, design matrix of prior probabilities,
-          // probability data point is in cluster m NOT given responses
+        // probability data point is in cluster m NOT given responses
         // dim 0: for each data, dim 1: for each cluster
       // estimated_prob: to store results, vector of estimated response
-          // probabilities for each category,
+        // probabilities for each category,
         // flatten list of matrices
           // dim 0: for each outcome
           // dim 1: for each cluster
           // dim 2: for each category
       // regress_coeff: to store results, vector length
-          // n_features_*(n_cluster-1), linear regression coefficient in matrix
-          // form, to be multiplied to the features and linked to the prior
-          // using softmax
+        // n_features_*(n_cluster-1), linear regression coefficient in matrix
+        // form, to be multiplied to the features and linked to the prior
+        // using softmax
       // ln_l_array: to store results, vector, maxmimum log likelihood for each
-          // repetition
+        // repetition
     EmAlgorithmArray(
         double* features,
         int* responses,
@@ -142,17 +141,17 @@ class EmAlgorithmArray {
       }
 
       this->initial_prob_ = initial_prob;
-      this->n_initial_prob_done_ = 0;
+      this->n_rep_done_ = 0;
       this->optimal_ln_l_ = -INFINITY;
       this->ln_l_array_ = ln_l_array;
       this->n_thread_ = n_thread;
-      this->initial_prob_lock_ = new std::mutex();
-      this->optimial_fitter_lock_ = new std::mutex();
+      this->n_rep_done_lock_ = new std::mutex();
+      this->results_lock_ = new std::mutex();
     }
 
     ~EmAlgorithmArray() {
-      delete this->initial_prob_lock_;
-      delete this->optimial_fitter_lock_;
+      delete this->n_rep_done_lock_;
+      delete this->results_lock_;
     }
 
     // FIT USING EM (in parallel)
@@ -203,10 +202,10 @@ class EmAlgorithmArray {
     // For each initial probability, fit using EM algorithm
     void FitThread() {
 
-      EmAlgorithm* fitter;
+      polca_parallel::EmAlgorithm* fitter;
       bool is_working = true;
       // which initial probability this thread is working on
-      int initial_prob_index;
+      int rep_index;
       double ln_l;
 
       int n_data = this->n_data_;
@@ -230,20 +229,20 @@ class EmAlgorithmArray {
 
         // lock to retrive initial probability
         // shall be unlocked in both if and else branches
-        this->initial_prob_lock_->lock();
-        if (this->n_initial_prob_done_ < this->n_rep_) {
-          initial_prob_index = this->n_initial_prob_done_;
+        this->n_rep_done_lock_->lock();
+        if (this->n_rep_done_ < this->n_rep_) {
+          rep_index = this->n_rep_done_;
           // increment for the next worker to work on
-          this->n_initial_prob_done_++;
-          this->initial_prob_lock_->unlock();
+          this->n_rep_done_++;
+          this->n_rep_done_lock_->unlock();
 
           // transfer pointer to data and where to store results
           // em fit
           if (n_feature == 1) {
-            fitter = new EmAlgorithm(
+            fitter = new polca_parallel::EmAlgorithm(
                 this->features_,
                 this->responses_,
-                this->initial_prob_ + initial_prob_index*sum_outcomes*n_cluster,
+                this->initial_prob_ + rep_index*sum_outcomes*n_cluster,
                 n_data,
                 n_feature,
                 this->n_category_,
@@ -257,10 +256,10 @@ class EmAlgorithmArray {
                 estimated_prob,
                 regress_coeff);
           } else {
-            fitter = new EmAlgorithmRegress(
+            fitter = new polca_parallel::EmAlgorithmRegress(
                 this->features_,
                 this->responses_,
-                this->initial_prob_ + initial_prob_index*sum_outcomes*n_cluster,
+                this->initial_prob_ + rep_index*sum_outcomes*n_cluster,
                 n_data,
                 n_feature,
                 this->n_category_,
@@ -275,20 +274,20 @@ class EmAlgorithmArray {
                 regress_coeff);
           }
           if (this->seed_array_ != NULL) {
-            fitter->set_seed(this->seed_array_[initial_prob_index]);
+            fitter->set_seed(this->seed_array_[rep_index]);
           }
           if (is_get_initial_prob) {
             fitter->set_best_initial_prob(best_initial_prob);
           }
           fitter->Fit();
           ln_l = fitter->get_ln_l();
-          this->ln_l_array_[initial_prob_index] = ln_l;
+          this->ln_l_array_[rep_index] = ln_l;
 
           // copy results if log likelihood improved
-          this->optimial_fitter_lock_->lock();
+          this->results_lock_->lock();
           this->has_restarted_ |= fitter->get_has_restarted();
           if (ln_l > this->optimal_ln_l_) {
-            this->best_rep_index_ = initial_prob_index;
+            this->best_rep_index_ = rep_index;
             this->optimal_ln_l_ = ln_l;
             this->n_iter_ = fitter->get_n_iter();
             memcpy(this->posterior_, posterior,
@@ -304,13 +303,13 @@ class EmAlgorithmArray {
                 sum_outcomes*n_cluster*sizeof(double));
             }
           }
-          this->optimial_fitter_lock_->unlock();
+          this->results_lock_->unlock();
 
           delete fitter;
 
         } else {
           // all initial values used, stop working
-          this->initial_prob_lock_->unlock();
+          this->n_rep_done_lock_->unlock();
           is_working = false;
         }
       }
@@ -326,5 +325,7 @@ class EmAlgorithmArray {
     }
 
 };
+
+}
 
 #endif

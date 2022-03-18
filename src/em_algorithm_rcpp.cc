@@ -7,8 +7,6 @@
 #include "em_algorithm_array.h"
 #include "poLCA.c"
 
-using namespace Rcpp;
-
 // EM FIT
 // Fit using the EM algorithm
 // Args:
@@ -40,20 +38,20 @@ using namespace Rcpp;
   // n_iter: number of iterations taken
   // eflag: true if the em algorithm has to ever restart
 // [[Rcpp::export]]
-List EmAlgorithmRcpp(
-    NumericMatrix features,
-    IntegerMatrix responses,
-    NumericVector initial_prob,
+Rcpp::List EmAlgorithmRcpp(
+    Rcpp::NumericMatrix features,
+    Rcpp::IntegerMatrix responses,
+    Rcpp::NumericVector initial_prob,
     int n_data,
     int n_feature,
     int n_category,
-    IntegerVector n_outcomes,
+    Rcpp::IntegerVector n_outcomes,
     int n_cluster,
     int n_rep,
     int n_thread,
     int max_iter,
     double tolerance,
-    IntegerVector seed) {
+    Rcpp::IntegerVector seed) {
 
   int sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
@@ -62,34 +60,35 @@ List EmAlgorithmRcpp(
   }
 
   // allocate matrices to pass pointers to C++ code
-  NumericMatrix posterior(n_data, n_cluster);
-  NumericMatrix prior(n_data, n_cluster);
-  NumericVector estimated_prob(sum_outcomes*n_cluster);
-  NumericVector regress_coeff(n_feature*(n_cluster-1));
-  NumericVector ln_l_array(n_rep);
-  NumericVector best_initial_prob(sum_outcomes*n_cluster);
+  Rcpp::NumericMatrix posterior(n_data, n_cluster);
+  Rcpp::NumericMatrix prior(n_data, n_cluster);
+  Rcpp::NumericVector estimated_prob(sum_outcomes*n_cluster);
+  Rcpp::NumericVector regress_coeff(n_feature*(n_cluster-1));
+  Rcpp::NumericVector ln_l_array(n_rep);
+  Rcpp::NumericVector best_initial_prob(sum_outcomes*n_cluster);
 
   // fit using EM algorithm
-  EmAlgorithmArray* fitter = new EmAlgorithmArray(
-      features.begin(),
-      responses.begin(),
-      initial_prob.begin(),
-      n_data,
-      n_feature,
-      n_category,
-      n_outcomes.begin(),
-      sum_outcomes,
-      n_cluster,
-      n_rep,
-      n_thread,
-      max_iter,
-      tolerance,
-      posterior.begin(),
-      prior.begin(),
-      estimated_prob.begin(),
-      regress_coeff.begin(),
-      ln_l_array.begin()
-  );
+  polca_parallel::EmAlgorithmArray* fitter =
+      new polca_parallel::EmAlgorithmArray(
+          features.begin(),
+          responses.begin(),
+          initial_prob.begin(),
+          n_data,
+          n_feature,
+          n_category,
+          n_outcomes.begin(),
+          sum_outcomes,
+          n_cluster,
+          n_rep,
+          n_thread,
+          max_iter,
+          tolerance,
+          posterior.begin(),
+          prior.begin(),
+          estimated_prob.begin(),
+          regress_coeff.begin(),
+          ln_l_array.begin()
+      );
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   fitter->SetSeed(&seed_seq);
@@ -103,7 +102,7 @@ List EmAlgorithmRcpp(
 
   delete fitter;
 
-  List to_return;
+  Rcpp::List to_return;
   to_return.push_back(posterior);
   to_return.push_back(prior);
   to_return.push_back(estimated_prob);
@@ -119,9 +118,14 @@ List EmAlgorithmRcpp(
 // Original author's likelihood
 // (for some reason, cannot get the original C code to be regonised by R)
 // [[Rcpp::export]]
-NumericVector ylik(NumericVector probs, IntegerVector y, int obs, int items,
-	  IntegerVector numChoices, int classes) {
-  NumericVector lik(obs*classes);
+Rcpp::NumericVector ylik(
+    Rcpp::NumericVector probs,
+    Rcpp::IntegerVector y,
+    int obs,
+    int items,
+	  Rcpp::IntegerVector numChoices,
+    int classes) {
+  Rcpp::NumericVector lik(obs*classes);
   ylik(probs.begin(), y.begin(), &obs, &items, numChoices.begin(), &classes,
       lik.begin());
 	return lik;

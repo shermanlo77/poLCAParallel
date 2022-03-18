@@ -1,15 +1,14 @@
-#ifndef GOODNESS_FIT_H
-#define GOODNESS_FIT_H
+#ifndef GOODNESS_FIT_H_
+#define GOODNESS_FIT_H_
 
 #include <array>
 #include <map>
 #include <math.h>
 #include <stdexcept>
 
-// [[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
 
-using namespace arma;
+namespace polca_parallel {
 
 struct Frequency {
   int observed;
@@ -95,7 +94,7 @@ void GetExpected (
     // calculate likelihood
     response_i = iter->first;
 
-    total_p = 0;  // to be summed over all clusters
+    total_p = 0.0;  // to be summed over all clusters
     outcome_prob_ptr = outcome_prob;
     // iterate through each cluster
     for (int m=0; m<n_cluster; m++) {
@@ -163,15 +162,18 @@ std::array<double, 2> GetStatistics(
   double ln_l_ratio;
 
   // chi squared calculation also use unobserved responses
-  chi_squared = sum(Row<double>(chi_squared_array, n_unique, false))
-      + ((double) n_data - sum(Row<double>(expected_array, n_unique, false)));
-  ln_l_ratio = 2.0 * sum(Row<double>(ln_l_ratio_array, n_unique, false));
+  chi_squared = arma::sum(arma::Row<double>(chi_squared_array, n_unique, false))
+      + ((double) n_data
+         - arma::sum(arma::Row<double>(expected_array, n_unique, false)));
+  ln_l_ratio = 2.0 * sum(arma::Row<double>(ln_l_ratio_array, n_unique, false));
 
   delete[] chi_squared_array;
   delete[] ln_l_ratio_array;
   delete[] expected_array;
 
   return {ln_l_ratio, chi_squared};
+}
+
 }
 
 #endif
