@@ -12,6 +12,9 @@
     #' Chisq: chi squared statistic
 poLCAParallel.goodnessfit = function(results) {
     y = results$y
+    formula = formula(paste0("cbind(", paste(colnames(y), collapse=","), ")~1"))
+    mframe <- model.frame(formula, y)
+    y <- model.response(mframe)
     prob_vec = poLCAParallel.vectorize(results$probs);
     goodness_fit_results = GoodnessFitRcpp(t(y),
                                            results$P,
