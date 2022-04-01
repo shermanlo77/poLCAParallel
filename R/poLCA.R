@@ -1,7 +1,7 @@
 poLCA <-
 function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
                 na.rm=TRUE,probs.start=NULL,nrep=1,verbose=TRUE,
-                calc.se=FALSE, calc.chisq=TRUE, n.thread=detectCores()) {
+                calc.se=TRUE, calc.chisq=TRUE, n.thread=detectCores()) {
     cat("\nUsing parallel version of poLCA\n")
     starttime <- Sys.time()
     mframe <- model.frame(formula,data,na.action=NULL)
@@ -33,7 +33,6 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
     K.j <- t(matrix(apply(y,2,max)))
     R <- nclass
     S <- ncol(x)
-    if (S>1) { calc.se <- TRUE }
     eflag <- FALSE
     probs.start.ok <- TRUE
     ret <- list()
@@ -131,8 +130,18 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
 
         if (calc.se) {
             se <- poLCA.se(y,x,poLCAParallel.unvectorize(vp),prior,rgivy)
+            rownames(se$b) <- colnames(x)
         } else {
-            se <- list(probs=NA,P=NA,b=NA,var.b=NA)
+            se <- list(probs=NA,P=NA,b=matrix(nrow=S, ncol=R-1), var.b=NA)
+        }
+
+        if (S>1) {
+            b <- matrix(b,nrow=S)
+            rownames(b) <- colnames(x)
+        } else {
+            b <- NA
+            se.b <- NA
+            se$var.b <- NA
         }
 
         ret$llik <- lnL             # maximum value of the log-likelihood
@@ -145,18 +154,11 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
         ret$P <- colMeans(ret$posterior)   # estimated class population shares
         ret$numiter <- nIter              # number of iterations until reaching convergence
         ret$probs.start.ok <- probs.start.ok # if starting probs specified, logical indicating proper entry format
-        if (S>1) {
-            b <- matrix(b,nrow=S)
-            rownames(b) <- colnames(x)
-            rownames(se$b) <- colnames(x)
-            ret$coeff <- b                 # coefficient estimates (when estimated)
-            ret$coeff.se <- se$b           # standard errors of coefficient estimates (when estimated)
-            ret$coeff.V <- se$var.b        # covariance matrix of coefficient estimates (when estimated)
-        } else {
-            ret$coeff <- NA
-            ret$coeff.se <- NA
-            ret$coeff.V <- NA
-        }
+
+        ret$coeff <- b                 # coefficient estimates (when estimated)
+        ret$coeff.se <- se$b           # standard errors of coefficient estimates (when estimated)
+        ret$coeff.V <- se$var.b        # covariance matrix of coefficient estimates (when estimated)
+
         ret$eflag <- eflag                 # error flag, true if estimation algorithm ever needed to restart with new initial values
     }
     names(ret$probs) <- colnames(y)
