@@ -1,18 +1,15 @@
 Package: poLCAParallel
 Type: Package
-Title: Polytomous variable Latent Class Analysis
-Version: 1.5.0
-Date: 2016-06-04
-Author: Drew Linzer <drew@votamatic.org>,
+Title: Polytomous variable Latent Class Analysis Parallel
+Version: 1.0.0
+Author: Sherman Lo <s.lo@qmul.ac.uk>,
+        Drew Linzer <drew@votamatic.org>,
         Jeffrey Lewis <jblewis@ucla.edu>.
-Maintainer: Drew Linzer <drew@votamatic.org>
-Depends: scatterplot3d, MASS, parallel
-Imports: Rcpp (>= 1.0.7)
+Maintainer: Sherman Lo <s.lo@qmul.ac.uk>
+Imports: Rcpp (>= 1.0.7), scatterplot3d, MASS, parallel
 LinkingTo: Rcpp, RcppArmadillo
 Description: Latent class analysis and latent class regression models
     for polytomous outcome variables.  Also known as latent structure analysis.
 License: GPL (>= 2)
-URL: http://dlinzer.github.com/poLCA
 LazyLoad: yes
 NeedsCompilation: yes
-Packaged: 2016-06-04 16:53:43 UTC; jeff
