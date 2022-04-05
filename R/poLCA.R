@@ -7,12 +7,11 @@ function(formula,data,nclass=2,maxiter=1000,graphs=FALSE,tol=1e-10,
     mframe <- model.frame(formula,data,na.action=NULL)
     mf <- model.response(mframe)
     if (any(mf<1,na.rm=TRUE) | any(round(mf) != mf,na.rm=TRUE)) {
-        cat("\n ALERT: some manifest variables contain values that are not
-    positive integers. For poLCA to run, please recode categorical
-    outcome variables to increment from 1 to the maximum number of
-    outcome categories for each variable. \n\n")
-        ret <- NULL
-    } else {
+        stop("\n ALERT: some manifest variables contain values that are not
+              positive integers. For poLCA to run, please recode categorical
+              outcome variables to increment from 1 to the maximum number of
+              outcome categories for each variable. \n\n")
+    }
     data <- data[rowSums(is.na(model.matrix(formula,mframe)))==0,]
     if (na.rm) {
         mframe <- model.frame(formula,data)
