@@ -49,7 +49,7 @@ You may install it using RStudio by opening the `.Rproj` file and clicking on `B
 
 ## About poLCAParallel
 
-The library poLCAParallel reimplements poLCA in C++. This was done using [Rcpp](https://cran.r-project.org/web/packages/Rcpp) and [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo) which allows C++ code to interact with R. Addition notes include:
+The library poLCAParallel reimplements poLCA in C++. This was done using [Rcpp](https://cran.r-project.org/web/packages/Rcpp) and [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo) which allows C++ code to interact with R. Additional notes include:
 *  The code uses [Armadillo](http://arma.sourceforge.net/) for linear algebra
 *  Multiple repetitions are done in parallel using [`<thread>`](https://www.cplusplus.com/reference/thread/) for multi-thread programming and [`<mutex>`](https://www.cplusplus.com/reference/mutex/) to prevent data races
 *  Response probabilities are reordered to increase cache efficiency
@@ -74,12 +74,7 @@ The library poLCAParallel reimplements poLCA in C++. This was done using [Rcpp](
 
 ## Code Style
 
-There was an attempt to use the [Google C++ style guide](https://google.github.io/styleguide/cppguide.html). There are deviations including:
-* Class methods are defined in a Java style
-* Post-increments are preferred over pre-increments
-* `public`, `protected` and `private` keywords have a 2 space indent
-* The use of C style casting
-* The use `sizeof(double)`
+There was an attempt to use the [Google C++ style guide](https://google.github.io/styleguide/cppguide.html).
 
 Armadillo objects are used sparingly, preferring the use of `double*` when handling vectors and matrices.
 
