@@ -27,78 +27,165 @@
 
 namespace polca_parallel {
 
-// EM ALGORITHM
-// For fitting using EM algorithm for a given initial value
-// Member variables are made public for the sake of convenience so that
-// EmAlgorithmArray can access and modify instances of EmAlgorithm
+/**
+ * For fitting using EM algorithm for a given initial value
+ *
+ * Member variables are made public for the sake of convenience so that
+ * EmAlgorithmArray can access and modify instances of EmAlgorithm
+ */
 class EmAlgorithm {
  protected:
-  double* features_;  // design matrix of features, matrix n_data x n_feature
-  // design matrix transpose of responses, matrix n_category x n_data
+  /** Design matrix of features, matrix n_data x n_feature */
+  double* features_;
+  /** Design matrix transpose of responses, matrix n_category x n_data */
   int* responses_;
-  // vector of initial probabilities for each category and responses,
-  // flatten list of matrices
-  // dim 0: for each outcome
-  // dim 1: for each category
-  // dim 2: for each cluster
+  /**
+   * Vector of initial probabilities for each category and responses,
+   * flatten list of matrices
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   */
   double* initial_prob_;
-  int n_data_;        // number of data points
-  int n_feature_;     // number of features
-  int n_category_;    // number of categories
-  int* n_outcomes_;   // vector of number of outcomes for each category
-  int sum_outcomes_;  // sum of n_outcomes
-  int n_cluster_;     // number of clusters (classes in lit) to fit
-  int max_iter_;      // maximum number of iterations for EM algorithm
-  // tolerance for difference in log likelihood, used for stopping condition
+  /** Number of data points */
+  int n_data_;
+  /** Number of features */
+  int n_feature_;
+  /** Number of categories */
+  int n_category_;
+  /** Vector of number of outcomes for each category */
+  int* n_outcomes_;
+  /** Sum of n_outcomes */
+  int sum_outcomes_;
+  /** Number of clusters to fit */
+  int n_cluster_;
+  /** Maximum number of iterations for EM algorithm */
+  int max_iter_;
+  /** Tolerance for difference in log likelihood, used for stopping condition */
   double tolerance_;
-  // design matrix of posterior probabilities (also called responsibility)
-  // probability data point is in cluster m given responses
-  // matrix, dim 0: for each data, dim 1: for each cluster
+  /**
+   * Design matrix of posterior probabilities (also called responsibility)
+   * probability data point is in cluster m given responses
+   * matrix
+   * <ul>
+   *   <li>dim 0: for each data</li>
+   *   <li>dim 1: for each cluster</li>
+   * </ul>
+   */
   double* posterior_;
-  // design matrix of prior probabilities, probability data point is in
-  // cluster m NOT given responses
-  // after calculations, it shall be in matrix form,
-  // dim 0: for each data, dim 1: for each cluster
-  // during the start and calculations, it may take on a different form,
-  // use the method GetPrior() to get the prior for a data point and cluster
+  /**
+   * Design matrix of prior probabilities, probability data point is in
+   * cluster m NOT given responses after calculations, it shall be in matrix
+   * form with dimensions
+   * <ul>
+   *   <li>dim 0: for each data</li>
+   *   <li>dim 1: for each cluster</li>
+   * </ul>
+   * During the start and calculations, it may take on a different form,
+   * use the method GetPrior() to get the prior for a data point and cluster
+   */
   double* prior_;
-  // vector of estimated response probabilities, conditioned on cluster, for
-  // each category,
-  // flatten list of matrices
-  // dim 0: for each outcome
-  // dim 1: for each category
-  // dim 2: for each cluster
+  /**
+   * Vector of estimated response probabilities, conditioned on cluster, for
+   * each category, flatten list of matrices
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   */
   double* estimated_prob_;
-  // vector length n_features_*(n_cluster-1), linear regression coefficient
-  // in matrix form, to be multiplied to the features and linked to the
-  // prior using softmax
+  /**
+   * Vector length n_features_*(n_cluster-1), linear regression coefficient
+   * in matrix form, to be multiplied to the features and linked to the
+   * prior using softmax
+   */
   double* regress_coeff_;
-  // vector of INITIAL response probabilities used to get the maximum log
-  // likelihood, conditioned on cluster, for each category
-  // this member variable is optional, set to NULL if not used
-  // flatten list of matrices
-  // dim 0: for each outcome
-  // dim 1: for each category
-  // dim 2: for each cluster
+  /**
+   * Vector of INITIAL response probabilities used to get the maximum log
+   * likelihood, this member variable is optional, set to NULL if not used
+   * flatten list of matrices
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   */
   double* best_initial_prob_ = NULL;
 
-  // log likelihood, updated at each iteration of EM
+  /** Log likelihood, updated at each iteration of EM */
   double ln_l_ = -INFINITY;
-  // vector, for each data point, log likelihood for each data point
-  // the log likelihood is the sum
+  /**Vector, for each data point, log likelihood for each data point,
+   * the total log likelihood is the sum
+   */
   double* ln_l_array_;
-  int n_iter_ = 0;  // number of iterations done right now
-  // indicate if it needed to use new initial values during a fit, can happen
-  // if a matrix is singular
+  /** Number of iterations done right now */
+  int n_iter_ = 0;
+  /**Indicate if it needed to use new initial values during a fit, can happen
+   * if a matrix is singular
+   */
   bool has_restarted_ = false;
-  // seed for random number generator
+  /** Seed for random number generator */
   unsigned seed_ = std::chrono::system_clock::now().time_since_epoch().count();
 
  public:
-  // for arguments for this constructor, see description of the member
-  // variables
-  // the following content pointed too shall modified:
-  // posterior, prior, estimated_prob, regress_coeff
+  /**
+   * Construct a new Em Algorithm object
+   *
+   * Please see the description of the member variables for further information.
+   * The following content pointed to shall modified:
+   * <ul>
+   *   <li>posterior</li>
+   *   <li>prior</li>
+   *   <li>estimated_prob</li>
+   *   <li>regress_coeff</li>
+   * </ul>
+   *
+   * @param features Design matrix of features, matrix n_data x n_feature
+   * @param responses Design matrix transpose of responses, matrix n_category x
+   * n_data
+   * @param initial_prob Vector of initial probabilities for each category and
+   * responses, flatten list of matrices
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   * @param n_data Number of data points
+   * @param n_feature Number of features
+   * @param n_category Number of categories
+   * @param n_outcomes Vector of number of outcomes for each category
+   * @param sum_outcomes Sum of n_outcomes
+   * @param n_cluster Number of clusters to fit
+   * @param max_iter Maximum number of iterations for EM algorithm
+   * @param tolerance Tolerance for difference in log likelihood, used for
+   * stopping condition
+   * @param posterior Design matrix of posterior probabilities (also called
+   * responsibility) probability data point is in cluster m given responses
+   * matrix
+   * <ul>
+   *   <li>dim 0: for each data</li>
+   *   <li>dim 1: for each cluster</li>
+   * </ul>
+   * @param prior Design matrix of prior probabilities, probability data point
+   * is in cluster m NOT given responses after calculations, it shall be in
+   * matrix form with dimensions <ul> <li>dim 0: for each data</li> <li>dim 1:
+   * for each cluster</li>
+   * </ul>
+   * During the start and calculations, it may take on a different form,
+   * use the method GetPrior() to get the prior for a data point and cluster
+   * @param estimated_prob Vector of estimated response probabilities,
+   * conditioned on cluster, for each category, flatten list of matrices <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   * @param regress_coeff Vector length n_features_*(n_cluster-1), linear
+   * regression coefficient in matrix form, to be multiplied to the features and
+   * linked to the prior using softmax
+   */
   EmAlgorithm(double* features, int* responses, double* initial_prob,
               int n_data, int n_feature, int n_category, int* n_outcomes,
               int sum_outcomes, int n_cluster, int max_iter, double tolerance,
@@ -107,95 +194,150 @@ class EmAlgorithm {
 
   virtual ~EmAlgorithm();
 
-  // fit data to model using EM algorithm
-  // data is provided through the constructor
-  // important results are stored in the member variables:
-  // posterior_
-  // prior_
-  // estimated_prob_
-  // ln_l_array_
-  // ln_l_
-  // n_iter_
+  /**
+   * Fit data to model using EM algorithm
+   *
+   * Data is provided through the constructor, important results are stored in
+   * the member variables:
+   * <ul>
+   *   <li>posterior_</li>
+   *   <li>prior_</li>
+   *   <li>estimated_prob_</li>
+   *   <li>ln_l_array_</li>
+   *   <li>ln_l_</li>
+   *   <li>n_iter_</li>
+   * </ul>
+   */
   void Fit();
 
-  // Set where to store initial probabilities (optional)
+  /**
+   * Set where to store initial probabilities (optional)
+   *
+   * @param best_initial_prob Vector of INITIAL response probabilities used to
+   * get the maximum log likelihood, flatten list of matrices
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   */
   void set_best_initial_prob(double* best_initial_prob);
 
+  /** Get the log likelihood */
   double get_ln_l();
 
+  /** Get the number of iterations of EM done */
   int get_n_iter();
 
+  /**
+   * Indicate if it needed to use new initial values during a fit, can happen
+   * if a matrix is singular
+   */
   bool get_has_restarted();
 
+  /** Set seed for generating new random initial values */
   void set_seed(unsigned seed);
 
  protected:
-  // Reset parameters for a re-run
-  // Reset the parameters estimated_prob_ with random values
+  /**
+   * Reset parameters for a re-run
+   * Reset the parameters estimated_prob_ with random values
+   * @param rng random number generator
+   * @param uniform required to generate random probabilities
+   */
   virtual void Reset(std::mt19937_64* rng,
                      std::uniform_real_distribution<double>* uniform);
 
-  // Initalise prior probabilities
-  // Modify the content of prior_ which contains prior probabilities for each
-  // cluster
+  /**
+   * Initalise prior probabilities
+   *
+   * Initalise the content of prior_ which contains prior probabilities for each
+   * cluster, ready for the EM algorithm
+   */
   virtual void InitPrior();
 
-  // Adjust prior return value to matrix format
+  /** Adjust prior return value to matrix format */
   virtual void FinalPrior();
 
-  // Get prior during the EM algorithm
+  /** Get prior during the EM algorithm */
+
+  /**
+   * Get prior, for a specified data point and cluster, during the EM algorithm
+   *
+   * @param data_index
+   * @param cluster_index
+   * @return double prior
+   */
   virtual double GetPrior(int data_index, int cluster_index);
 
-  // E step
-  // update the posterior probabilities given the prior probabilities and
-  // estimated response probabilities
-  // modifies the member variables posterior_ and ln_l_array_
-  // calculations for the E step also provides the elements for ln_l_array
-  //
-  // IMPORTANT DEV NOTES: p is iteratively being multiplied, underflow errors
-  // may occur if the number of data points is large, say more than 300
-  // consider summing over log probabilities  rather than multiplying
-  // probabilities
+  /**
+   * Do E step, update the posterior probabilities given the prior probabilities
+   * and estimated response probabilities. Modifies the member variables
+   * posterior_ and ln_l_array_. Calculations from the E step also provides the
+   * elements for ln_l_array_.
+   *
+   * IMPORTANT DEV NOTES: p is iteratively being multiplied, underflow errors
+   * may occur if the number of data points is large, say more than 300
+   * consider summing over log probabilities  rather than multiplying
+   * probabilities
+   */
   void EStep();
 
-  // Check if the likelihood is invalid
+  /**
+   * Check if the likelihood is invalid
+   *
+   * @param ln_l_difference the change in log likelihood after an iteration of
+   * EM
+   * @return true if the likelihood is invalid
+   * @return false if the likelihood okay
+   */
   virtual bool IsInvalidLikelihood(double ln_l_difference);
 
-  // M Step
-  // update the prior probabilities and estimated response probabilities
-  // given the posterior probabilities
-  // modifies the member variables prior_ and estimated_prob_
+  /**
+   * Do M step, update the prior probabilities and estimated response
+   * probabilities given the posterior probabilities
+   * modifies the member variables prior_ and estimated_prob_
+   *
+   * @return false
+   */
   virtual bool MStep();
 
-  // Estimate probability
-  // updates and modify the member variable estimated_prob_ using the
-  // posterior
+  /**
+   * Estimate probability
+   * updates and modify the member variable estimated_prob_ using the
+   * posterior
+   */
   void EstimateProbability();
 
-  // Weighted Sum for Outcome Probability Estimation
-  // Calculates sum over data points of a observed outcome, weighted by the
-  // posterior. This is done for all outcomes. The member variable
-  // estimated_prob_ is updated with the results.
-  // Parameters:
-  // cluster_index: which cluster to consider
+  /**
+   * Weighted sum for outcome probability estimation.
+   * Calculates sum over data points of a observed outcome, weighted by the
+   * posterior. This is done for all outcomes. The member variable
+   * estimated_prob_ is updated with the results.
+   *
+   * @param cluster_index which cluster to consider
+   */
   void WeightedSumProb(int cluster_index);
 
-  // Normalised Weighted Sum for Outcome Porbability Estimation
-  // After calling WeightedSumProb, call this to normalise the weighted sum so
-  // that the member variable estimated_prob_ contain estimated
-  // probabilities for each outcome
-  // Can be overridden as the sum of weights can be calculated differently
-  // Parameters:
-  // cluster_index: which cluster to consider
+  /**
+   * Normalised weighted sum for outcome probability estimation
+   * After calling WeightedSumProb, call this to normalise the weighted sum so
+   * that the member variable estimated_prob_ contain estimated
+   * probabilities for each outcome
+   * Can be overridden as the sum of weights can be calculated differently
+   *
+   * @param cluster_index which cluster to consider
+   */
   virtual void NormalWeightedSumProb(int cluster_index);
 
-  // Normalised Weighted Sum for Outcome Porbability Estimation
-  // After calling WeightedSumProb, call this to normalise the weighted sum so
-  // that the member variable estimated_prob_ contain estimated
-  // probabilities for each outcome
-  // Parameters:
-  // cluster_index: which cluster to consider
-  // normaliser: sum of weights
+  /**
+   * Normalised Weighted Sum for Outcome Porbability Estimation
+   * After calling WeightedSumProb, call this to normalise the weighted sum so
+   * that the member variable estimated_prob_ contain estimated
+   * probabilities for each outcome
+   * @param cluster_index which cluster to consider
+   * @param normaliser sum of weights
+   */
   void NormalWeightedSumProb(int cluster_index, double normaliser);
 };
 
