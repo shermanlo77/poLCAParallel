@@ -54,6 +54,17 @@ please check the possible following prerequisites are installed:
 * [LAPACK](http://www.netlib.org/lapack/)
 * [OpenBLAS](https://www.openblas.net/)
 
+## Installation using R
+
+Requires the R package
+[devtools](https://www.r-project.org/nosvn/pandoc/devtools.html)
+
+Run the following in R
+
+```r
+devtools::install_github("shermanlo77/poLCAParallel")
+```
+
 ## Installation using Linux Terminal
 
 Requires the R packages [Rcpp](https://cran.r-project.org/web/packages/Rcpp) and
@@ -71,11 +82,6 @@ then in a Linux terminal at the directory containing the repository
 ```console
 R CMD INSTALL --preclean --no-multiarch poLCAParallel
 ```
-
-## Installation using RStudio
-
-You may install it using RStudio by opening the `.Rproj` file and clicking on
-`Build -> Install and Restart`.
 
 ## About poLCAParallel
 
