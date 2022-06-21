@@ -99,6 +99,9 @@ allows C++ code to interact with R. Additional notes include:
 * Use of [`std::map`](https://en.cppreference.com/w/cpp/container/map) for the
   chi-squared calculations
 
+Further reading available on a
+[QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html).
+
 ## Changes from the Orginal Code
 
 * The stopping condition of the EM algorithm, if the log-likelihood change after
@@ -142,17 +145,20 @@ handling vectors and matrices.
 
 ## Citation
 
+Please consider cititing the corresponding
+[QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html):
+
+* Lo, S.E. 2022. Speeding up and Parallelising R packages (using Rcpp and C++).
+  [https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html)
+
 Users of poLCA are requested to cite the software package as:
 
-Linzer, Drew A. and Jeffrey Lewis. 2013. "poLCA: Polytomous Variable Latent
-Class Analysis." R package version 1.4.
-[[link]](http://dlinzer.github.com/poLCA)
-
-and
-
-Linzer, Drew A. and Jeffrey Lewis. 2011. "poLCA: an R Package for Polytomous
-Variable Latent Class Analysis." Journal of Statistical Software. 42(10): 1-29.
-[[link]](http://www.jstatsoft.org/v42/i10)
+* Linzer, Drew A. and Jeffrey Lewis. 2013. "poLCA: Polytomous Variable Latent
+  Class Analysis." R package version 1.4.
+  [[link]](https://github.com/dlinzer/poLCA)
+* Linzer, Drew A. and Jeffrey Lewis. 2011. "poLCA: an R Package for Polytomous
+  Variable Latent Class Analysis." Journal of Statistical Software. 42(10): 1-29.
+  [[link]](http://www.jstatsoft.org/v42/i10)
 
 ## License
 
