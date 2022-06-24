@@ -62,7 +62,7 @@ Requires the R package
 Run the following in R
 
 ```r
-devtools::install_github("shermanlo77/poLCAParallel")
+devtools::install_github("QMUL/poLCAParallel")
 ```
 
 ## Installation using Linux Terminal
