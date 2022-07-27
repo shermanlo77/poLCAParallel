@@ -1,6 +1,18 @@
-citHeader("To cite poLCA in publications use:")
+citHeader("To cite poLCAParallel in publications use:")
 
-citEntry(entry = "Article",
+citEntry(entry = "misc",
+  title        = "Speeding up and Parallelising {R} packages (using {Rcpp} and {C++} | QMUL ITS Research Blog)",
+  author       = personList(as.person("Sherman E. Lo")),
+  year         = "2022",
+  url          = "https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html",
+
+  textVersion  =
+  paste("Lo, S.E. (2022).",
+        "Speeding up and Parallelising R packages (using Rcpp and C++ | QMUL ITS Research Blog",
+        "URL https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html")
+)
+
+citEntry(entry = "article",
   title        = "{poLCA}: An {R} Package for Polytomous Variable Latent Class Analysis",
   author       = personList(as.person("Drew A. Linzer"),
                    as.person("Jeffrey B. Lewis")),
@@ -12,9 +24,8 @@ citEntry(entry = "Article",
   url          = "http://www.jstatsoft.org/v42/i10/",
 
   textVersion  =
-  paste("Drew A. Linzer, Jeffrey B. Lewis (2011).",
+  paste("Linzer, D.E. & Lewis, J.B. (2011).",
         "poLCA: An R Package for Polytomous Variable Latent Class Analysis.",
         "Journal of Statistical Software, 42(10), 1-29.",
-        "URL http://www.jstatsoft.org/v42/i10/.")
+        "URL http://www.jstatsoft.org/v42/i10/")
 )
-

@@ -54,7 +54,7 @@ please check the possible following prerequisites are installed:
 * [LAPACK](http://www.netlib.org/lapack/)
 * [OpenBLAS](https://www.openblas.net/)
 
-## Installation using R
+## Installation using R and devtools::install_github()
 
 Requires the R package
 [devtools](https://www.r-project.org/nosvn/pandoc/devtools.html)
@@ -62,25 +62,47 @@ Requires the R package
 Run the following in R
 
 ```r
-devtools::install_github("QMUL/poLCAParallel")
+devtools::install_github("QMUL/poLCAParallel@package")
 ```
 
-## Installation using Linux Terminal
+## Installation using a git clone
 
-Requires the R packages [Rcpp](https://cran.r-project.org/web/packages/Rcpp) and
+Requires the R package
+[devtools](https://www.r-project.org/nosvn/pandoc/devtools.html),
+[Rcpp](https://cran.r-project.org/web/packages/Rcpp),
 [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo).
+Optionally, creating the documentation requires the R package
+[roxygen2](https://cran.r-project.org/web/packages/roxygen2/index.html).
 
 Git clone this repository.
-In R,
-
-```r
-Rcpp::compileAttributes("<path_to_poLCAParallel>")
-```
-
-then in a Linux terminal at the directory containing the repository
 
 ```console
-R CMD INSTALL --preclean --no-multiarch poLCAParallel
+git clone https://github.com/QMUL/poLCAParallel.git
+```
+
+In R, run the following so that the package can be compiled correctly
+
+```r
+Rcpp::compileAttributes("../poLCAParallel")
+```
+
+and optionally for the documentation
+
+```r
+devtools::document("../poLCAParallel")
+```
+
+Finally
+
+```r
+devtools::install("../poLCAParallel")
+```
+
+to install the package. Alternatively, `R CMD INSTALL` can be used as shown
+below in a terminal
+
+```console
+R CMD INSTALL --preclean --no-multiarch ../poLCAParallel
 ```
 
 ## About poLCAParallel
@@ -126,11 +148,11 @@ Further reading available on a
 ## Further Development Notes
 
 * There are possible problems with implementing the calculations of the standard
-  error. They are discussed [here](note_standard_error.tex).
+  error. They are discussed [here](inst/note_standard_error.tex).
 * There is a possible underflow error if the number of categories is too large,
   more than ~300. This is because in the calculation of the log-likelihood, the
   probabilities from each category are multiplied by each other. If there are
-  \(J\) categories, then there are $J$ probabilities to multiply together. This
+  $J$ categories, then there are $J$ probabilities to multiply together. This
   is addressed in commit 85ee419 but reverted. Consider summing over log space
   instead.
 * Multiple Newton steps can be taken instead of a single one.
@@ -143,21 +165,46 @@ There was an attempt to use the
 Armadillo objects are used sparingly, preferring the use of `double*` when
 handling vectors and matrices.
 
+All generated documents and code shall not be included on the `master` branch.
+Instead, they shall be in the `package` branch so that this package can be
+installed using `devtools::install_github("QMUL/poLCAParallel@package")`, yet,
+avoiding duplicated code on the `master` branch.
+
+## C++ Source Code Documentation
+
+The C++ code is compatible with [Doxygen](https://doxygen.nl/) by running
+
+```console
+doxygen -g
+```
+
+to create a config file `Doxyfile`. Doxygen needs to know the source code is
+located in `src/` which can be done by modifying a line in the config file
+`Doxyfile`
+
+```console
+INPUT = src/
+```
+
+Afterwards, running `doxygen` will create documention for the C++ code.
+
 ## Citation
 
 Please consider cititing the corresponding
 [QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html):
 
-* Lo, S.E. 2022. Speeding up and Parallelising R packages (using Rcpp and C++).
-  [https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html)
+* Lo, S.E. (2022). Speeding up and Parallelising R packages (using Rcpp and C++
+  | QMUL ITS Research Blog.
+  [[link]](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html)
 
 Users of poLCA are requested to cite the software package as:
 
-* Linzer, Drew A. and Jeffrey Lewis. 2013. "poLCA: Polytomous Variable Latent
-  Class Analysis." R package version 1.4.
+* Linzer, D.A. & Lewis, J. (2013). poLCA: Polytomous Variable Latent
+  Class Analysis. R package version 1.4.
   [[link]](https://github.com/dlinzer/poLCA)
-* Linzer, Drew A. and Jeffrey Lewis. 2011. "poLCA: an R Package for Polytomous
-  Variable Latent Class Analysis." Journal of Statistical Software. 42(10): 1-29.
+* Linzer, D.A. & Lewis, J.B. (2011). poLCA: An R package for polytomous
+  cariable latent class analysis. *Journal of Statistical Software*,
+  42(10): 1-29.
   [[link]](http://www.jstatsoft.org/v42/i10)
 
 ## License
