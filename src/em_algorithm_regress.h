@@ -18,6 +18,8 @@
 #ifndef EM_ALGORITHM_REGRESS_H_
 #define EM_ALGORITHM_REGRESS_H_
 
+#define ARMA_WARN_LEVEL 1
+
 #include "RcppArmadillo.h"
 #include "em_algorithm.h"
 

@@ -46,7 +46,6 @@ void polca_parallel::EmAlgorithm::Fit() {
   bool is_first_run = true;
   bool is_success = false;
 
-  double ln_l;
   double ln_l_difference;
   double ln_l_before;
 
@@ -257,12 +256,6 @@ bool polca_parallel::EmAlgorithm::MStep() {
 }
 
 void polca_parallel::EmAlgorithm::EstimateProbability() {
-  int y;                     // for getting a response from responses_
-  double* estimated_prob;    // for pointing to elements in estimated_prob_
-  double* estimated_prob_m;  // points to estimated_prob_ for given cluster
-  int n_outcome;  // number of outcomes while iterating through categories
-  double posterior_iter;
-
   // set all estimated response probability to zero
   for (int i = 0; i < this->n_cluster_ * this->sum_outcomes_; ++i) {
     this->estimated_prob_[i] = 0.0;

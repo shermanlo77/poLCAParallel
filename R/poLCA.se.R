@@ -21,12 +21,12 @@ function(y,x,probs,prior,rgivy) {
     # ...and (R-1)*ncol(x) columns corresponding to coefficients (betas)
     ppdiff <- rgivy-prior
     if (R>1) for (r in 2:R) { s <- cbind(s,x*ppdiff[,r]) }
-    
+
     s[is.na(s)] <- 0      # To handle missing values
     info <- t(s) %*% s    # Information matrix
-    VCE <- ginv(info)     # VCE matrix of log-odds response probs and covariate coefficients
+    VCE <- MASS::ginv(info)     # VCE matrix of log-odds response probs and covariate coefficients
 
-    # Variance of class conditional response probs using delta fn. transformation with 
+    # Variance of class conditional response probs using delta fn. transformation with
     # Jacobian a block diagonal matrix (across r) of block diagonal matrices (across j)
     VCE.lo <- VCE[1:sum(R*(K.j-1)),1:sum(R*(K.j-1))]
     Jac <- matrix(0,nrow=nrow(VCE.lo)+(J*R),ncol=ncol(VCE.lo))
@@ -42,7 +42,7 @@ function(y,x,probs,prior,rgivy) {
         }
     }
     VCE.probs <- Jac %*% VCE.lo %*% t(Jac)
-    
+
     maindiag <- diag(VCE.probs)
     maindiag[maindiag<0] <- 0 # error trap
     se.probs.vec <- sqrt(maindiag)
@@ -50,7 +50,7 @@ function(y,x,probs,prior,rgivy) {
     for (j in 1:J) { se.probs[[j]] <- matrix(0,0,K.j[j]) }
     pos <- 1
     for (r in 1:R) {
-        for (j in 1:J) { 
+        for (j in 1:J) {
             se.probs[[j]] <- rbind(se.probs[[j]],se.probs.vec[pos:(pos+K.j[j]-1)])
             pos <- pos+K.j[j]
         }
@@ -60,7 +60,7 @@ function(y,x,probs,prior,rgivy) {
     if (R>1) {
         VCE.beta <- VCE[(1+sum(R*(K.j-1))):dim(VCE)[1],(1+sum(R*(K.j-1))):dim(VCE)[2]]
         se.beta <- matrix(sqrt(diag(VCE.beta)),nrow=ncol(x),ncol=(R-1))
-    
+
         ptp <- array(NA,dim=c(R,R,N))
         for (n in 1:N) {
             ptp[,,n] <- -(prior[n,] %*% t(prior[n,]))

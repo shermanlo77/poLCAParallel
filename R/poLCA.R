@@ -222,7 +222,6 @@ poLCA <- function(formula,
                   calc.se = TRUE,
                   calc.chisq = TRUE,
                   n.thread = parallel::detectCores()) {
-    cat("\nUsing parallel version of poLCA\n")
     starttime <- Sys.time()
     mframe <- model.frame(formula, data, na.action = NULL)
     mf <- model.response(mframe)
@@ -408,7 +407,7 @@ poLCA <- function(formula,
             rownames(b) <- colnames(x)
         } else {
             b <- NA
-            se.b <- NA
+            se$b <- NA
             se$var.b <- NA
         }
 

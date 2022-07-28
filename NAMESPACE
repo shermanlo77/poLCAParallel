@@ -1,20 +1,19 @@
-export(poLCA, 
-       poLCA.simdata, 
-       poLCA.reorder, 
-       poLCA.table, 
-       poLCA.entropy, 
-       poLCA.predcell, 
-       poLCA.posterior,
-       poLCAParallel.vectorize,
-       poLCAParallel.unvectorize,
-       poLCAParallel.goodnessfit,
-       rmulti)
-       
+export(
+  poLCA,
+  poLCA.simdata,
+  poLCA.reorder,
+  poLCA.table,
+  poLCA.entropy,
+  poLCA.predcell,
+  poLCA.posterior,
+  rmulti
+)
+
 S3method(print, poLCA)
 S3method(plot, poLCA)
 S3method(coef, poLCA)
 S3method(vcov, poLCA)
 
-useDynLib(poLCAParallel, .registration=TRUE)
+useDynLib(poLCAParallel, .registration = TRUE)
 importFrom(Rcpp, evalCpp)
 exportPattern("^[[:alpha:]]+")
