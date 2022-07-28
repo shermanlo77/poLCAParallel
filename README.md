@@ -126,6 +126,8 @@ Further reading available on a
 
 ## Changes from the Orginal Code
 
+R scripts which compares poLCAParallel with poLCA are provided in `exec/`.
+
 * The stopping condition of the EM algorithm, if the log-likelihood change after
   an iteration of EM is too small, is evaluated after the E step rather than the
   M step. This is so that the by-product of the E step is reused when
