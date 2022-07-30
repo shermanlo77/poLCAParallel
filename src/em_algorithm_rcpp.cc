@@ -23,36 +23,40 @@
 #include "em_algorithm_array.h"
 #include "poLCA.c"
 
-// EM FIT
-// Fit using the EM algorithm
-// Args:
-// features: design matrix of features
-// responses: design matrix transpose of responses
-// initial_prob: vector of response probabilities for each cluster, flatten
-// list of matrices, from the return value of poLCAParallel.vectorize.R
-// flatten list of matrices
-// dim 0: for each outcome
-// dim 1: for each category
-// dim 2: for each cluster
-// n_data: number of data points
-// n_feature: number of features
-// n_category: number of categories
-// n_outcomes: vector, number of possible responses for each category
-// n_cluster: number of clusters, or classes, to fit
-// n_rep: number of repetitions
-// max_iter: maximum number of iterations for EM algorithm
-// tolerance: stop fitting the log likelihood change less than this
-// seed: array of integers to seed rng
-// Return a list:
-// posterior: matrix of posterior probabilities, dim 0: for each data point,
-// dim 1: for each cluster
-// prior: matrix of prior probabilities, dim 0: for each data point,
-// dim 1: for each cluster
-// estimated_prob: vector of estimated response probabilities, in the same
-// format as initial_prob
-// ln_l: log likelihood
-// n_iter: number of iterations taken
-// eflag: true if the em algorithm has to ever restart
+/**
+ * Function to be exported to R, fit using the EM algorithm
+ * @param features: design matrix of features
+ * @param responses design matrix transpose of responses
+ * @param initial_prob vector of response probabilities for each cluster,
+ * flatten list of matrices, from the return value of poLCAParallel.vectorize.R,
+ * flatten list of matrices
+ * <ul>
+ *   <li>dim 0: for each outcome</li>
+ *   <li>dim 1: for each category</li>
+ *   <li>dim 2: for each cluster</li>
+ * </ul>
+ * @param n_data number of data points
+ * @param n_feature number of features
+ * @param n_category number of categories
+ * @param n_outcomes: vector, number of possible responses for each category
+ * @param n_cluster: number of clusters, or classes, to fit
+ * @param n_rep: number of repetitions
+ * @param max_iter: maximum number of iterations for EM algorithm
+ * @param tolerance: stop fitting the log likelihood change less than this
+ * @param seed: array of integers to seed rng
+ * @return a list containing
+ * <ul>
+ *   <li>posterior: matrix of posterior probabilities, dim 0: for each data
+ *   point, dim 1: for each cluster</li>
+ *   <li>prior: matrix of prior probabilities, dim 0: for each data point,
+ *   dim 1: for each cluster</li>
+ *   <li>estimated_prob: vector of estimated response probabilities, in the same
+ *   format as initial_prob</li>
+ *   <li>ln_l: log likelihood</li>
+ *   <li>n_iter: number of iterations taken</li>
+ *   <li>eflag: true if the em algorithm has to ever restart</li>
+ * </ul>
+ */
 // [[Rcpp::export]]
 Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
                            Rcpp::IntegerMatrix responses,

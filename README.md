@@ -83,26 +83,26 @@ git clone https://github.com/QMUL/poLCAParallel.git
 In R, run the following so that the package can be compiled correctly
 
 ```r
-Rcpp::compileAttributes("../poLCAParallel")
+Rcpp::compileAttributes("poLCAParallel")
 ```
 
 and optionally for the documentation
 
 ```r
-devtools::document("../poLCAParallel")
+devtools::document("poLCAParallel")
 ```
 
 Finally
 
 ```r
-devtools::install("../poLCAParallel")
+devtools::install("poLCAParallel")
 ```
 
 to install the package. Alternatively, `R CMD INSTALL` can be used as shown
 below in a terminal
 
 ```console
-R CMD INSTALL --preclean --no-multiarch ../poLCAParallel
+R CMD INSTALL --preclean --no-multiarch poLCAParallel
 ```
 
 ## About poLCAParallel

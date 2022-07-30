@@ -21,26 +21,33 @@
 #include "RcppArmadillo.h"
 #include "goodness_fit.h"
 
-// GOODNESS OF FIT STATISTICS
-// Get goodness of fit statistics given fitted probabilities
-// Args:
-// features: design matrix of features
-// prior: vector of prior probabilities, for each cluster
-// outcome_prob: vector of response probabilities for each cluster, flatten
-// list of matrices, from the return value of poLCA.vectorize.R
-// flatten list of matrices
-// dim 0: for each outcome
-// dim 1: for each category
-// dim 2: for each cluster
-// n_data: number of data points
-// n_category: number of categories
-// n_outcomes: vector, number of possible responses for each category
-// n_cluster: number of clusters, or classes, to fit
-// Return a list:
-// unique_freq_table: data frame of unique responses with their observed
-// frequency and expected frequency
-// ln_l_ratio
-// chi_squared
+/**
+ * Function to be exported to R, goodness of fit statistics
+ *
+ * Get goodness of fit statistics given fitted probabilities
+ *
+ * @param features: design matrix of features
+ * @param prior: vector of prior probabilities, for each cluster
+ * outcome_prob: vector of response probabilities for each cluster, flatten
+ * list of matrices, from the return value of poLCA.vectorize.R,
+ * flatten list of matrices
+ * <ul>
+ *   <li>dim 0: for each outcome</li>
+ *   <li>dim 1: for each category</li>
+ *   <li>dim 2: for each cluster</li>
+ * </ul>
+ * @param n_data number of data points
+ * @param n_category number of categories
+ * @param n_outcomes vector, number of possible responses for each category
+ * @param n_cluster number of clusters, or classes, to fit
+ * @return a list containing:
+ * <ul>
+ *   <li>unique_freq_table: data frame of unique responses with their observed
+ *   frequency and expected frequency</li>
+ *   <li>ln_l_ratio</li>
+ *   <li>chi_squared</li>
+ * </ul>
+ */
 // [[Rcpp::export]]
 Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                            Rcpp::NumericVector prior,
