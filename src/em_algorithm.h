@@ -127,8 +127,8 @@ class EmAlgorithm {
    * if a matrix is singular
    */
   bool has_restarted_ = false;
-  /** Seed for random number generator */
-  unsigned seed_ = std::chrono::system_clock::now().time_since_epoch().count();
+  /** Random number generator for generating new initial values if fail*/
+  std::unique_ptr<std::mt19937_64> rng_;
 
  public:
   /**
@@ -235,8 +235,14 @@ class EmAlgorithm {
    */
   bool get_has_restarted();
 
-  /** Set seed for generating new random initial values */
+  /** Set rng using a seed, for generating new random initial values */
   void set_seed(unsigned seed);
+
+  /** Set rng by transferring ownership of an rng to here */
+  void set_rng(std::unique_ptr<std::mt19937_64>* rng);
+
+  /** Transfer ownership of rng back*/
+  std::unique_ptr<std::mt19937_64> move_rng();
 
  protected:
   /**

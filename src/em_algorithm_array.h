@@ -166,7 +166,7 @@ class EmAlgorithmArray {
   void Fit();
 
   /** Set the member variable seed_array_ with seeds for each repetition */
-  void SetSeed(std::seed_seq* seed);
+  virtual void SetSeed(std::seed_seq* seed);
 
   /**
    * Set where to store initial probabilities (optional)
@@ -190,6 +190,15 @@ class EmAlgorithmArray {
    * matrix
    */
   bool get_has_restarted();
+
+ protected:
+  /** Set the rng of a EmAlgorithm object given the rep_index */
+  virtual void SetFitterRng(polca_parallel::EmAlgorithm* fitter, int rep_index);
+
+  /**
+   * Move ownership of a rng from a fitter back to here
+   */
+  virtual void MoveRngBackFromFitter(polca_parallel::EmAlgorithm* fitter);
 
  private:
   /**

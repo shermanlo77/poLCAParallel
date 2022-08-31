@@ -93,6 +93,18 @@ bool polca_parallel::EmAlgorithmArray::get_has_restarted() {
   return this->has_restarted_;
 }
 
+void polca_parallel::EmAlgorithmArray::SetFitterRng(
+    polca_parallel::EmAlgorithm* fitter, int rep_index) {
+  if (this->seed_array_ != NULL) {
+    fitter->set_seed(this->seed_array_[rep_index]);
+  }
+}
+
+void polca_parallel::EmAlgorithmArray::MoveRngBackFromFitter(
+    polca_parallel::EmAlgorithm* fitter) {
+  // do nothing, no rng handelled here
+}
+
 void polca_parallel::EmAlgorithmArray::FitThread() {
   polca_parallel::EmAlgorithm* fitter;
   bool is_working = true;
@@ -144,15 +156,17 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
             n_cluster, this->max_iter_, this->tolerance_, posterior, prior,
             estimated_prob, regress_coeff);
       }
-      if (this->seed_array_ != NULL) {
-        fitter->set_seed(this->seed_array_[rep_index]);
-      }
+      this->SetFitterRng(fitter, rep_index);
       if (is_get_initial_prob) {
         fitter->set_best_initial_prob(best_initial_prob);
       }
       fitter->Fit();
       ln_l = fitter->get_ln_l();
       this->ln_l_array_[rep_index] = ln_l;
+
+      // if ownership of rng transferred (if any) to fitter, get it back if
+      // needed
+      this->MoveRngBackFromFitter(fitter);
 
       // copy results if log likelihood improved
       this->results_lock_->lock();

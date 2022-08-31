@@ -38,6 +38,10 @@ polca_parallel::EmAlgorithm::EmAlgorithm(
   this->estimated_prob_ = estimated_prob;
   this->regress_coeff_ = regress_coeff;
   this->ln_l_array_ = new double[this->n_data_];
+
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::mt19937_64* rng = new std::mt19937_64(seed);
+  this->rng_ = std::unique_ptr<std::mt19937_64>(rng);
 }
 
 polca_parallel::EmAlgorithm::~EmAlgorithm() { delete[] this->ln_l_array_; }
@@ -49,7 +53,6 @@ void polca_parallel::EmAlgorithm::Fit() {
   double ln_l_difference;
   double ln_l_before;
 
-  std::mt19937_64 rng(this->seed_);
   std::uniform_real_distribution<double> uniform(0.0, 1.0);
 
   while (!is_success) {
@@ -61,7 +64,7 @@ void polca_parallel::EmAlgorithm::Fit() {
     } else {
       // reach this condition if the first run has a problem
       // reset all required parameters
-      this->Reset(&rng, &uniform);
+      this->Reset(this->rng_.get(), &uniform);
     }
 
     // make a copy initial probabilities if requested
@@ -140,7 +143,17 @@ bool polca_parallel::EmAlgorithm::get_has_restarted() {
 }
 
 void polca_parallel::EmAlgorithm::set_seed(unsigned seed) {
-  this->seed_ = seed;
+  std::mt19937_64* rng = new std::mt19937_64(seed);
+  this->rng_ = std::unique_ptr<std::mt19937_64>(rng);
+}
+
+void polca_parallel::EmAlgorithm::set_rng(
+    std::unique_ptr<std::mt19937_64>* rng) {
+  this->rng_ = std::move(*rng);
+}
+
+std::unique_ptr<std::mt19937_64> polca_parallel::EmAlgorithm::move_rng() {
+  return std::move(this->rng_);
 }
 
 void polca_parallel::EmAlgorithm::Reset(
