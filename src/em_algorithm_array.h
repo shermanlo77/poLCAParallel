@@ -29,8 +29,30 @@
 namespace polca_parallel {
 
 /**
- * For using EM algorithm with multiple inital probabilities, use to try to find
- * the global maximum. Each thread runs a repetition
+ * For using EM algorithm with multiple inital probabilities
+ *
+ * Run multiple EM algorithm with different initial probabilites to try to find
+ * the global maximum. Multiple threads can be used.
+ *
+ * How to use:
+ * <ul>
+ *   <li>
+ *     Pass the data (features, responses) and array to store results via the
+ *     constructor
+ *   </li>
+ *   <li>
+ *     Call optional methods SetSeed(), set_best_initial_prob() and/or
+ *     set_ln_l_array()
+ *   </li>
+ *   <li>
+ *     Call the method Fit() to run multiple EM algorithms. Results with the
+ *     best log likelihood are stored
+ *   </li>
+ *   <li>
+ *     Call the methods get_best_rep_index(), get_n_iter() and/or
+ *     get_has_restarted() to get optional information
+ *   </li>
+ * </ul>
  */
 class EmAlgorithmArray {
  private:
@@ -166,7 +188,8 @@ class EmAlgorithmArray {
 
   /**
    * Fit (in parallel) using EM algorithm. To be called right after
-   * construction or after setting optional settings
+   * construction or after setting optional settings. Results with the best log
+   * likelihood are recorded
    */
   void Fit();
 
