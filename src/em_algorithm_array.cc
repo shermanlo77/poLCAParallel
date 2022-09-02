@@ -87,6 +87,10 @@ int polca_parallel::EmAlgorithmArray::get_best_rep_index() {
   return this->best_rep_index_;
 }
 
+double polca_parallel::EmAlgorithmArray::get_optimal_ln_l() {
+  return this->optimal_ln_l_;
+}
+
 int polca_parallel::EmAlgorithmArray::get_n_iter() { return this->n_iter_; }
 
 bool polca_parallel::EmAlgorithmArray::get_has_restarted() {

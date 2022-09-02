@@ -6,7 +6,8 @@ export(
   poLCA.entropy,
   poLCA.predcell,
   poLCA.posterior,
-  rmulti
+  rmulti,
+  blrt
 )
 
 S3method(print, poLCA)

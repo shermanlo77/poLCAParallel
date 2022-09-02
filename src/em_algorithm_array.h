@@ -65,7 +65,7 @@ class EmAlgorithmArray {
   /** Optional, to store initial prob to obtain max likelihood */
   double* best_initial_prob_ = NULL;
 
-  /** Number of initial values to tries */
+  /** Number of initial values to try */
   int n_rep_;
   /** The best log likelihood found so far */
   double optimal_ln_l_;
@@ -87,13 +87,17 @@ class EmAlgorithmArray {
   /** Number of threads */
   int n_thread_;
 
-  /** Array of seeds, for each repetition */
-  std::unique_ptr<unsigned[]> seed_array_ = NULL;
-
   /** For locking n_rep_done_ */
   std::mutex* n_rep_done_lock_;
   /** For locking optimal_ln_l_, best_rep_index_, n_iter_ and has_restarted_ */
   std::mutex* results_lock_;
+
+ protected:
+  /**
+   * Array of seeds, for each repetition, used to seed each repetition, only
+   * used if a run fails and needs to generate new initial values
+   */
+  std::unique_ptr<unsigned[]> seed_array_ = NULL;
 
  public:
   /**
@@ -178,6 +182,9 @@ class EmAlgorithmArray {
 
   /** Get the index of the repetition with the highest log likelihood */
   int get_best_rep_index();
+
+  /** Get the best log likelihood from all repetitions */
+  double get_optimal_ln_l();
 
   /**
    * Get the number of EM iterations done for the repetition with the highest
