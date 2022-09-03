@@ -23,6 +23,7 @@
 #include <random>
 #include <thread>
 
+#include "em_algorithm.h"
 #include "em_algorithm_array_serial.h"
 
 namespace polca_parallel {

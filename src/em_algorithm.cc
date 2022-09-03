@@ -160,22 +160,9 @@ void polca_parallel::EmAlgorithm::Reset(
     std::mt19937_64* rng, std::uniform_real_distribution<double>* uniform) {
   // generate random number for estimated_prob_
   this->has_restarted_ = true;
-  for (double* ptr = this->estimated_prob_;
-       ptr < this->estimated_prob_ + this->n_cluster_ * this->sum_outcomes_;
-       ++ptr) {
-    *ptr = (*uniform)(*rng);
-  }
-  // normalise to probabilities
-  double* estimated_prob = estimated_prob_;
-  int n_outcome;
-  for (int m = 0; m < this->n_cluster_; ++m) {
-    for (int j = 0; j < this->n_category_; ++j) {
-      n_outcome = this->n_outcomes_[j];
-      arma::Col<double> prob_vector(estimated_prob, n_outcome, false);
-      prob_vector /= sum(prob_vector);
-      estimated_prob += n_outcome;
-    }
-  }
+  polca_parallel::GenerateNewProb(rng, uniform, this->n_outcomes_,
+                                  this->sum_outcomes_, this->n_category_,
+                                  this->n_cluster_, this->estimated_prob_);
 }
 
 void polca_parallel::EmAlgorithm::InitPrior() {
@@ -324,5 +311,24 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(int cluster_index,
       estimated_prob[k] /= normaliser;
     }
     estimated_prob += n_outcome;
+  }
+}
+
+void polca_parallel::GenerateNewProb(
+    std::mt19937_64* rng, std::uniform_real_distribution<double>* uniform,
+    int* n_outcomes, int sum_outcomes, int n_category, int n_cluster,
+    double* prob) {
+  for (double* ptr = prob; ptr < prob + n_cluster * sum_outcomes; ++ptr) {
+    *ptr = (*uniform)(*rng);
+  }
+  // normalise to probabilities
+  int n_outcome;
+  for (int m = 0; m < n_cluster; ++m) {
+    for (int j = 0; j < n_category; ++j) {
+      n_outcome = n_outcomes[j];
+      arma::Col<double> prob_vector(prob, n_outcome, false);
+      prob_vector /= sum(prob_vector);
+      prob += n_outcome;
+    }
   }
 }

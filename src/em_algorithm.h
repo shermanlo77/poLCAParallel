@@ -347,6 +347,11 @@ class EmAlgorithm {
   void NormalWeightedSumProb(int cluster_index, double normaliser);
 };
 
+void GenerateNewProb(std::mt19937_64* rng,
+                     std::uniform_real_distribution<double>* uniform,
+                     int* n_outcomes, int sum_outcomes, int n_category,
+                     int n_cluster, double* prob);
+
 }  // namespace polca_parallel
 
 #endif  // EM_ALGORITHM_H_

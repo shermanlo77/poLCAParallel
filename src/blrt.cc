@@ -55,6 +55,19 @@ void polca_parallel::Blrt::RunThread() {
   // to store the bootstrap samples
   int* bootstrap_data = new int[this->n_data_ * this->n_category_];
 
+  // allocate memory for storing initial values for the probabilities
+  double* init_prob_null =
+      new double[this->sum_outcomes_ * this->n_cluster_null_ * this->n_rep_];
+  double* init_prob_alt =
+      new double[this->sum_outcomes_ * this->n_cluster_alt_ * this->n_rep_];
+
+  // use the fitted values as the initial values when fitting onto the bootstrap
+  // samples
+  memcpy(init_prob_null, this->prob_null_,
+         this->sum_outcomes_ * this->n_cluster_null_ * sizeof(*init_prob_null));
+  memcpy(init_prob_alt, this->prob_alt_,
+         this->sum_outcomes_ * this->n_cluster_alt_ * sizeof(*init_prob_alt));
+
   // allocate memory for all required arrays, a lot of them aren't used after
   // fitting
   double* features = new double[this->n_data_];
@@ -70,6 +83,7 @@ void polca_parallel::Blrt::RunThread() {
       new double[this->n_cluster_alt_ * this->sum_outcomes_];
   double* fitted_regress_coeff_null = new double[this->n_cluster_null_ - 1];
   double* fitted_regress_coeff_alt = new double[this->n_cluster_alt_ - 1];
+  double* fitted_ln_l_array = new double[this->n_rep_];
 
   while (is_working) {
     // lock to retrive n_bootstrap_done_
@@ -85,29 +99,44 @@ void polca_parallel::Blrt::RunThread() {
       std::unique_ptr<std::mt19937_64> rng(
           new std::mt19937_64(this->seed_array_[i_bootstrap]));
 
+      std::uniform_real_distribution<double> uniform(0.0, 1.0);
+
+      // generate new initial values
+      for (int i_rep = 1; i_rep < this->n_rep_; ++i_rep) {
+        polca_parallel::GenerateNewProb(
+            rng.get(), &uniform, this->n_outcomes_, this->sum_outcomes_,
+            this->n_category_, this->n_cluster_null_,
+            init_prob_null +
+                i_rep * this->sum_outcomes_ * this->n_cluster_null_);
+
+        polca_parallel::GenerateNewProb(
+            rng.get(), &uniform, this->n_outcomes_, this->sum_outcomes_,
+            this->n_category_, this->n_cluster_alt_,
+            init_prob_alt + i_rep * this->sum_outcomes_ * this->n_cluster_alt_);
+      }
+
       // bootstrap data using null model
       this->Bootstrap(this->prior_null_, this->prob_null_,
                       this->n_cluster_null_, rng.get(), bootstrap_data);
 
       // null model fit
-      double ln_l_array;
       polca_parallel::EmAlgorithmArraySerial null_model(
-          features, bootstrap_data, this->prob_null_, this->n_data_, 1,
+          features, bootstrap_data, init_prob_null, this->n_data_, 1,
           this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-          this->n_cluster_null_, 1, 1, this->max_iter_, this->tolerance_,
-          fitted_posterior_null, fitted_prior_null, fitted_prob_null,
-          fitted_regress_coeff_null, &ln_l_array);
+          this->n_cluster_null_, this->n_rep_, 1, this->max_iter_,
+          this->tolerance_, fitted_posterior_null, fitted_prior_null,
+          fitted_prob_null, fitted_regress_coeff_null, fitted_ln_l_array);
       null_model.SetRng(&rng);
       null_model.Fit();
       rng = null_model.MoveRng();
 
       // alt model fit
       polca_parallel::EmAlgorithmArraySerial alt_model(
-          features, bootstrap_data, this->prob_alt_, this->n_data_, 1,
+          features, bootstrap_data, init_prob_alt, this->n_data_, 1,
           this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-          this->n_cluster_alt_, 1, 1, this->max_iter_, this->tolerance_,
-          fitted_posterior_alt, fitted_prior_alt, fitted_prob_alt,
-          fitted_regress_coeff_alt, &ln_l_array);
+          this->n_cluster_alt_, this->n_rep_, 1, this->max_iter_,
+          this->tolerance_, fitted_posterior_alt, fitted_prior_alt,
+          fitted_prob_alt, fitted_regress_coeff_alt, fitted_ln_l_array);
       alt_model.SetRng(&rng);
       alt_model.Fit();
       rng = alt_model.MoveRng();
@@ -124,6 +153,8 @@ void polca_parallel::Blrt::RunThread() {
   }
 
   delete[] bootstrap_data;
+  delete[] init_prob_null;
+  delete[] init_prob_alt;
   delete[] features;
   delete[] fitted_posterior_null;
   delete[] fitted_posterior_alt;
@@ -133,6 +164,7 @@ void polca_parallel::Blrt::RunThread() {
   delete[] fitted_prob_alt;
   delete[] fitted_regress_coeff_null;
   delete[] fitted_regress_coeff_alt;
+  delete[] fitted_ln_l_array;
 }
 
 /**
