@@ -23,12 +23,12 @@ n_thread <- 1
 for (nclass in 2:5) {
   for (i in 1:2) {
     if (i == 1) {
-      data(cheating)
+      data(cheating, package = "poLCAParallel")
       dat <- cheating
       f <- cbind(LIEEXAM, LIEPAPER, FRAUD, COPYEXAM) ~ GPA
       cat("========== cheating ==========")
     } else {
-      data(election)
+      data(election, package = "poLCAParallel")
       dat <- election
       f <- cbind(
         MORALG, CARESG, KNOWG, LEADG, DISHONG, INTELG,
