@@ -19,8 +19,15 @@
 #' @param tol Tolerance for difference in log likelihood, used for
 #' stopping condition
 #'
-#' @return Vector, the log likelihood ratio for each bootstrap sample
-#'
+#' @return List containing the following:
+#' <ul>
+#'   <li>fitted_log_ratio: log likelihood ratio comparing the null and alt
+#' model</li>
+#'   <li>bootstrap_log_ratio: vector of length n_bootstrap, bootstrapped log
+#' likelihood ratio comparing the null and alt model</li>
+#'   <li>p_value<: the porportion of bootstrap samples with log likelihood
+#' ratios greater than the fitted log likelihood ratio/li>
+#' </ul>
 #' @export
 blrt <- function(model_null, model_alt, n_bootstrap,
                  n_thread = parallel::detectCores(), n_rep = 1, max_iter = 1000,
@@ -47,11 +54,19 @@ blrt <- function(model_null, model_alt, n_bootstrap,
     replace = TRUE
   )
 
-  ratio_array <- BlrtRcpp(
+  bootstrap_log_ratio_array <- BlrtRcpp(
     prior_null, prob_null, n_cluster_null, prior_alt,
     prob_alt, n_cluster_alt, n_data, n_category, n_outcomes, n_bootstrap, n_rep,
     n_thread, max_iter, tol, seed
   )
 
-  return(ratio_array)
+  fitted_log_ratio <- 2 * model_alt$llik - 2 * model_null$llik
+
+  p_value <- sum(bootstrap_log_ratio_array > fitted_log_ratio) / n_bootstrap
+
+  to_return <- list()
+  to_return[["fitted_log_ratio"]] <- fitted_log_ratio
+  to_return[["bootstrap_log_ratio"]] <- bootstrap_log_ratio_array
+  to_return[["p_value"]] <- p_value
+  return(to_return)
 }

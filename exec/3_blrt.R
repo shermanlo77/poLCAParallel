@@ -5,6 +5,7 @@ n_thread <- 32
 nrep <- 32 # number of different initial values (could be n_thread too)
 n_class_max <- 10 # maximum number of classes to investigate
 n_bootstrap <- 100 # number of bootstrap samples
+set.seed(1746091653)
 
 # carcinoma is the sample data from poLCA
 data(carcinoma, package = "poLCAParallel")
@@ -32,8 +33,8 @@ p_value_array <- c(0)
 # for all number of classes investigated:
 #   - store the log likelihood ratio
 #   - store all bootstrap samples log likelihoods ratios
-log_likelihood_ratio_array <- rep(NaN, n_class_max)
-bootstrap_log_likelihood_ratio_array <- list()
+fitted_log_ratio_array <- rep(NaN, n_class_max)
+bootstrap_log_ratio_array <- list()
 
 # do the bootstrap likelihood ratio test for each number of classes
 for (nclass in 2:n_class_max) {
@@ -43,22 +44,19 @@ for (nclass in 2:n_class_max) {
   null_model <- model_array[[nclass - 1]]
   alt_model <- model_array[[nclass]]
 
-  # log likelihood ratio to compare the two models
-  log_likelihood_ratio <- 2 * alt_model$llik - 2 * null_model$llik
-  log_likelihood_ratio_array[nclass] <- log_likelihood_ratio
-
   # for each bootstrap sample, store the log likelihood ratio here
-  bootstrap_log_likelihood_ratio <- poLCAParallel::blrt(
+  bootstrap_results <- poLCAParallel::blrt(
     null_model, alt_model,
     n_bootstrap, n_thread, nrep
   )
 
+  # log likelihood ratio to compare the two models
+  fitted_log_ratio_array[nclass] <- bootstrap_results[["fitted_log_ratio"]]
   # store the log likelihoods ratios for all bootstrap samples
-  bootstrap_log_likelihood_ratio_array[[nclass]] <-
-    bootstrap_log_likelihood_ratio
-  # calculate the p value using all bootstrap values for this nclass
-  p <- sum(bootstrap_log_likelihood_ratio > log_likelihood_ratio) / n_bootstrap
-  p_value_array <- c(p_value_array, p)
+  bootstrap_log_ratio_array[[nclass]] <-
+    bootstrap_results[["bootstrap_log_ratio"]]
+  # store the p value for this nclass
+  p_value_array <- c(p_value_array, bootstrap_results[["p_value"]])
 }
 
 # plot the p value for each number of class
@@ -80,10 +78,10 @@ abline(h = 0.05)
 
 
 # plot the bootstrap distribution of the log likelihood ratios for each class
-boxplot(bootstrap_log_likelihood_ratio_array,
+boxplot(bootstrap_log_ratio_array,
   xlab = "number of classses", ylab = "log likelihood ratio"
 )
 # also plot the log likelihood ratio when using the real data
-lines(1:n_class_max, log_likelihood_ratio_array,
+lines(1:n_class_max, fitted_log_ratio_array,
   type = "b", col = "red", pch = 15
 )

@@ -10,6 +10,7 @@
 
 nrep <- 32
 n.thread <- 1
+set.seed(999204567)
 
 for (nclass in 2:5) {
   for (i in 1:5) {
@@ -46,7 +47,6 @@ for (nclass in 2:5) {
     cat(paste("==========", nclass, "classes ==========\n"))
 
     # using parallel code
-    set.seed(0)
     start_time <- Sys.time()
     lca_parallel <- poLCAParallel::poLCA(
       f, dat,
