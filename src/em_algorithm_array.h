@@ -62,6 +62,8 @@ class EmAlgorithmArray {
   double* estimated_prob_;
   /** To store regression coefficient results */
   double* regress_coeff_;
+  /** True if to use regression model */
+  bool is_regress_;
   /** Optional, to store initial prob to obtain max likelihood */
   double* best_initial_prob_ = NULL;
 
@@ -151,13 +153,14 @@ class EmAlgorithmArray {
    * n_features_*(n_cluster-1), linear regression coefficient in matrix
    * form, to be multiplied to the features and linked to the prior
    * using softmax
+   * @param is_regress True if to use regression model
    */
   EmAlgorithmArray(double* features, int* responses, double* initial_prob,
                    int n_data, int n_feature, int n_category, int* n_outcomes,
                    int sum_outcomes, int n_cluster, int n_rep, int n_thread,
                    int max_iter, double tolerance, double* posterior,
-                   double* prior, double* estimated_prob,
-                   double* regress_coeff);
+                   double* prior, double* estimated_prob, double* regress_coeff,
+                   bool is_regress);
 
   ~EmAlgorithmArray();
 

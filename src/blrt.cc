@@ -124,7 +124,7 @@ void polca_parallel::Blrt::RunThread() {
           this->n_category_, this->n_outcomes_, this->sum_outcomes_,
           this->n_cluster_null_, this->n_rep_, 1, this->max_iter_,
           this->tolerance_, fitted_posterior_null, fitted_prior_null,
-          fitted_prob_null, fitted_regress_coeff_null);
+          fitted_prob_null, fitted_regress_coeff_null, false);
       null_model.SetRng(&rng);
       null_model.Fit();
       rng = null_model.MoveRng();
@@ -135,7 +135,7 @@ void polca_parallel::Blrt::RunThread() {
           this->n_category_, this->n_outcomes_, this->sum_outcomes_,
           this->n_cluster_alt_, this->n_rep_, 1, this->max_iter_,
           this->tolerance_, fitted_posterior_alt, fitted_prior_alt,
-          fitted_prob_alt, fitted_regress_coeff_alt);
+          fitted_prob_alt, fitted_regress_coeff_alt, false);
       alt_model.SetRng(&rng);
       alt_model.Fit();
       rng = alt_model.MoveRng();

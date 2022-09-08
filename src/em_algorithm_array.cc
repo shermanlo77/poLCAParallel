@@ -22,7 +22,7 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
     int n_cluster, int n_rep, int n_thread, int max_iter, double tolerance,
     double* posterior, double* prior, double* estimated_prob,
-    double* regress_coeff) {
+    double* regress_coeff, bool is_regress) {
   this->n_rep_ = n_rep;
 
   this->features_ = features;
@@ -39,6 +39,7 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
   this->prior_ = prior;
   this->estimated_prob_ = estimated_prob;
   this->regress_coeff_ = regress_coeff;
+  this->is_regress_ = is_regress;
 
   if (n_thread > n_rep) {
     n_thread = n_rep;
@@ -148,15 +149,15 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
 
       // transfer pointer to data and where to store results
       // em fit
-      if (n_feature == 1) {
-        fitter = new polca_parallel::EmAlgorithm(
+      if (this->is_regress_) {
+        fitter = new polca_parallel::EmAlgorithmRegress(
             this->features_, this->responses_,
             this->initial_prob_ + rep_index * sum_outcomes * n_cluster, n_data,
             n_feature, this->n_category_, this->n_outcomes_, sum_outcomes,
             n_cluster, this->max_iter_, this->tolerance_, posterior, prior,
             estimated_prob, regress_coeff);
       } else {
-        fitter = new polca_parallel::EmAlgorithmRegress(
+        fitter = new polca_parallel::EmAlgorithm(
             this->features_, this->responses_,
             this->initial_prob_ + rep_index * sum_outcomes * n_cluster, n_data,
             n_feature, this->n_category_, this->n_outcomes_, sum_outcomes,
