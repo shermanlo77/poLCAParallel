@@ -41,8 +41,7 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
                          int* n_outcomes, int sum_outcomes, int n_cluster,
                          int n_rep, int n_thread, int max_iter,
                          double tolerance, double* posterior, double* prior,
-                         double* estimated_prob, double* regress_coeff,
-                         double* ln_l_array);
+                         double* estimated_prob, double* regress_coeff);
 
   /**
    * Set the member variable seed_array_ containing only one seed and the rng.

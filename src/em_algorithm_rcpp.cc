@@ -85,12 +85,12 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
           features.begin(), responses.begin(), initial_prob.begin(), n_data,
           n_feature, n_category, n_outcomes.begin(), sum_outcomes, n_cluster,
           n_rep, n_thread, max_iter, tolerance, posterior.begin(),
-          prior.begin(), estimated_prob.begin(), regress_coeff.begin(),
-          ln_l_array.begin());
+          prior.begin(), estimated_prob.begin(), regress_coeff.begin());
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   fitter->SetSeed(&seed_seq);
   fitter->set_best_initial_prob(best_initial_prob.begin());
+  fitter->set_ln_l_array(ln_l_array.begin());
 
   fitter->Fit();
 

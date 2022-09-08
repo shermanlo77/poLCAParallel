@@ -83,7 +83,6 @@ void polca_parallel::Blrt::RunThread() {
       new double[this->n_cluster_alt_ * this->sum_outcomes_];
   double* fitted_regress_coeff_null = new double[this->n_cluster_null_ - 1];
   double* fitted_regress_coeff_alt = new double[this->n_cluster_alt_ - 1];
-  double* fitted_ln_l_array = new double[this->n_rep_];
 
   while (is_working) {
     // lock to retrive n_bootstrap_done_
@@ -125,7 +124,7 @@ void polca_parallel::Blrt::RunThread() {
           this->n_category_, this->n_outcomes_, this->sum_outcomes_,
           this->n_cluster_null_, this->n_rep_, 1, this->max_iter_,
           this->tolerance_, fitted_posterior_null, fitted_prior_null,
-          fitted_prob_null, fitted_regress_coeff_null, fitted_ln_l_array);
+          fitted_prob_null, fitted_regress_coeff_null);
       null_model.SetRng(&rng);
       null_model.Fit();
       rng = null_model.MoveRng();
@@ -136,7 +135,7 @@ void polca_parallel::Blrt::RunThread() {
           this->n_category_, this->n_outcomes_, this->sum_outcomes_,
           this->n_cluster_alt_, this->n_rep_, 1, this->max_iter_,
           this->tolerance_, fitted_posterior_alt, fitted_prior_alt,
-          fitted_prob_alt, fitted_regress_coeff_alt, fitted_ln_l_array);
+          fitted_prob_alt, fitted_regress_coeff_alt);
       alt_model.SetRng(&rng);
       alt_model.Fit();
       rng = alt_model.MoveRng();
@@ -164,7 +163,6 @@ void polca_parallel::Blrt::RunThread() {
   delete[] fitted_prob_alt;
   delete[] fitted_regress_coeff_null;
   delete[] fitted_regress_coeff_alt;
-  delete[] fitted_ln_l_array;
 }
 
 /**

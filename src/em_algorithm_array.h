@@ -81,7 +81,7 @@ class EmAlgorithmArray {
   /** Which initial value is being worked on */
   int n_rep_done_;
   /** Maximum log likelihood for each reptition */
-  double* ln_l_array_;
+  double* ln_l_array_ = NULL;
   /** Index of which inital value has the best log likelihood */
   int best_rep_index_;
   /** Number of threads */
@@ -151,15 +151,13 @@ class EmAlgorithmArray {
    * n_features_*(n_cluster-1), linear regression coefficient in matrix
    * form, to be multiplied to the features and linked to the prior
    * using softmax
-   * @param ln_l_array To store results, vector, maxmimum log likelihood for
-   * each repetition
    */
   EmAlgorithmArray(double* features, int* responses, double* initial_prob,
                    int n_data, int n_feature, int n_category, int* n_outcomes,
                    int sum_outcomes, int n_cluster, int n_rep, int n_thread,
                    int max_iter, double tolerance, double* posterior,
-                   double* prior, double* estimated_prob, double* regress_coeff,
-                   double* ln_l_array);
+                   double* prior, double* estimated_prob,
+                   double* regress_coeff);
 
   ~EmAlgorithmArray();
 
@@ -179,6 +177,9 @@ class EmAlgorithmArray {
    * objects
    */
   void set_best_initial_prob(double* best_initial_prob);
+
+  /** Set where to store the log likelihood for each iteration */
+  void set_ln_l_array(double* ln_l_array);
 
   /** Get the index of the repetition with the highest log likelihood */
   int get_best_rep_index();
