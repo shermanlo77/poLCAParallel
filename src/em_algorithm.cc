@@ -64,7 +64,7 @@ void polca_parallel::EmAlgorithm::Fit() {
     } else {
       // reach this condition if the first run has a problem
       // reset all required parameters
-      this->Reset(this->rng_.get(), &uniform);
+      this->Reset(&uniform);
     }
 
     // make a copy initial probabilities if requested
@@ -157,10 +157,10 @@ std::unique_ptr<std::mt19937_64> polca_parallel::EmAlgorithm::move_rng() {
 }
 
 void polca_parallel::EmAlgorithm::Reset(
-    std::mt19937_64* rng, std::uniform_real_distribution<double>* uniform) {
+    std::uniform_real_distribution<double>* uniform) {
   // generate random number for estimated_prob_
   this->has_restarted_ = true;
-  polca_parallel::GenerateNewProb(rng, uniform, this->n_outcomes_,
+  polca_parallel::GenerateNewProb(this->rng_.get(), uniform, this->n_outcomes_,
                                   this->sum_outcomes_, this->n_category_,
                                   this->n_cluster_, this->estimated_prob_);
 }

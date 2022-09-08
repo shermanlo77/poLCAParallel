@@ -38,8 +38,8 @@ polca_parallel::EmAlgorithmRegress::~EmAlgorithmRegress() {
 }
 
 void polca_parallel::EmAlgorithmRegress::Reset(
-    std::mt19937_64* rng, std::uniform_real_distribution<double>* uniform) {
-  this->polca_parallel::EmAlgorithm::Reset(rng, uniform);
+    std::uniform_real_distribution<double>* uniform) {
+  this->polca_parallel::EmAlgorithm::Reset(uniform);
   this->init_regress_coeff();
 }
 

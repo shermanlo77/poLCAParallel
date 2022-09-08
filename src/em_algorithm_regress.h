@@ -51,8 +51,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   ~EmAlgorithmRegress() override;
 
  protected:
-  void Reset(std::mt19937_64* rng,
-             std::uniform_real_distribution<double>* uniform) override;
+  void Reset(std::uniform_real_distribution<double>* uniform) override;
 
   void InitPrior() override;
 
