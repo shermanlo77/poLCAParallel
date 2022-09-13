@@ -11,6 +11,31 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// BlrtRcpp
+Rcpp::NumericVector BlrtRcpp(Rcpp::NumericVector prior_null, Rcpp::NumericVector prob_null, int n_cluster_null, Rcpp::NumericVector prior_alt, Rcpp::NumericVector prob_alt, int n_cluster_alt, int n_data, int n_category, Rcpp::IntegerVector n_outcomes, int n_bootstrap, int n_rep, int n_thread, int max_iter, double tolerance, Rcpp::IntegerVector seed);
+RcppExport SEXP _poLCAParallel_BlrtRcpp(SEXP prior_nullSEXP, SEXP prob_nullSEXP, SEXP n_cluster_nullSEXP, SEXP prior_altSEXP, SEXP prob_altSEXP, SEXP n_cluster_altSEXP, SEXP n_dataSEXP, SEXP n_categorySEXP, SEXP n_outcomesSEXP, SEXP n_bootstrapSEXP, SEXP n_repSEXP, SEXP n_threadSEXP, SEXP max_iterSEXP, SEXP toleranceSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type prior_null(prior_nullSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type prob_null(prob_nullSEXP);
+    Rcpp::traits::input_parameter< int >::type n_cluster_null(n_cluster_nullSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type prior_alt(prior_altSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type prob_alt(prob_altSEXP);
+    Rcpp::traits::input_parameter< int >::type n_cluster_alt(n_cluster_altSEXP);
+    Rcpp::traits::input_parameter< int >::type n_data(n_dataSEXP);
+    Rcpp::traits::input_parameter< int >::type n_category(n_categorySEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type n_outcomes(n_outcomesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_bootstrap(n_bootstrapSEXP);
+    Rcpp::traits::input_parameter< int >::type n_rep(n_repSEXP);
+    Rcpp::traits::input_parameter< int >::type n_thread(n_threadSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< double >::type tolerance(toleranceSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(BlrtRcpp(prior_null, prob_null, n_cluster_null, prior_alt, prob_alt, n_cluster_alt, n_data, n_category, n_outcomes, n_bootstrap, n_rep, n_thread, max_iter, tolerance, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // EmAlgorithmRcpp
 Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features, Rcpp::IntegerMatrix responses, Rcpp::NumericVector initial_prob, int n_data, int n_feature, int n_category, Rcpp::IntegerVector n_outcomes, int n_cluster, int n_rep, int n_thread, int max_iter, double tolerance, Rcpp::IntegerVector seed);
 RcppExport SEXP _poLCAParallel_EmAlgorithmRcpp(SEXP featuresSEXP, SEXP responsesSEXP, SEXP initial_probSEXP, SEXP n_dataSEXP, SEXP n_featureSEXP, SEXP n_categorySEXP, SEXP n_outcomesSEXP, SEXP n_clusterSEXP, SEXP n_repSEXP, SEXP n_threadSEXP, SEXP max_iterSEXP, SEXP toleranceSEXP, SEXP seedSEXP) {
@@ -73,6 +98,7 @@ RcppExport void postclass(void *, void *, void *, void *, void *, void *, void *
 RcppExport void probhat(void *, void *, void *, void *, void *, void *, void *);
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_poLCAParallel_BlrtRcpp", (DL_FUNC) &_poLCAParallel_BlrtRcpp, 15},
     {"_poLCAParallel_EmAlgorithmRcpp", (DL_FUNC) &_poLCAParallel_EmAlgorithmRcpp, 13},
     {"_poLCAParallel_ylik", (DL_FUNC) &_poLCAParallel_ylik, 6},
     {"_poLCAParallel_GoodnessFitRcpp", (DL_FUNC) &_poLCAParallel_GoodnessFitRcpp, 7},
