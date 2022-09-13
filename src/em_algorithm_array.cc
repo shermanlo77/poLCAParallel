@@ -22,7 +22,7 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
     int n_cluster, int n_rep, int n_thread, int max_iter, double tolerance,
     double* posterior, double* prior, double* estimated_prob,
-    double* regress_coeff, double* ln_l_array) {
+    double* regress_coeff, bool is_regress) {
   this->n_rep_ = n_rep;
 
   this->features_ = features;
@@ -39,6 +39,7 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
   this->prior_ = prior;
   this->estimated_prob_ = estimated_prob;
   this->regress_coeff_ = regress_coeff;
+  this->is_regress_ = is_regress;
 
   if (n_thread > n_rep) {
     n_thread = n_rep;
@@ -47,7 +48,6 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
   this->initial_prob_ = initial_prob;
   this->n_rep_done_ = 0;
   this->optimal_ln_l_ = -INFINITY;
-  this->ln_l_array_ = ln_l_array;
   this->n_thread_ = n_thread;
   this->n_rep_done_lock_ = new std::mutex();
   this->results_lock_ = new std::mutex();
@@ -83,14 +83,34 @@ void polca_parallel::EmAlgorithmArray::set_best_initial_prob(
   this->best_initial_prob_ = best_initial_prob;
 }
 
+void polca_parallel::EmAlgorithmArray::set_ln_l_array(double* ln_l_array) {
+  this->ln_l_array_ = ln_l_array;
+}
+
 int polca_parallel::EmAlgorithmArray::get_best_rep_index() {
   return this->best_rep_index_;
+}
+
+double polca_parallel::EmAlgorithmArray::get_optimal_ln_l() {
+  return this->optimal_ln_l_;
 }
 
 int polca_parallel::EmAlgorithmArray::get_n_iter() { return this->n_iter_; }
 
 bool polca_parallel::EmAlgorithmArray::get_has_restarted() {
   return this->has_restarted_;
+}
+
+void polca_parallel::EmAlgorithmArray::SetFitterRng(
+    polca_parallel::EmAlgorithm* fitter, int rep_index) {
+  if (this->seed_array_ != NULL) {
+    fitter->set_seed(this->seed_array_[rep_index]);
+  }
+}
+
+void polca_parallel::EmAlgorithmArray::MoveRngBackFromFitter(
+    polca_parallel::EmAlgorithm* fitter) {
+  // do nothing, no rng handelled here
 }
 
 void polca_parallel::EmAlgorithmArray::FitThread() {
@@ -129,30 +149,34 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
 
       // transfer pointer to data and where to store results
       // em fit
-      if (n_feature == 1) {
-        fitter = new polca_parallel::EmAlgorithm(
-            this->features_, this->responses_,
-            this->initial_prob_ + rep_index * sum_outcomes * n_cluster, n_data,
-            n_feature, this->n_category_, this->n_outcomes_, sum_outcomes,
-            n_cluster, this->max_iter_, this->tolerance_, posterior, prior,
-            estimated_prob, regress_coeff);
-      } else {
+      if (this->is_regress_) {
         fitter = new polca_parallel::EmAlgorithmRegress(
             this->features_, this->responses_,
             this->initial_prob_ + rep_index * sum_outcomes * n_cluster, n_data,
             n_feature, this->n_category_, this->n_outcomes_, sum_outcomes,
             n_cluster, this->max_iter_, this->tolerance_, posterior, prior,
             estimated_prob, regress_coeff);
+      } else {
+        fitter = new polca_parallel::EmAlgorithm(
+            this->features_, this->responses_,
+            this->initial_prob_ + rep_index * sum_outcomes * n_cluster, n_data,
+            n_feature, this->n_category_, this->n_outcomes_, sum_outcomes,
+            n_cluster, this->max_iter_, this->tolerance_, posterior, prior,
+            estimated_prob, regress_coeff);
       }
-      if (this->seed_array_ != NULL) {
-        fitter->set_seed(this->seed_array_[rep_index]);
-      }
+      this->SetFitterRng(fitter, rep_index);
       if (is_get_initial_prob) {
         fitter->set_best_initial_prob(best_initial_prob);
       }
       fitter->Fit();
       ln_l = fitter->get_ln_l();
-      this->ln_l_array_[rep_index] = ln_l;
+      if (this->ln_l_array_ != NULL) {
+        this->ln_l_array_[rep_index] = ln_l;
+      }
+
+      // if ownership of rng transferred (if any) to fitter, get it back if
+      // needed
+      this->MoveRngBackFromFitter(fitter);
 
       // copy results if log likelihood improved
       this->results_lock_->lock();

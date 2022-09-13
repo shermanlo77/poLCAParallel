@@ -29,8 +29,30 @@
 namespace polca_parallel {
 
 /**
- * For using EM algorithm with multiple inital probabilities, use to try to find
- * the global maximum. Each thread runs a repetition
+ * For using EM algorithm with multiple inital probabilities
+ *
+ * Run multiple EM algorithm with different initial probabilites to try to find
+ * the global maximum. Multiple threads can be used.
+ *
+ * How to use:
+ * <ul>
+ *   <li>
+ *     Pass the data (features, responses) and array to store results via the
+ *     constructor
+ *   </li>
+ *   <li>
+ *     Call optional methods SetSeed(), set_best_initial_prob() and/or
+ *     set_ln_l_array()
+ *   </li>
+ *   <li>
+ *     Call the method Fit() to run multiple EM algorithms. Results with the
+ *     best log likelihood are stored
+ *   </li>
+ *   <li>
+ *     Call the methods get_best_rep_index(), get_n_iter() and/or
+ *     get_has_restarted() to get optional information
+ *   </li>
+ * </ul>
  */
 class EmAlgorithmArray {
  private:
@@ -62,10 +84,12 @@ class EmAlgorithmArray {
   double* estimated_prob_;
   /** To store regression coefficient results */
   double* regress_coeff_;
+  /** True if to use regression model */
+  bool is_regress_;
   /** Optional, to store initial prob to obtain max likelihood */
   double* best_initial_prob_ = NULL;
 
-  /** Number of initial values to tries */
+  /** Number of initial values to try */
   int n_rep_;
   /** The best log likelihood found so far */
   double optimal_ln_l_;
@@ -81,19 +105,23 @@ class EmAlgorithmArray {
   /** Which initial value is being worked on */
   int n_rep_done_;
   /** Maximum log likelihood for each reptition */
-  double* ln_l_array_;
+  double* ln_l_array_ = NULL;
   /** Index of which inital value has the best log likelihood */
   int best_rep_index_;
   /** Number of threads */
   int n_thread_;
 
-  /** Array of seeds, for each repetition */
-  std::unique_ptr<unsigned[]> seed_array_ = NULL;
-
   /** For locking n_rep_done_ */
   std::mutex* n_rep_done_lock_;
   /** For locking optimal_ln_l_, best_rep_index_, n_iter_ and has_restarted_ */
   std::mutex* results_lock_;
+
+ protected:
+  /**
+   * Array of seeds, for each repetition, used to seed each repetition, only
+   * used if a run fails and needs to generate new initial values
+   */
+  std::unique_ptr<unsigned[]> seed_array_ = NULL;
 
  public:
   /**
@@ -147,26 +175,26 @@ class EmAlgorithmArray {
    * n_features_*(n_cluster-1), linear regression coefficient in matrix
    * form, to be multiplied to the features and linked to the prior
    * using softmax
-   * @param ln_l_array To store results, vector, maxmimum log likelihood for
-   * each repetition
+   * @param is_regress True if to use regression model
    */
   EmAlgorithmArray(double* features, int* responses, double* initial_prob,
                    int n_data, int n_feature, int n_category, int* n_outcomes,
                    int sum_outcomes, int n_cluster, int n_rep, int n_thread,
                    int max_iter, double tolerance, double* posterior,
                    double* prior, double* estimated_prob, double* regress_coeff,
-                   double* ln_l_array);
+                   bool is_regress);
 
   ~EmAlgorithmArray();
 
   /**
    * Fit (in parallel) using EM algorithm. To be called right after
-   * construction or after setting optional settings
+   * construction or after setting optional settings. Results with the best log
+   * likelihood are recorded
    */
   void Fit();
 
   /** Set the member variable seed_array_ with seeds for each repetition */
-  void SetSeed(std::seed_seq* seed);
+  virtual void SetSeed(std::seed_seq* seed);
 
   /**
    * Set where to store initial probabilities (optional)
@@ -176,8 +204,14 @@ class EmAlgorithmArray {
    */
   void set_best_initial_prob(double* best_initial_prob);
 
+  /** Set where to store the log likelihood for each iteration */
+  void set_ln_l_array(double* ln_l_array);
+
   /** Get the index of the repetition with the highest log likelihood */
   int get_best_rep_index();
+
+  /** Get the best log likelihood from all repetitions */
+  double get_optimal_ln_l();
 
   /**
    * Get the number of EM iterations done for the repetition with the highest
@@ -190,6 +224,15 @@ class EmAlgorithmArray {
    * matrix
    */
   bool get_has_restarted();
+
+ protected:
+  /** Set the rng of a EmAlgorithm object given the rep_index */
+  virtual void SetFitterRng(polca_parallel::EmAlgorithm* fitter, int rep_index);
+
+  /**
+   * Move ownership of a rng from a fitter back to here
+   */
+  virtual void MoveRngBackFromFitter(polca_parallel::EmAlgorithm* fitter);
 
  private:
   /**

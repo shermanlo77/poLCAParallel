@@ -14,6 +14,7 @@
 library(MASS)
 nrep <- 32
 n_thread <- 1
+set.seed(982258332)
 
 # for high number of classes, you get into numerical errors, this is where
 # poLCA and poLCAParallel diverge in methodology.
@@ -23,12 +24,12 @@ n_thread <- 1
 for (nclass in 2:5) {
   for (i in 1:2) {
     if (i == 1) {
-      data(cheating)
+      data(cheating, package = "poLCAParallel")
       dat <- cheating
       f <- cbind(LIEEXAM, LIEPAPER, FRAUD, COPYEXAM) ~ GPA
       cat("========== cheating ==========")
     } else {
-      data(election)
+      data(election, package = "poLCAParallel")
       dat <- election
       f <- cbind(
         MORALG, CARESG, KNOWG, LEADG, DISHONG, INTELG,
@@ -40,7 +41,6 @@ for (nclass in 2:5) {
     cat(paste("==========", nclass, "classes ==========\n"))
 
     # using original code
-    set.seed(0)
     start_time <- Sys.time()
     lca <- poLCA::poLCA(
       f, dat,
@@ -50,7 +50,6 @@ for (nclass in 2:5) {
     units(diff_time_og) <- "secs"
 
     # using parallel code
-    set.seed(0)
     start_time <- Sys.time()
     lca_parallel <- poLCAParallel::poLCA(
       f, dat,

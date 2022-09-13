@@ -10,21 +10,22 @@
 
 nrep <- 32
 n.thread <- 1
+set.seed(999204567)
 
 for (nclass in 2:5) {
   for (i in 1:5) {
     if (i == 1) {
-      data(carcinoma)
+      data(carcinoma, package = "poLCAParallel")
       dat <- carcinoma
       f <- cbind(A, B, C, D, E, F, G) ~ 1
       cat("========== carcinoma ==========")
     } else if (i == 2) {
-      data(cheating)
+      data(cheating, package = "poLCAParallel")
       dat <- cheating
       f <- cbind(LIEEXAM, LIEPAPER, FRAUD, COPYEXAM) ~ 1
       cat("========== cheating ==========")
     } else if (i == 3) {
-      data(election)
+      data(election, package = "poLCAParallel")
       dat <- election
       f <- cbind(
         MORALG, CARESG, KNOWG, LEADG, DISHONG, INTELG,
@@ -32,12 +33,12 @@ for (nclass in 2:5) {
       ) ~ 1
       cat("========== election ==========")
     } else if (i == 4) {
-      data(gss82)
+      data(gss82, package = "poLCAParallel")
       dat <- gss82
       f <- cbind(PURPOSE, ACCURACY, UNDERSTA, COOPERAT) ~ 1
       cat("========== gss82 ==========")
     } else {
-      data(values)
+      data(values, package = "poLCAParallel")
       dat <- values
       f <- cbind(A, B, C, D) ~ 1
       cat("========== values ==========")
@@ -46,7 +47,6 @@ for (nclass in 2:5) {
     cat(paste("==========", nclass, "classes ==========\n"))
 
     # using parallel code
-    set.seed(0)
     start_time <- Sys.time()
     lca_parallel <- poLCAParallel::poLCA(
       f, dat,

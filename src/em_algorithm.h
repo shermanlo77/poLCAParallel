@@ -28,10 +28,30 @@
 namespace polca_parallel {
 
 /**
- * For fitting using EM algorithm for a given initial value
+ * For fitting poLCA using EM algorithm for a given initial value.
  *
- * Member variables are made public for the sake of convenience so that
- * EmAlgorithmArray can access and modify instances of EmAlgorithm
+ * How to use:
+ * <ul>
+ *   <li>
+ *     Pass the data, initial probabilities and other parameters to the
+ *     constructor. Also in the constructor, pass an array to store the
+ *     posterior and prior probabilities (for each cluster) and the estimated
+ *     response probabilities
+ *   </li>
+ *   <li>
+ *     Call optional methods such as set_best_initial_prob(), set_seed()
+ *     and/or set_rng()
+ *   </li>
+ *   <li>
+ *      Call Fit() to fit using the EM algorithm, results are stored in the
+ *      provided arrays. The EM algorithm restarts with random initial values
+ *      should it fail for some reason (more commonly in the regression model)
+ *   </li>
+ *   <li>
+ *     Extract optional results using the methods get_ln_l(), get_n_iter()
+ *     and/or get_has_restarted()
+ *   </li>
+ * </ul>
  */
 class EmAlgorithm {
  protected:
@@ -127,25 +147,27 @@ class EmAlgorithm {
    * if a matrix is singular
    */
   bool has_restarted_ = false;
-  /** Seed for random number generator */
-  unsigned seed_ = std::chrono::system_clock::now().time_since_epoch().count();
+  /** Random number generator for generating new initial values if fail*/
+  std::unique_ptr<std::mt19937_64> rng_;
 
  public:
   /**
-   * Construct a new Em Algorithm object
+   * Construct a new EM algorithm object
    *
    * Please see the description of the member variables for further information.
-   * The following content pointed to shall modified:
+   * The following content pointed to shall be modified:
    * <ul>
    *   <li>posterior</li>
    *   <li>prior</li>
    *   <li>estimated_prob</li>
-   *   <li>regress_coeff</li>
    * </ul>
    *
-   * @param features Design matrix of features, matrix n_data x n_feature
-   * @param responses Design matrix transpose of responses, matrix n_category x
-   * n_data
+   * @param features Not used and ignored
+   * @param responses Design matrix transpose of responses, one based
+   * <ul>
+   *   <li>dim 0: for each data point, length n_data</li>
+   *   <li>dim 1: for each category, length n_category</li>
+   * </ul>
    * @param initial_prob Vector of initial probabilities for each category and
    * responses, flatten list of matrices
    * <ul>
@@ -171,20 +193,21 @@ class EmAlgorithm {
    * </ul>
    * @param prior Design matrix of prior probabilities, probability data point
    * is in cluster m NOT given responses after calculations, it shall be in
-   * matrix form with dimensions <ul> <li>dim 0: for each data</li> <li>dim 1:
-   * for each cluster</li>
+   * matrix form with dimensions
+   * <ul>
+   *   <li>dim 0: for each data</li>
+   *   <li>dim 1: for each cluster</li>
    * </ul>
    * During the start and calculations, it may take on a different form,
    * use the method GetPrior() to get the prior for a data point and cluster
    * @param estimated_prob Vector of estimated response probabilities,
-   * conditioned on cluster, for each category, flatten list of matrices <ul>
+   * conditioned on cluster, for each category, flatten list of matrices
+   * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
    *   <li>dim 2: for each cluster</li>
    * </ul>
-   * @param regress_coeff Vector length n_features_*(n_cluster-1), linear
-   * regression coefficient in matrix form, to be multiplied to the features and
-   * linked to the prior using softmax
+   * @param regress_coeff Not used and ignored
    */
   EmAlgorithm(double* features, int* responses, double* initial_prob,
               int n_data, int n_feature, int n_category, int* n_outcomes,
@@ -235,18 +258,22 @@ class EmAlgorithm {
    */
   bool get_has_restarted();
 
-  /** Set seed for generating new random initial values */
+  /** Set rng using a seed, for generating new random initial values */
   void set_seed(unsigned seed);
+
+  /** Set rng by transferring ownership of an rng to here */
+  void set_rng(std::unique_ptr<std::mt19937_64>* rng);
+
+  /** Transfer ownership of rng back*/
+  std::unique_ptr<std::mt19937_64> move_rng();
 
  protected:
   /**
    * Reset parameters for a re-run
    * Reset the parameters estimated_prob_ with random values
-   * @param rng random number generator
    * @param uniform required to generate random probabilities
    */
-  virtual void Reset(std::mt19937_64* rng,
-                     std::uniform_real_distribution<double>* uniform);
+  virtual void Reset(std::uniform_real_distribution<double>* uniform);
 
   /**
    * Initalise prior probabilities
@@ -340,6 +367,29 @@ class EmAlgorithm {
    */
   void NormalWeightedSumProb(int cluster_index, double normaliser);
 };
+
+/**
+ * Generate random response probabilities
+ *
+ * @param rng random number generator
+ * @param uniform uniform (0, 1)
+ * @param n_outcomes vector length n_category, number of outcomes for each
+ * category
+ * @param sum_outcomes sum of n_outcomes
+ * @param n_category number of categories
+ * @param n_cluster number of clusters
+ * @param prob output, vector of random response probabilities, conditioned on
+ * cluster, for each outcome, category and cluster
+ * <ul>
+ *   <li>dim 0: for each outcome</li>
+ *   <li>dim 1: for each category</li>
+ *   <li>dim 2: for each cluster</li>
+ * </ul>
+ */
+void GenerateNewProb(std::mt19937_64* rng,
+                     std::uniform_real_distribution<double>* uniform,
+                     int* n_outcomes, int sum_outcomes, int n_category,
+                     int n_cluster, double* prob);
 
 }  // namespace polca_parallel
 

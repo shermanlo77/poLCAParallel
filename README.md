@@ -10,6 +10,26 @@ A reimplementation of poLCA
 results and be as similar as possible to the original code but runs faster,
 especially with multiple repetitions by using multiple threads.
 
+## About poLCAParallel
+
+The library poLCAParallel reimplements poLCA and its bootstrap log-likelihood
+ratio test in C++. This was done using
+[Rcpp](https://cran.r-project.org/web/packages/Rcpp) and
+[RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo) which
+allows C++ code to interact with R. Additional notes include:
+
+* The code uses [Armadillo](http://arma.sourceforge.net/) for linear algebra
+* Multiple repetitions are done in parallel using
+  [`<thread>`](https://www.cplusplus.com/reference/thread/) for multi-thread
+  programming and [`<mutex>`](https://www.cplusplus.com/reference/mutex/) to
+  prevent data races
+* Response probabilities are reordered to increase cache efficiency
+* Use of [`std::map`](https://en.cppreference.com/w/cpp/container/map) for the
+  chi-squared calculations
+
+Further reading available on a
+[QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html).
+
 ## About the Original Code
 
 poLCA is a software package for the estimation of latent class models and latent
@@ -43,9 +63,11 @@ class regression models.
 If the recommended installation instructions fail or there are other problems,
 please check the possible following prerequisites are installed:
 
-* R packages:
+* R packages for installing and compiling:
+  * [devtools](https://cran.r-project.org/web/packages/devtools/index.html)
   * [Rcpp](https://cran.r-project.org/web/packages/Rcpp)
   * [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo)
+* Dependent R packages:
   * [MASS](https://cran.r-project.org/web/packages/MASS/index.html)
   * [parallel](https://www.rdocumentation.org/packages/parallel/)
   * [scatterplot3d](https://cran.r-project.org/web/packages/scatterplot3d/)
@@ -105,28 +127,9 @@ below in a terminal
 R CMD INSTALL --preclean --no-multiarch poLCAParallel
 ```
 
-## About poLCAParallel
-
-The library poLCAParallel reimplements poLCA in C++. This was done using
-[Rcpp](https://cran.r-project.org/web/packages/Rcpp) and
-[RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo) which
-allows C++ code to interact with R. Additional notes include:
-
-* The code uses [Armadillo](http://arma.sourceforge.net/) for linear algebra
-* Multiple repetitions are done in parallel using
-  [`<thread>`](https://www.cplusplus.com/reference/thread/) for multi-thread
-  programming and [`<mutex>`](https://www.cplusplus.com/reference/mutex/) to
-  prevent data races
-* Response probabilities are reordered to increase cache efficiency
-* Use of [`std::map`](https://en.cppreference.com/w/cpp/container/map) for the
-  chi-squared calculations
-
-Further reading available on a
-[QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html).
-
 ## Changes from the Orginal Code
 
-R scripts which compares poLCAParallel with poLCA are provided in `exec/`.
+R scripts which compare poLCAParallel with poLCA are provided in `exec/`.
 
 * The stopping condition of the EM algorithm, if the log-likelihood change after
   an iteration of EM is too small, is evaluated after the E step rather than the
@@ -167,10 +170,14 @@ There was an attempt to use the
 Armadillo objects are used sparingly, preferring the use of `double*` when
 handling vectors and matrices.
 
-All generated documents and code shall not be included on the `master` branch.
+All generated documents and codes shall not be included in the `master` branch.
 Instead, they shall be in the `package` branch so that this package can be
 installed using `devtools::install_github("QMUL/poLCAParallel@package")`, yet,
 avoiding duplicated code on the `master` branch.
+
+Semantic versioning is used and tagged. Tags on the `master` branch shall have
+`v` prepended and `-master` appended, eg. `v1.1.0-master`. The corresponding
+tag on the `package` branch shall only have `v` prepended, eg. `v1.1.0`.
 
 ## C++ Source Code Documentation
 
@@ -188,24 +195,30 @@ located in `src/` which can be done by modifying a line in the config file
 INPUT = src/
 ```
 
-Afterwards, running `doxygen` will create documention for the C++ code.
+Afterwards, running `doxygen` will create documentation for the C++ code. The
+configure file can be further configured.
 
 ## Citation
 
-Please consider cititing the corresponding
+Please consider citing the corresponding
 [QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html):
 
 * Lo, S.E. (2022). Speeding up and Parallelising R packages (using Rcpp and C++
   | QMUL ITS Research Blog.
   [[link]](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html)
 
-Users of poLCA are requested to cite the software package as:
+## References
 
+* Dziak, J. J., Lanza, S. T., & Tan, X. (2014). Effect size, statistical power,
+  and sample size requirements for the bootstrap likelihood ratio test in latent
+  class analysis. *Structural Equation Modeling: A Multidisciplinary Journal*,
+  21(4), 534-552.
+  [[link]](https://www.tandfonline.com/doi/full/10.1080/10705511.2014.919819?casa_token=LgaSzKeeB8MAAAAA%3AB80XwZEIkLOIVsD4Gvp6O0gfktOnIqA6dOBBvUZIjjhs-7ilLIZJC_TmxCh8Umh45d0sWez4-em9)
 * Linzer, D.A. & Lewis, J. (2013). poLCA: Polytomous Variable Latent
   Class Analysis. R package version 1.4.
   [[link]](https://github.com/dlinzer/poLCA)
 * Linzer, D.A. & Lewis, J.B. (2011). poLCA: An R package for polytomous
-  cariable latent class analysis. *Journal of Statistical Software*,
+  variable latent class analysis. *Journal of Statistical Software*,
   42(10): 1-29.
   [[link]](http://www.jstatsoft.org/v42/i10)
 

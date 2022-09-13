@@ -27,8 +27,30 @@ namespace polca_parallel {
 
 /**
  * For fitting using EM algorithm for a given initial value, prior probabilities
- * are softmax. Member variables are made public for the sake of convenience so
- * that EmAlgorithmArray can access and modify instances of EmAlgorithm
+ * are softmax functions of the features
+ *
+ * How to use:
+ * <ul>
+ *   <li>
+ *     Pass the data, initial probabilities, and other parameters to the
+ *     constructor. Also in the constructor, pass an array to store the
+ *     posterior and prior probabilities (for each cluster), the estimated
+ *     response probabilities and the estimated regression coefficients
+ *   </li>
+ *   <li>
+ *     Call optional methods such as set_best_initial_prob(), set_seed()
+ *     and/or set_rng()
+ *   </li>
+ *   <li>
+ *      Call Fit() to fit using the EM algorithm, results are stored in the
+ *      provided arrays. The EM algorithm restarts with random initial values
+ *      should it fail for some reason (more commonly in the regression model)
+ *   </li>
+ *   <li>
+ *     Extract optional results using the methods get_ln_l(), get_n_iter()
+ *     and/or get_has_restarted()
+ *   </li>
+ * </ul>
  */
 class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
  private:
@@ -40,7 +62,70 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   double* hessian_;
 
  public:
-  /** @copydoc EmAlgorithmRegress::EmAlgorithm
+  /**
+   * Construct a new EM algorithm regression object
+   *
+   * Please see the description of the member variables for further information.
+   * The following content pointed to shall be modified:
+   * <ul>
+   *   <li>posterior</li>
+   *   <li>prior</li>
+   *   <li>estimated_prob</li>
+   *   <li>regress_coeff</li>
+   * </ul>
+   *
+   * @param features Design matrix of features
+   * <ul>
+   *   <li>dim 0: for each data point, length n_data</li>
+   *   <li>dim 1: for each feature, length n_feature</li>
+   * </ul>
+   * @param responses Design matrix transpose of responses, one based
+   * <ul>
+   *   <li>dim 0: for each data point, length n_data</li>
+   *   <li>dim 1: for each category, length n_category</li>
+   * </ul>
+   * @param initial_prob Vector of initial probabilities for each category and
+   * responses, flatten list of matrices
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   * @param n_data Number of data points
+   * @param n_feature Number of features
+   * @param n_category Number of categories
+   * @param n_outcomes Vector of number of outcomes for each category
+   * @param sum_outcomes Sum of n_outcomes
+   * @param n_cluster Number of clusters to fit
+   * @param max_iter Maximum number of iterations for EM algorithm
+   * @param tolerance Tolerance for difference in log likelihood, used for
+   * stopping condition
+   * @param posterior Design matrix of posterior probabilities (also called
+   * responsibility) probability data point is in cluster m given responses
+   * matrix
+   * <ul>
+   *   <li>dim 0: for each data</li>
+   *   <li>dim 1: for each cluster</li>
+   * </ul>
+   * @param prior Design matrix of prior probabilities, probability data point
+   * is in cluster m NOT given responses after calculations, it shall be in
+   * matrix form with dimensions
+   * <ul>
+   *   <li>dim 0: for each data</li>
+   *   <li>dim 1: for each cluster</li>
+   * </ul>
+   * During the start and calculations, it may take on a different form,
+   * use the method GetPrior() to get the prior for a data point and cluster
+   * @param estimated_prob Vector of estimated response probabilities,
+   * conditioned on cluster, for each category, flatten list of matrices
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   * @param regress_coeff Vector length n_features_*(n_cluster-1), linear
+   * regression coefficient in matrix form, to be multiplied to the features and
+   * linked to the prior using softmax
    */
   EmAlgorithmRegress(double* features, int* responses, double* initial_prob,
                      int n_data, int n_feature, int n_category, int* n_outcomes,
@@ -51,8 +136,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   ~EmAlgorithmRegress() override;
 
  protected:
-  void Reset(std::mt19937_64* rng,
-             std::uniform_real_distribution<double>* uniform) override;
+  void Reset(std::uniform_real_distribution<double>* uniform) override;
 
   void InitPrior() override;
 
