@@ -55,6 +55,12 @@ namespace polca_parallel {
  */
 class EmAlgorithm {
  protected:
+  /**
+   * Use the log sum of probabilities if the number of categories is equal or
+   * greater than this
+   **/
+  static const int N_CATEGORY_LOGSUM;
+
   /** Design matrix of features, matrix n_data x n_feature */
   double* features_;
   /** Design matrix transpose of responses, matrix n_category x n_data */
@@ -302,13 +308,27 @@ class EmAlgorithm {
    * and estimated response probabilities. Modifies the member variables
    * posterior_ and ln_l_array_. Calculations from the E step also provides the
    * elements for ln_l_array_.
-   *
-   * IMPORTANT DEV NOTES: p is iteratively being multiplied, underflow errors
-   * may occur if the number of data points is large, say more than 300
-   * consider summing over log probabilities  rather than multiplying
-   * probabilities
    */
   void EStep();
+
+  /**
+   * Calculate the unnormalize posterior using likelihood multiply by prior.
+   * This is then assigned in posterior_.
+   *
+   * It should be noted in the likelihood calculations, probabilities are
+   * iteratively multiplied. However, to avoid underflow errors, a sum of log
+   * probabilities is done instead if the number of categories is large. It
+   * should be noted a sum of log is slower
+   *
+   * @param data_index
+   * @param cluster_index
+   * @param estimated_prob pointer to estimated probabilities for the
+   * corresponding cluster. This is modified to point to the probabilities for
+   * the next cluster.
+   */
+  void PosteriorUnnormalize(int data_index,
+                              int cluster_index,
+                              double** estimated_prob);
 
   /**
    * Check if the likelihood is invalid
