@@ -21,6 +21,7 @@
 #include <math.h>
 
 #include <chrono>
+#include <memory>
 #include <random>
 
 #include "RcppArmadillo.h"
