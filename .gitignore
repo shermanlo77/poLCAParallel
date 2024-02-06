@@ -9,3 +9,4 @@ src/RcppExports.cpp
 man/*
 html/
 latex/
+*.pdf
