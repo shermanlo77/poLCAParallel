@@ -29,10 +29,10 @@
 namespace polca_parallel {
 
 /**
- * Use the log sum of probabilities if the number of categories is equal or
- * greater than this
+ * When multiplying probabilites together in PosteriorUnnormalize(), use sum of
+ * logs instead when the resulting probability is less than this threshold
  **/
-extern const int N_CATEGORY_SUMLOG;
+extern const int UNDERFLOW_THRESHOLD;
 
 /**
  * For fitting poLCA using EM algorithm for a given initial value.

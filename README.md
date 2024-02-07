@@ -175,9 +175,8 @@ Example use of a bootstrap likelihood ratio test is shown in `exec/3_blrt.R`.
 * When calculating the likelihood, probabilities are iteratively multiplied,
   this is much faster than taking the sum of log probabilities. However to avoid
   underflow errors, the calculation of the likelihood, instead, uses the sum of
-  log probabilities if the number of categories $J$ is 100 or more. See
-  `N_CATEGORY_SUMLOG` and  `PosteriorUnnormalize()` in `src/em_algorithm.*` for
-  the implementation.
+  log probabilities when an underflow is detected. See `PosteriorUnnormalize()`
+  in `src/em_algorithm.*` for the implementation.
 * Multiple Newton steps can be taken instead of a single one.
 
 ## Code Style

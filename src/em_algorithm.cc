@@ -17,7 +17,8 @@
 
 #include "em_algorithm.h"
 
-const int polca_parallel::N_CATEGORY_SUMLOG = 100;
+const int polca_parallel::UNDERFLOW_THRESHOLD =
+  std::numeric_limits<double>::min();
 
 polca_parallel::EmAlgorithm::EmAlgorithm(
     double* features, int* responses, double* initial_prob, int n_data,
@@ -314,23 +315,31 @@ double polca_parallel::PosteriorUnnormalize(
   double posterior;
   int y;  // for getting a response from responses_
 
-  if (n_category < polca_parallel::N_CATEGORY_SUMLOG) {
-    // used for conditioned on cluster m likelihood calculation
-    // for a data point
-    // P(Y^{(i)} | cluster m)
-    double p = 1;
+  bool use_sum_log = false;
 
-    // calculate conditioned on cluster m likelihood
-    for (int j = 0; j < n_category; ++j) {
-      y = responses_i[j];
-      p *= (*estimated_prob)[y - 1];
-      // increment to point to the next category
-      *estimated_prob += n_outcomes[j];
+  // used for conditioned on cluster m likelihood calculation
+  // for a data point
+  // P(Y^{(i)} | cluster m)
+  double p = 1;
+
+  // calculate conditioned on cluster m likelihood
+  for (int j = 0; j < n_category; ++j) {
+    y = responses_i[j];
+    p *= (*estimated_prob)[y - 1];
+    // increment to point to the next category
+    *estimated_prob += n_outcomes[j];
+
+    // check for underflow
+    if (p < polca_parallel::UNDERFLOW_THRESHOLD) {
+      use_sum_log = true;
+      break;
     }
     // posterior = likelihood x prior
     posterior = p * prior;
-  } else {
+  }
 
+  // if underflow occured, use sum of logs instead
+  if (use_sum_log) {
     double ln_p = 0;
     // calculate conditioned on cluster m likelihood
     for (int j = 0; j < n_category; ++j) {
