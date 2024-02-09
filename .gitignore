@@ -7,3 +7,6 @@ src/*.dll
 R/RcppExports.R
 src/RcppExports.cpp
 man/*
+html/
+latex/
+*.pdf

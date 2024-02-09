@@ -2,6 +2,8 @@
 
 ## Polytomous Variable Latent Class Analysis
 
+### With Bootstrap Likelihood Ratio Test
+
 Sherman E. Lo, Queen Mary, University of London
 
 A reimplementation of poLCA
@@ -12,7 +14,7 @@ especially with multiple repetitions by using multiple threads.
 
 ## About poLCAParallel
 
-The library poLCAParallel reimplements poLCA and its bootstrap log-likelihood
+The library poLCAParallel reimplements poLCA and the bootstrap log-likelihood
 ratio test in C++. This was done using
 [Rcpp](https://cran.r-project.org/web/packages/Rcpp) and
 [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo) which
@@ -27,7 +29,7 @@ allows C++ code to interact with R. Additional notes include:
 * Use of [`std::map`](https://en.cppreference.com/w/cpp/container/map) for the
   chi-squared calculations
 
-Further reading available on a
+Further reading is available on a
 [QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html).
 
 ## About the Original Code
@@ -87,49 +89,62 @@ Run the following in R
 devtools::install_github("QMUL/poLCAParallel@package")
 ```
 
+## Installation from Releases
+
+Requires the R packages [Rcpp](https://cran.r-project.org/web/packages/Rcpp),
+[RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo) and
+[scatterplot3d](https://cran.r-project.org/web/packages/scatterplot3d/index.html).
+
+Download the `.tar.gz` file from the releases. Install it using using
+`R CMD INSTALL`, for example
+
+```bash
+R CMD INSTALL --preclean --no-multiarch poLCAParallel-*.*.*.tar.gz
+```
+
 ## Installation using a git clone
 
-Requires the R package
-[devtools](https://www.r-project.org/nosvn/pandoc/devtools.html),
-[Rcpp](https://cran.r-project.org/web/packages/Rcpp),
-[RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo).
-Optionally, creating the documentation requires the R package
+Requires the R packages [Rcpp](https://cran.r-project.org/web/packages/Rcpp) and
+[RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo). The R
+package [devtools](https://www.r-project.org/nosvn/pandoc/devtools.html) is
+recommended. Optionally, creating the documentation requires the R package
 [roxygen2](https://cran.r-project.org/web/packages/roxygen2/index.html).
 
 Git clone this repository.
 
-```console
+```bash
 git clone https://github.com/QMUL/poLCAParallel.git
 ```
 
-In R, run the following so that the package can be compiled correctly
+Run the following so that the package can be compiled correctly
 
-```r
-Rcpp::compileAttributes("poLCAParallel")
+```bash
+R -e "Rcpp::compileAttributes('poLCAParallel')"
 ```
 
 and optionally for the documentation
 
-```r
-devtools::document("poLCAParallel")
+```bash
+R -e "devtools::document('poLCAParallel')"
 ```
 
 Finally
 
-```r
-devtools::install("poLCAParallel")
+```bash
+R -e "devtools::install('poLCAParallel')"
 ```
 
 to install the package. Alternatively, `R CMD INSTALL` can be used as shown
 below in a terminal
 
-```console
+```bash
 R CMD INSTALL --preclean --no-multiarch poLCAParallel
 ```
 
 ## Changes from the Orginal Code
 
 R scripts which compare poLCAParallel with poLCA are provided in `exec/`.
+Example use of a bootstrap likelihood ratio test is shown in `exec/3_blrt.R`.
 
 * The stopping condition of the EM algorithm, if the log-likelihood change after
   an iteration of EM is too small, is evaluated after the E step rather than the
@@ -140,7 +155,7 @@ R scripts which compare poLCAParallel with poLCA are provided in `exec/`.
 * The output `probs.start` are the initial probabilities used to achieve the
   maximum log-likelihood from *any* repetition rather than from the first
   repetition.
-* The output `eflag` is set to `TRUE` if *any* repetition had to be restarted,
+* The output `eflag` is set to `TRUE` if *any* repetition has to be restarted,
   rather than the repetition which achieves maximum log-likelihood.
 * An additional argument `n.thread` is provided to specify the number of threads
   to use.
@@ -152,17 +167,40 @@ R scripts which compare poLCAParallel with poLCA are provided in `exec/`.
 
 ## Further Development Notes
 
-* There are possible problems with implementing the calculations of the standard
-  error. They are discussed [here](inst/note_standard_error.tex).
-* There is a possible underflow error if the number of categories is too large,
-  more than ~300. This is because in the calculation of the log-likelihood, the
-  probabilities from each category are multiplied by each other. If there are
-  $J$ categories, then there are $J$ probabilities to multiply together. This
-  is addressed in commit 85ee419 but reverted. Consider summing over log space
-  instead.
+* The standard errors have not been implemented in C++. This is because there
+  are possible problems with implementing the calculations of the standard
+  error. They are discussed here [[.tex]](inst/note_standard_error.tex)
+  [[.md]](inst/note_standard_error.md). In-built GitHub tools may not render
+  equations correctly.
+* When calculating the likelihood, probabilities are iteratively multiplied,
+  this is much faster than taking the sum of log probabilities. However to avoid
+  underflow errors, the calculation of the likelihood, instead, uses the sum of
+  log probabilities when an underflow is detected. See `PosteriorUnnormalize()`
+  in `src/em_algorithm.*` for the implementation.
 * Multiple Newton steps can be taken instead of a single one.
 
 ## Code Style
+
+All generated documents and codes, eg from
+
+```bash
+R -e "Rcpp::compileAttributes('poLCAParallel')"
+```
+
+and
+
+```bash
+R -e "devtools::document('poLCAParallel')"
+```
+
+shall not be included in the `master` branch. Instead, they shall be in the
+`package` branch so that this package can be installed using
+`devtools::install_github("QMUL/poLCAParallel@package")`. This is to avoid
+having duplicate documentation and generated code on the `master` branch.
+
+Semantic versioning is used and tagged. Tags on the `master` branch shall have
+`v` prepended and `-master` appended, eg. `v1.1.0-master`. The corresponding
+tag on the `package` branch shall only have `v` prepended, eg. `v1.1.0`.
 
 There was an attempt to use the
 [Google C++ style guide](https://google.github.io/styleguide/cppguide.html).
@@ -170,42 +208,34 @@ There was an attempt to use the
 Armadillo objects are used sparingly, preferring the use of `double*` when
 handling vectors and matrices.
 
-All generated documents and codes shall not be included in the `master` branch.
-Instead, they shall be in the `package` branch so that this package can be
-installed using `devtools::install_github("QMUL/poLCAParallel@package")`, yet,
-avoiding duplicated code on the `master` branch.
-
-Semantic versioning is used and tagged. Tags on the `master` branch shall have
-`v` prepended and `-master` appended, eg. `v1.1.0-master`. The corresponding
-tag on the `package` branch shall only have `v` prepended, eg. `v1.1.0`.
-
 ## C++ Source Code Documentation
 
-The C++ code is compatible with [Doxygen](https://doxygen.nl/) by running
+The C++ code documentation can be created with [Doxygen](https://doxygen.nl/)
+by running
 
 ```console
-doxygen -g
+doxygen
 ```
 
-to create a config file `Doxyfile`. Doxygen needs to know the source code is
-located in `src/` which can be done by modifying a line in the config file
-`Doxyfile`
-
-```console
-INPUT = src/
-```
-
-Afterwards, running `doxygen` will create documentation for the C++ code. The
-configure file can be further configured.
+and viewed at `html/index.html`.
 
 ## Citation
 
 Please consider citing the corresponding
-[QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html):
+[QMUL ITS Research Blog](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html)
 
-* Lo, S.E. (2022). Speeding up and Parallelising R packages (using Rcpp and C++
+* Lo, S.E. (2022). Speeding up and Parallelising R packages (using Rcpp and C++)
   | QMUL ITS Research Blog.
   [[link]](https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html)
+
+and the publication below which this software was originally created for
+
+* Eto F, Samuel M, Henkin R, Mahesh M, Ahmad T, et al. (2023). Ethnic
+  differences in early onset multimorbidity and associations with health service
+  use, long-term prescribing, years of life lost, and mortality: A
+  cross-sectional study using clustering in the UK Clinical Practice Research
+  Datalink. *PLOS Medicine,* 20(10): e1004300.
+  <https://doi.org/10.1371/journal.pmed.1004300>
 
 ## References
 

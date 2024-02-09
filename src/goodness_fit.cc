@@ -56,18 +56,12 @@ void polca_parallel::GetExpected(
 
     total_p = 0.0;  // to be summed over all clusters
     outcome_prob_ptr = outcome_prob;
+
     // iterate through each cluster
     for (int m = 0; m < n_cluster; ++m) {
-      // calculate likelihood conditioned on cluster m
-      p = 1;
-      for (int j = 0; j < n_category; ++j) {
-        n_outcome = n_outcomes[j];
-        y = response_i[j];
-        p *= outcome_prob_ptr[y - 1];
-        // increment to point to the next category
-        outcome_prob_ptr += n_outcome;
-      }
-      p *= prior[m];
+      p = polca_parallel::PosteriorUnnormalize(
+          response_i.data(), n_category, n_outcomes, &outcome_prob_ptr,
+          prior[m]);
       total_p += p;
     }
 

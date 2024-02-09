@@ -27,6 +27,8 @@
 
 #include "RcppArmadillo.h"
 
+#include "em_algorithm.h"
+
 namespace polca_parallel {
 
 /**

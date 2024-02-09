@@ -21,11 +21,18 @@
 #include <math.h>
 
 #include <chrono>
+#include <memory>
 #include <random>
 
 #include "RcppArmadillo.h"
 
 namespace polca_parallel {
+
+/**
+ * When multiplying probabilites together in PosteriorUnnormalize(), use sum of
+ * logs instead when the resulting probability is less than this threshold
+ **/
+extern const int UNDERFLOW_THRESHOLD;
 
 /**
  * For fitting poLCA using EM algorithm for a given initial value.
@@ -302,13 +309,22 @@ class EmAlgorithm {
    * and estimated response probabilities. Modifies the member variables
    * posterior_ and ln_l_array_. Calculations from the E step also provides the
    * elements for ln_l_array_.
-   *
-   * IMPORTANT DEV NOTES: p is iteratively being multiplied, underflow errors
-   * may occur if the number of data points is large, say more than 300
-   * consider summing over log probabilities  rather than multiplying
-   * probabilities
    */
   void EStep();
+
+  /**
+   * Calculate the unnormalize posterior using likelihood multiply by prior.
+   * This is then assigned in posterior_.
+   *
+   * @param data_index
+   * @param cluster_index
+   * @param estimated_prob pointer to estimated probabilities for the
+   * corresponding cluster. This is modified to point to the probabilities for
+   * the next cluster.
+   */
+  void PosteriorUnnormalize(int data_index,
+                              int cluster_index,
+                              double** estimated_prob);
 
   /**
    * Check if the likelihood is invalid
@@ -367,6 +383,30 @@ class EmAlgorithm {
    */
   void NormalWeightedSumProb(int cluster_index, double normaliser);
 };
+
+/**
+ * Calculates and returns the unnormalize posterior using likelihood multiply by
+ * prior.
+ *
+ * It should be noted in the likelihood calculations, probabilities are
+ * iteratively multiplied. However, to avoid underflow errors, a sum of log
+ * probabilities is done instead if the number of categories is large. It
+ * should be noted a sum of log is slower
+ *
+ * @param responses_i the responses for a given data point
+ * @param n_catgeory
+ * @param n_outcomes
+ * @param estimated_prob pointer to estimated probabilities for the
+ * corresponding cluster. This is modified to point to the probabilities for
+ * the next cluster.
+ * @param prior the prior for this data point and cluster
+ * @return double the unnormalise posterior for this datap oint and cluster
+ */
+double PosteriorUnnormalize(int* responses_i,
+                            int n_category,
+                            int* n_outcomes,
+                            double** estimated_prob,
+                            double prior);
 
 /**
  * Generate random response probabilities

@@ -17,6 +17,9 @@
 
 #include "em_algorithm.h"
 
+const int polca_parallel::UNDERFLOW_THRESHOLD =
+  std::numeric_limits<double>::min();
+
 polca_parallel::EmAlgorithm::EmAlgorithm(
     double* features, int* responses, double* initial_prob, int n_data,
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
@@ -192,19 +195,9 @@ double polca_parallel::EmAlgorithm::GetPrior(int data_index,
 
 void polca_parallel::EmAlgorithm::EStep() {
   double* estimated_prob;  // for pointing to elements in estimated_prob_
-  int n_outcome;  // number of outcomes while iterating through categories
-  // used for conditioned on cluster m likelihood calculation
-  // for a data point
-  // P(Y^{(i)} | cluster m)
-  double p;
   // used for likelihood calculation for a data point
   // P(Y^{(i)})
   double normaliser;
-  // used for calculating posterior probability, conditioned on a cluster m,
-  // for a data point
-  // P(cluster m | Y^{(i)})
-  double posterior_iter;
-  int y;  // for getting a response from responses_
 
   for (int i = 0; i < this->n_data_; ++i) {
     // normaliser noramlise over cluster, so loop over cluster here
@@ -212,19 +205,8 @@ void polca_parallel::EmAlgorithm::EStep() {
 
     estimated_prob = this->estimated_prob_;
     for (int m = 0; m < this->n_cluster_; ++m) {
-      // calculate conditioned on cluster m likelihood
-      p = 1.0;
-      for (int j = 0; j < this->n_category_; ++j) {
-        n_outcome = this->n_outcomes_[j];
-        y = this->responses_[i * this->n_category_ + j];
-        p *= estimated_prob[y - 1];
-        // increment to point to the next category
-        estimated_prob += n_outcome;
-      }
-      // posterior = likelihood x prior
-      posterior_iter = p * this->GetPrior(i, m);
-      this->posterior_[m * this->n_data_ + i] = posterior_iter;
-      normaliser += posterior_iter;
+      this->PosteriorUnnormalize(i, m, &estimated_prob);
+      normaliser += this->posterior_[m * this->n_data_ + i];
     }
     // normalise
     for (int m = 0; m < this->n_cluster_; ++m) {
@@ -233,6 +215,15 @@ void polca_parallel::EmAlgorithm::EStep() {
     // store the log likelihood for this data point
     this->ln_l_array_[i] = log(normaliser);
   }
+}
+
+void polca_parallel::EmAlgorithm::PosteriorUnnormalize(
+    int data_index, int cluster_index, double** estimated_prob) {
+  int* responses_i = this->responses_ + (data_index * this->n_category_);
+  double prior = this->GetPrior(data_index, cluster_index);
+  double posterior = polca_parallel::PosteriorUnnormalize(
+      responses_i, this->n_category_, this->n_outcomes_, estimated_prob, prior);
+  this->posterior_[cluster_index * this->n_data_ + data_index] = posterior;
 }
 
 bool polca_parallel::EmAlgorithm::IsInvalidLikelihood(double ln_l_difference) {
@@ -312,6 +303,56 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(int cluster_index,
     }
     estimated_prob += n_outcome;
   }
+}
+
+double polca_parallel::PosteriorUnnormalize(
+    int* responses_i, int n_category,
+    int* n_outcomes, double** estimated_prob, double prior) {
+
+  // used for calculating posterior probability, conditioned on a cluster m,
+  // for a data point
+  // P(cluster m | Y^{(i)})
+  double posterior;
+  int y;  // for getting a response from responses_
+
+  bool use_sum_log = false;
+
+  // used for conditioned on cluster m likelihood calculation
+  // for a data point
+  // P(Y^{(i)} | cluster m)
+  double p = 1;
+
+  // calculate conditioned on cluster m likelihood
+  for (int j = 0; j < n_category; ++j) {
+    y = responses_i[j];
+    p *= (*estimated_prob)[y - 1];
+    // increment to point to the next category
+    *estimated_prob += n_outcomes[j];
+
+    // check for underflow
+    if (p < polca_parallel::UNDERFLOW_THRESHOLD) {
+      use_sum_log = true;
+      break;
+    }
+    // posterior = likelihood x prior
+    posterior = p * prior;
+  }
+
+  // if underflow occured, use sum of logs instead
+  if (use_sum_log) {
+    double ln_p = 0;
+    // calculate conditioned on cluster m likelihood
+    for (int j = 0; j < n_category; ++j) {
+      y = responses_i[j];
+      ln_p += log((*estimated_prob)[y - 1]);
+      // increment to point to the next category
+      *estimated_prob += n_outcomes[j];
+    }
+    posterior = ln_p + log(prior);
+    posterior = exp(posterior);
+  }
+
+  return posterior;
 }
 
 void polca_parallel::GenerateNewProb(

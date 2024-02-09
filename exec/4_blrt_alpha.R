@@ -1,18 +1,9 @@
-# Example script on doing bootstrap likelihood ratio test using poLCAParallel
+# Example script on doing BLRT not using poLCAParallel::blrt()
 #
-# For $R$ classes, bootstrap likelihood ratio test (BLRT) fits the null model
-# using $R-1$ classes and an alt model using $R$ classes, producing a likelihood
-# ratio. Using the fitted null and alt models, a parametric bootstrap can be
-# done to get an empirical distribution of the likelihood ratio.
+# Reimplements 3_blrt.R but without using poLCAParallel::blrt(). Thus this
+# script and 3_blrt.R should produce similar results as a verification.
 #
-# To do model selection, select the highest $R$ where the fitted log likelihood
-# ratio is on the 95% percentile or higher of the empirical (bootstrap)
-# distribution of log likelihood ratios, eg p-value less than 5%. Thus this
-# script should be run for a different number of classes, eg using an array job.
-#
-# The code uses poLCAParallel::blrt() to do BLRT. It records all bootstrap
-# samples log likelihood ratios, which are plotted. Figures are saved in the
-# current directory
+# Even though this is a multi-core process, this is slower than 3_blrt.R
 
 nrep <- 32 # number of different initial values
 n_class_max <- 10 # maximum number of classes to investigate
@@ -55,22 +46,64 @@ for (nclass in 2:n_class_max) {
   alt_model <- model_array[[nclass]]
 
   # for each bootstrap sample, store the log likelihood ratio here
-  bootstrap_results <- poLCAParallel::blrt(
-    null_model, alt_model, n_bootstrap, nrep
-  )
+  bootstrap_log_likelihood_ratio <- c()
+
+  # for each bootstrap sample
+  for (b in seq_len(n_bootstrap)) {
+    # get a bootstrap sample
+
+    # make a copy from the original data
+    # because polca will automatically remove columns containing all the same
+    # values
+    # the bootstrap samples should preserve the columns name for consistency
+    data_bootstrap <- data_og
+
+    # do a parametric bootstrap
+    # data_bootstrap_some_columns may be missing columns as explained above
+    data_bootstrap_some_columns <- poLCAParallel::poLCA.simdata(
+      null_model$Nobs, null_model$probs, P=null_model$P
+    )$dat
+    colnames(data_bootstrap_some_columns) <- colnames(null_model$y)
+
+    # replace the original data with bootstrap values
+    data_bootstrap[colnames(null_model$y)] <- data_bootstrap_some_columns
+
+    # fit the null model onto the bootstrap sample
+    null_model_bootstrap <- poLCAParallel::poLCA(
+      formula, data_bootstrap,
+      nclass = nclass - 1, nrep = nrep, verbose = FALSE
+    )
+
+    # fit the alt model onto the bootstrap sample
+    alt_model_bootstrap <- poLCAParallel::poLCA(
+      formula, data_bootstrap,
+      nclass = nclass, nrep = nrep, verbose = FALSE
+    )
+
+    # record the log likelihood ratio when using this bootstrap sample
+    # this compares the fitted null and alt model
+    bootstrap_log_likelihood_ratio <- c(
+      bootstrap_log_likelihood_ratio,
+      2 * alt_model_bootstrap$llik - 2 * null_model_bootstrap$llik
+    )
+
+  }
 
   # log likelihood ratio to compare the two models
-  fitted_log_ratio_array[nclass] <- bootstrap_results[["fitted_log_ratio"]]
+  log_likelihood_ratio <- 2 * alt_model$llik - 2 * null_model$llik
+  fitted_log_ratio_array[nclass] <- log_likelihood_ratio
   # store the log likelihoods ratios for all bootstrap samples
-  bootstrap_log_ratio_array[[nclass]] <-
-    bootstrap_results[["bootstrap_log_ratio"]]
+  bootstrap_log_ratio_array[[nclass]] <- bootstrap_log_likelihood_ratio
+  # calculate the p value using all bootstrap values for this nclass
+  p <- sum(bootstrap_log_likelihood_ratio > log_likelihood_ratio) / n_bootstrap
   # store the p value for this nclass
-  p_value_array <- c(p_value_array, bootstrap_results[["p_value"]])
+  p_value_array <- c(p_value_array, p)
+
 }
 
 # plot the bootstrap distribution of the log likelihood ratios for each class
 # the red line shows the log likelihood ratio using the real data
-pdf("3_blrt_llik.pdf")
+pdf("4_blrt_alpha_llik.pdf")
 boxplot(bootstrap_log_ratio_array,
   xlab = "number of classses", ylab = "log likelihood ratio"
 )
@@ -92,7 +125,7 @@ lines(1:n_class_max, fitted_log_ratio_array,
 #     uniform distribution, so for a class number too high, it should fluctuate
 #     randomly between 0 and 1
 # the solid line is at 5%
-pdf("3_blrt_p_values.pdf")
+pdf("4_blrt_alpha_p_values.pdf")
 barplot(p_value_array,
   xlab = "number of classes", ylab = "p-value",
   names.arg = 1:n_class_max
