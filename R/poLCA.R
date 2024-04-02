@@ -138,6 +138,7 @@
 #'     function basic latent class model, or the mean of the priors in the
 #'     latent class regression model.
 #'   * P.se: the standard errors of the estimated `P`.
+#'   * prior: matrix of prior class membership probabilities
 #'   * posterior: matrix of posterior class membership probabilities; also see
 #'     function 'poLCA.posterior'.
 #'   * predclass: vector of predicted class memberships, by modal assignment.
@@ -421,6 +422,8 @@ poLCA <- function(formula,
         ret$probs.se <- se$probs
         # standard errors of class population shares
         ret$P.se <- se$P
+        # NxR matrix of prior class membership probabilities
+        ret$prior <- prior
         # NxR matrix of posterior class membership probabilities
         ret$posterior <- rgivy
         # Nx1 vector of predicted class memberships, by modal assignment
