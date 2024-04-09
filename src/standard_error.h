@@ -99,6 +99,9 @@ class StandardError {
   /**
    * Construct a new StandardError object
    *
+   * Call Calc() and the resulting errors will be saved to prior_error and
+   * prob_error
+   *
    * @param features Design matrix of features, matrix n_data x n_feature
    * @param responses Design matrix transpose of responses, matrix n_category x
    * n_data
@@ -124,7 +127,7 @@ class StandardError {
    *   <li>dim 1: for each cluster</li>
    * </ul>
    * @param n_data Number of data points
-   * @param n_feature Number of features
+   * @param n_feature Number of features, required to be 1
    * @param n_category Number of categories
    * @param n_outcomes Array of number of outcomes, for each category
    * @param sum_outcomes Sum of all integers in n_outcomes
@@ -139,7 +142,7 @@ class StandardError {
    *   <li>dim 1: for each category</li>
    *   <li>dim 2: for each cluster</li>
    * </ul>
-   * @param regress_coeff_error Covariance matrix of the regression coefficient
+   * @param regress_coeff_error Not used
    */
   StandardError(double* features, int* responses, double* probs, double* prior,
                 double* posterior, int n_data, int n_feature, int n_category,
@@ -153,7 +156,7 @@ class StandardError {
    * Calculate the standard errors. Results are saved in the provided pointers
    * prior_error, prob_error and regress_coeff_error
    */
-  void Calc();
+  virtual void Calc();
 
  protected:
   /**
@@ -186,7 +189,7 @@ class StandardError {
    * @param score MODIFIED where to save the results, modified so that *score is
    * shifited by n_data * (n_cluster - 1), ready for the next set of scores
    */
-  void CalcScorePrior(double** score);
+  virtual void CalcScorePrior(double** score);
 
   /**
    * Calculate the scores for the prior
@@ -245,7 +248,7 @@ class StandardError {
    * *jacobian_ptr is modified so that it points to the start of the next block
    * matrix after calling this method
    */
-  void CalcJacobianPrior(double** jacobian_ptr);
+  virtual void CalcJacobianPrior(double** jacobian_ptr);
 
   /**
    * Calculate all block matrices for the probabilities in the Jacobian matrix
@@ -295,7 +298,7 @@ class StandardError {
    * @param info the information matrix
    * @param jacobian the jacobian matrix
    */
-  void ExtractErrorGiveInfoInv(double* info_inv, double* jacobian);
+  virtual void ExtractErrorGiveInfoInv(double* info_inv, double* jacobian);
 
   /**
    * Extract errors for the prior from a section of the covariance matrix
