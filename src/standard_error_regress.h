@@ -48,7 +48,7 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    *   <li>dim 1: for each cluster</li>
    * </ul>
    * @param posterior Design matrix of posterior probabilities (also called
-   * responsibility) probability data point is in cluster m given responses
+   * responsibility), probability data point is in cluster m given responses
    * matrix
    * <ul>
    *   <li>dim 0: for each data</li>
@@ -60,17 +60,18 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    * @param n_outcomes Array of number of outcomes, for each category
    * @param sum_outcomes Sum of all integers in n_outcomes
    * @param n_cluster Number of clusters fitted
-   * @param prior_error Vector containing the standard error for the prior
-   * probabilities for each cluster
-   * @param prob_error Vector containing the standard error for the outcome
-   * probabilities category and cluster,
+   * @param prior_error Vector to contain the standard error for the prior
+   * probabilities for each cluster, modified after calling Calc()
+   * @param prob_error Vector to contain the standard error for the outcome
+   * probabilities category and cluster, modified after calling Calc()
    * flatten list of matrices
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
    *   <li>dim 2: for each cluster</li>
    * </ul>
-   * @param regress_coeff_error Covariance matrix of the regression coefficient
+   * @param regress_coeff_error Matrix to contain the covariance matrix of the
+   * regression coefficient, modified after calling Calc()
    */
   StandardErrorRegress(double* features, int* responses, double* probs,
                        double* prior, double* posterior, int n_data,
@@ -81,7 +82,7 @@ class StandardErrorRegress : public polca_parallel::StandardError {
  protected:
   void CalcScorePrior(double** score_start) override;
   void CalcJacobianPrior(double** jacobian_ptr) override;
-  void ExtractErrorGiveInfoInv(double* info_inv, double* jacobian) override;
+  void ExtractErrorGivenInfoInv(double* info_inv, double* jacobian) override;
 };
 
 }  // namespace polca_parallel

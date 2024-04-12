@@ -28,20 +28,19 @@ polca_parallel::StandardErrorRegress::StandardErrorRegress(
           prob_error, regress_coeff_error) {}
 
 void polca_parallel::StandardErrorRegress::CalcScorePrior(double** score) {
-  double* feature;
-  double score_prior[this->n_data_];
+  arma::Mat<double> features_arma(this->features_, this->n_data_,
+                                  this->n_feature_, false);
   for (int cluster_index = 1; cluster_index < this->n_cluster_;
        ++cluster_index) {
-    this->CalcScorePriorCol(cluster_index, score_prior);
-    feature = this->features_;
-    for (int feature_index = 0; feature_index < this->n_feature_;
-         ++feature_index) {
-      for (int data_index = 0; data_index < this->n_data_; ++data_index) {
-        **score = *feature * score_prior[data_index];
-        ++(*score);
-        ++feature;
-      }
-    }
+    arma::Mat<double> score_i_arma(*score, this->n_data_, this->n_feature_,
+                                   false, true);
+    arma::Col<double> prior_i_arma(this->prior_ + cluster_index * this->n_data_,
+                                   this->n_data_, false);
+    arma::Col<double> posterior_i_arma(
+        this->posterior_ + cluster_index * this->n_data_, this->n_data_, false);
+
+    score_i_arma = features_arma.each_col() % (posterior_i_arma - prior_i_arma);
+    *score += this->n_data_ * this->n_feature_;
   }
 }
 
@@ -76,7 +75,7 @@ void polca_parallel::StandardErrorRegress::CalcJacobianPrior(
   *jacobian_ptr += (this->n_cluster_ - 1) * this->n_feature_;
 }
 
-void polca_parallel::StandardErrorRegress::ExtractErrorGiveInfoInv(
+void polca_parallel::StandardErrorRegress::ExtractErrorGivenInfoInv(
     double* info_inv, double* jacobian) {
   int size = this->n_feature_ * (this->n_cluster_ - 1);
   arma::Mat<double> info_arma(info_inv, this->info_size_, this->info_size_,
@@ -84,6 +83,6 @@ void polca_parallel::StandardErrorRegress::ExtractErrorGiveInfoInv(
   arma::Mat<double> regress_coeff_error(this->regress_coeff_error_, size, size,
                                         false, true);
   regress_coeff_error = info_arma.submat(0, 0, size - 1, size - 1);
-  this->polca_parallel::StandardError::ExtractErrorGiveInfoInv(info_inv,
-                                                               jacobian);
+  this->polca_parallel::StandardError::ExtractErrorGivenInfoInv(info_inv,
+                                                                jacobian);
 }
