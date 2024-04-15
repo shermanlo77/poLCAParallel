@@ -223,6 +223,17 @@ poLCA <- function(formula,
                   calc.se = TRUE,
                   calc.chisq = TRUE,
                   n.thread = parallel::detectCores()) {
+
+    # nclass == 1 will use original code
+    # poLCAParallel edits the original code for the nclass > 1 case
+    if (nclass == 1) {
+        cat("\n ALERT: For nclass = 1, using the original poLCA code. \n\n")
+        return(poLCA::poLCA(
+            formula, data, nclass, maxiter, graphs, tol, na.rm,
+            probs.start, nrep, verbose, calc.se
+        ))
+    }
+
     starttime <- Sys.time()
     mframe <- model.frame(formula, data, na.action = NULL)
     mf <- model.response(mframe)
@@ -256,196 +267,158 @@ poLCA <- function(formula,
     probs.start.ok <- TRUE
     ret <- list() # list of items to return
 
-    # nclass == 1 will use original code
-    # poLCAParallel edits the orginial code for the nclass > 1 case
-    if (R == 1) {
-        ret$probs <- list()
-        for (j in 1:J) {
-            ret$probs[[j]] <- matrix(NA, nrow = 1, ncol = K.j[j])
-            for (k in 1:K.j[j]) {
-                ret$probs[[j]][k] <- sum(y[, j] == k) / sum(y[, j] > 0)
-            }
-        }
-        ret$probs.start <- ret$probs
-        ret$P <- 1
-        prior <- matrix(1, nrow = N, ncol = 1)
-        ret$predclass <- prior
-        ret$posterior <- ret$predclass
-        ret$llik <- sum(log(poLCA.ylik.C(poLCA.vectorize(ret$probs), y)))
-        if (calc.se) {
-            se <- poLCA.se(y, x, ret$probs, prior, ret$posterior)
-            # standard errors of class-conditional response probabilities
-            ret$probs.se <- se$probs
-            # standard errors of class population shares
-            ret$P.se <- se$P
+    # error checking on user-inputted probs.start
+    if (!is.null(probs.start)) {
+        if ((length(probs.start) != J) | (!is.list(probs.start))) {
+            probs.start.ok <- FALSE
         } else {
-            ret$probs.se <- NA
-            ret$P.se <- NA
-        }
-        ret$numiter <- 1
-        ret$probs.start.ok <- TRUE
-        ret$coeff <- NA
-        ret$coeff.se <- NA
-        ret$coeff.V <- NA
-        ret$eflag <- FALSE
-        if (S > 1) {
-            cat("\n ALERT: covariates not allowed when nclass=1;
-                 will be ignored. \n \n")
-            S <- 1
-        }
-    } else {
-        # error checking on user-inputted probs.start
-        if (!is.null(probs.start)) {
-            if ((length(probs.start) != J) | (!is.list(probs.start))) {
+            if (sum(sapply(probs.start, dim)[1, ] == R) != J) {
                 probs.start.ok <- FALSE
-            } else {
-                if (sum(sapply(probs.start, dim)[1, ] == R) != J) {
-                    probs.start.ok <- FALSE
-                }
-                if (sum(sapply(probs.start, dim)[2, ] == K.j) != J) {
-                    probs.start.ok <- FALSE
-                }
-                if (sum(round(sapply(probs.start, rowSums), 4) == 1)
-                != (R * J)) {
-                    probs.start.ok <- FALSE
-                }
+            }
+            if (sum(sapply(probs.start, dim)[2, ] == K.j) != J) {
+                probs.start.ok <- FALSE
+            }
+            if (sum(round(sapply(probs.start, rowSums), 4) == 1)
+            != (R * J)) {
+                probs.start.ok <- FALSE
             }
         }
+    }
 
-        # perpare initial values
-        initial_prob <- list()
-        initial_prob_vector <- c()
-        irep <- 1
+    # perpare initial values
+    initial_prob <- list()
+    initial_prob_vector <- c()
+    irep <- 1
 
-        # see if can use user provided probs.start
-        if (probs.start.ok & !is.null(probs.start)) {
-            initial_prob[[1]] <- poLCAParallel.vectorize(probs.start)
+    # see if can use user provided probs.start
+    if (probs.start.ok & !is.null(probs.start)) {
+        initial_prob[[1]] <- poLCAParallel.vectorize(probs.start)
+        initial_prob_vector <- c(
+            initial_prob_vector,
+            initial_prob[[1]]$vecprobs
+        )
+        irep <- irep + 1
+    }
+
+    # then generate random probabilities
+    if (nrep > 1 | irep == 1) {
+        for (repl in irep:nrep) {
+            probs <- list()
+            for (j in 1:J) {
+                probs[[j]] <- matrix(
+                    runif(R * K.j[j]),
+                    nrow = R, ncol = K.j[j]
+                )
+                probs[[j]] <- probs[[j]] / rowSums(probs[[j]])
+            }
+            initial_prob[[repl]] <- poLCAParallel.vectorize(probs)
             initial_prob_vector <- c(
                 initial_prob_vector,
-                initial_prob[[1]]$vecprobs
-            )
-            irep <- irep + 1
-        }
-
-        # then generate random probabilities
-        if (nrep > 1 | irep == 1) {
-            for (repl in irep:nrep) {
-                probs <- list()
-                for (j in 1:J) {
-                    probs[[j]] <- matrix(
-                        runif(R * K.j[j]),
-                        nrow = R, ncol = K.j[j]
-                    )
-                    probs[[j]] <- probs[[j]] / rowSums(probs[[j]])
-                }
-                initial_prob[[repl]] <- poLCAParallel.vectorize(probs)
-                initial_prob_vector <- c(
-                    initial_prob_vector,
-                    initial_prob[[repl]]$vecprobs
-                )
-            }
-        }
-
-        # random seed required to generate new initial values when needed
-        seed <- sample.int(
-            as.integer(.Machine$integer.max), 5,
-            replace = TRUE
-        )
-        # run C++ code here, extract results
-        em_results <- EmAlgorithmRcpp(
-            x,
-            t(y),
-            initial_prob_vector,
-            N,
-            S,
-            J,
-            K.j,
-            R,
-            nrep,
-            n.thread,
-            maxiter,
-            tol,
-            seed
-        )
-        rgivy <- em_results[[1]]
-        prior <- em_results[[2]]
-        estimated_prob <- em_results[[3]]
-        b <- em_results[[4]]
-        ret$attempts <- em_results[[5]]
-        best_rep_index <- em_results[[6]]
-        numiter <- em_results[[7]]
-        best_initial_prob <- em_results[[8]]
-        eflag <- em_results[[9]]
-
-        llik <- ret$attempts[best_rep_index]
-
-        # copy initial_prob[[1]] as it can be used as a parameter for
-        # poLCAParallel.unvectorize(vp)
-        # replace $vecprobs with the estimate probabilities
-        vp <- initial_prob[[1]]
-        vp$vecprobs <- estimated_prob
-
-        ret$probs.start <- initial_prob[[1]]
-        ret$probs.start$vecprobs <- best_initial_prob
-
-        # calculate standard error
-        if (calc.se) {
-            se <- poLCA.se(
-                y, x, poLCAParallel.unvectorize(vp),
-                prior, rgivy
-            )
-            rownames(se$b) <- colnames(x)
-        } else {
-            se <- list(
-                probs = NA, P = NA, b = matrix(nrow = S, ncol = R - 1),
-                var.b = NA
+                initial_prob[[repl]]$vecprobs
             )
         }
-
-        # labelling b
-        if (S > 1) {
-            b <- matrix(b, nrow = S)
-            rownames(b) <- colnames(x)
-        } else {
-            b <- NA
-            se$b <- NA
-            se$var.b <- NA
-        }
-
-        # maximum value of the log-likelihood
-        ret$llik <- llik
-        # starting values of class-conditional response probabilities
-        ret$probs.start <- poLCAParallel.unvectorize(ret$probs.start)
-        # estimated class-conditional response probabilities
-        ret$probs <- poLCAParallel.unvectorize(vp)
-        # standard errors of class-conditional response probabilities
-        ret$probs.se <- se$probs
-        # standard errors of class population shares
-        ret$P.se <- se$P
-        # NxR matrix of prior class membership probabilities
-        ret$prior <- prior
-        # NxR matrix of posterior class membership probabilities
-        ret$posterior <- rgivy
-        # Nx1 vector of predicted class memberships, by modal assignment
-        ret$predclass <- apply(ret$posterior, 1, which.max)
-        # estimated class population shares
-        ret$P <- colMeans(ret$posterior)
-        # number of iterations until reaching convergence
-        ret$numiter <- numiter
-        # if starting probs specified, logical indicating proper entry
-        # format
-        ret$probs.start.ok <- probs.start.ok
-
-        ret$coeff <- b # coefficient estimates (when estimated)
-        # standard errors of coefficient estimates (when estimated)
-        ret$coeff.se <- se$b
-        # covariance matrix of coefficient estimates (when estimated)
-        ret$coeff.V <- se$var.b
-
-        # error flag, true if estimation algorithm ever needed to restart
-        # with new initial values
-        ret$eflag <- eflag
     }
+
+    # random seed required to generate new initial values when needed
+    seed <- sample.int(
+        as.integer(.Machine$integer.max), 5,
+        replace = TRUE
+    )
+    # run C++ code here, extract results
+    em_results <- EmAlgorithmRcpp(
+        x,
+        t(y),
+        initial_prob_vector,
+        N,
+        S,
+        J,
+        K.j,
+        R,
+        nrep,
+        n.thread,
+        maxiter,
+        tol,
+        seed
+    )
+    rgivy <- em_results[[1]]
+    prior <- em_results[[2]]
+    estimated_prob <- em_results[[3]]
+    b <- em_results[[4]]
+    ret$attempts <- em_results[[5]]
+    best_rep_index <- em_results[[6]]
+    numiter <- em_results[[7]]
+    best_initial_prob <- em_results[[8]]
+    eflag <- em_results[[9]]
+
+    llik <- ret$attempts[best_rep_index]
+
+    # copy initial_prob[[1]] as it can be used as a parameter for
+    # poLCAParallel.unvectorize(vp)
+    # replace $vecprobs with the estimate probabilities
+    vp <- initial_prob[[1]]
+    vp$vecprobs <- estimated_prob
+
+    ret$probs.start <- initial_prob[[1]]
+    ret$probs.start$vecprobs <- best_initial_prob
+
+    # calculate standard error
+    if (calc.se) {
+        se <- poLCA.se(
+            y, x, poLCAParallel.unvectorize(vp),
+            prior, rgivy
+        )
+        rownames(se$b) <- colnames(x)
+    } else {
+        se <- list(
+            probs = NA, P = NA, b = matrix(nrow = S, ncol = R - 1),
+            var.b = NA
+        )
+    }
+
+    # labelling b
+    if (S > 1) {
+        b <- matrix(b, nrow = S)
+        rownames(b) <- colnames(x)
+    } else {
+        b <- NA
+        se$b <- NA
+        se$var.b <- NA
+    }
+
+    # maximum value of the log-likelihood
+    ret$llik <- llik
+    # starting values of class-conditional response probabilities
+    ret$probs.start <- poLCAParallel.unvectorize(ret$probs.start)
+    # estimated class-conditional response probabilities
+    ret$probs <- poLCAParallel.unvectorize(vp)
+    # standard errors of class-conditional response probabilities
+    ret$probs.se <- se$probs
+    # standard errors of class population shares
+    ret$P.se <- se$P
+    # NxR matrix of prior class membership probabilities
+    ret$prior <- prior
+    # NxR matrix of posterior class membership probabilities
+    ret$posterior <- rgivy
+    # Nx1 vector of predicted class memberships, by modal assignment
+    ret$predclass <- apply(ret$posterior, 1, which.max)
+    # estimated class population shares
+    ret$P <- colMeans(ret$posterior)
+    # number of iterations until reaching convergence
+    ret$numiter <- numiter
+    # if starting probs specified, logical indicating proper entry
+    # format
+    ret$probs.start.ok <- probs.start.ok
+
+    ret$coeff <- b # coefficient estimates (when estimated)
+    # standard errors of coefficient estimates (when estimated)
+    ret$coeff.se <- se$b
+    # covariance matrix of coefficient estimates (when estimated)
+    ret$coeff.V <- se$var.b
+
+    # error flag, true if estimation algorithm ever needed to restart
+    # with new initial values
+    ret$eflag <- eflag
+
     names(ret$probs) <- colnames(y)
     if (calc.se) {
         names(ret$probs.se) <- colnames(y)
