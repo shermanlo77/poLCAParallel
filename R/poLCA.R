@@ -361,28 +361,12 @@ poLCA <- function(formula,
     ret$probs.start <- initial_prob[[1]]
     ret$probs.start$vecprobs <- best_initial_prob
 
-    # calculate standard error
-    if (calc.se) {
-        se <- poLCA.se(
-            y, x, poLCAParallel.unvectorize(vp),
-            prior, rgivy
-        )
-        rownames(se$b) <- colnames(x)
-    } else {
-        se <- list(
-            probs = NA, P = NA, b = matrix(nrow = S, ncol = R - 1),
-            var.b = NA
-        )
-    }
-
     # labelling b
     if (S > 1) {
         b <- matrix(b, nrow = S)
         rownames(b) <- colnames(x)
     } else {
         b <- NA
-        se$b <- NA
-        se$var.b <- NA
     }
 
     # maximum value of the log-likelihood
@@ -391,10 +375,6 @@ poLCA <- function(formula,
     ret$probs.start <- poLCAParallel.unvectorize(ret$probs.start)
     # estimated class-conditional response probabilities
     ret$probs <- poLCAParallel.unvectorize(vp)
-    # standard errors of class-conditional response probabilities
-    ret$probs.se <- se$probs
-    # standard errors of class population shares
-    ret$P.se <- se$P
     # NxR matrix of prior class membership probabilities
     ret$prior <- prior
     # NxR matrix of posterior class membership probabilities
@@ -410,19 +390,19 @@ poLCA <- function(formula,
     ret$probs.start.ok <- probs.start.ok
 
     ret$coeff <- b # coefficient estimates (when estimated)
-    # standard errors of coefficient estimates (when estimated)
-    ret$coeff.se <- se$b
-    # covariance matrix of coefficient estimates (when estimated)
-    ret$coeff.V <- se$var.b
+
+    # placeholder for standard error
+    ret$P.se <- NA
+    ret$probs.se <- NA
+    ret$coeff.se <- NA
+    ret$coeff.V <- NA
 
     # error flag, true if estimation algorithm ever needed to restart
     # with new initial values
     ret$eflag <- eflag
 
     names(ret$probs) <- colnames(y)
-    if (calc.se) {
-        names(ret$probs.se) <- colnames(y)
-    }
+
     # number of degrees of freedom used by the model (number of estimated
     # parameters)
     ret$npar <- (R * sum(K.j - 1)) + (R - 1)
@@ -451,6 +431,11 @@ poLCA <- function(formula,
         }
     }
     ret$N <- N # number of observations
+
+    # calculate the standard errors
+    if (calc.se) {
+        ret <- poLCAParallel.se(ret)
+    }
 
     # if no rows are fully observed or chi squared not requested
     if ((all(rowSums(y == 0) > 0)) | !calc.chisq) {
