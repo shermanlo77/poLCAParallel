@@ -1,3 +1,20 @@
+// poLCAParallel
+// Copyright (C) 2022 Sherman Lo
+
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 #include "blrt.h"
 
 polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
@@ -36,7 +53,7 @@ void polca_parallel::Blrt::SetSeed(std::seed_seq* seed) {
 }
 
 void polca_parallel::Blrt::Run() {
-  std::thread thread_array[this->n_thread_ - 1];
+  std::thread* thread_array = new std::thread[this->n_thread_ - 1];
   for (int i = 0; i < this->n_thread_ - 1; ++i) {
     thread_array[i] = std::thread(&Blrt::RunThread, this);
   }
@@ -46,6 +63,7 @@ void polca_parallel::Blrt::Run() {
   for (int i = 0; i < this->n_thread_ - 1; ++i) {
     thread_array[i].join();
   }
+  delete[] thread_array;
 }
 
 void polca_parallel::Blrt::RunThread() {

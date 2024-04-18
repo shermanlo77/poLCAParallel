@@ -24,9 +24,8 @@ void polca_parallel::GetUniqueObserved(
   std::vector<int> response_i(n_category);
   for (int i = 0; i < n_data; ++i) {
     // get the outcomes for each category
-    for (int j = 0; j < n_category; ++j) {
-      response_i[j] = responses[j];
-    }
+    memcpy(response_i.data(), responses,
+           response_i.size() * sizeof(*responses));
     // add or update observation count
     try {
       ++unique_freq->at(response_i).observed;

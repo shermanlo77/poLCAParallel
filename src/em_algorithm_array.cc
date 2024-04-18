@@ -61,7 +61,7 @@ polca_parallel::EmAlgorithmArray::~EmAlgorithmArray() {
 
 void polca_parallel::EmAlgorithmArray::Fit() {
   // parallel run FitThread
-  std::thread thread_array[this->n_thread_ - 1];
+  std::thread* thread_array = new std::thread[this->n_thread_ - 1];
   for (int i = 0; i < this->n_thread_ - 1; ++i) {
     thread_array[i] = std::thread(&EmAlgorithmArray::FitThread, this);
   }
@@ -71,6 +71,8 @@ void polca_parallel::EmAlgorithmArray::Fit() {
   for (int i = 0; i < this->n_thread_ - 1; ++i) {
     thread_array[i].join();
   }
+
+  delete[] thread_array;
 }
 
 void polca_parallel::EmAlgorithmArray::SetSeed(std::seed_seq* seed) {

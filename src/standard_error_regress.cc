@@ -64,7 +64,7 @@ void polca_parallel::StandardErrorRegress::CalcJacobianPrior(
           }
           *jacobian += jac_element * *feature++;
         }
-        *jacobian /= (double)this->n_data_;
+        *jacobian /= static_cast<double>(this->n_data_);
         ++jacobian;
       }
     }

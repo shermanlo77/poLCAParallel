@@ -51,27 +51,17 @@ void polca_parallel::EmAlgorithmRegress::InitPrior() {
                              false);
   arma::Mat<double> regress_coeff(this->regress_coeff_, this->n_feature_,
                                   this->n_cluster_ - 1, false);
-  arma::Mat<double> prior = features * regress_coeff;
-  prior = exp(prior);
+  arma::Mat<double> prior_except_0(this->prior_ + this->n_data_, this->n_data_,
+                                   this->n_cluster_ - 1, false, true);
 
   // for the 0th cluster, eta = 0, prior for 0th cluster propto 1
-  for (int i = 0; i < this->n_data_; ++i) {
-    this->prior_[i] = 1.0;
-  }
-  memcpy(this->prior_ + this->n_data_, prior.begin(),
-         prior.size() * sizeof(*this->prior_));
+  std::fill(this->prior_, this->prior_ + this->n_data_, 1.0);
+  prior_except_0 = exp(features * regress_coeff);
 
   // normalise so that prior_ are probabilities
-  arma::Mat<double> prior_arma(this->prior_, this->n_data_, this->n_cluster_,
-                               false);
-  arma::Col<double> normaliser = sum(prior_arma, 1);
-  double* prior_ptr = this->prior_;
-  for (int m = 0; m < this->n_cluster_; ++m) {
-    for (int i = 0; i < this->n_data_; ++i) {
-      *prior_ptr /= normaliser[i];
-      ++prior_ptr;
-    }
-  }
+  arma::Mat<double> prior(this->prior_, this->n_data_, this->n_cluster_, false,
+                          true);
+  prior.each_col() /= sum(prior, 1);
 }
 
 void polca_parallel::EmAlgorithmRegress::FinalPrior() {
@@ -103,7 +93,7 @@ bool polca_parallel::EmAlgorithmRegress::MStep() {
 
   // single Newton step
   arma::Col<double> regress_coeff(this->regress_coeff_, this->n_parameters_,
-                                  false);
+                                  false, true);
   arma::Col<double> gradient(this->gradient_, this->n_parameters_, false);
   arma::Mat<double> hessian(this->hessian_, this->n_parameters_,
                             this->n_parameters_, false);
@@ -132,9 +122,8 @@ void polca_parallel::EmAlgorithmRegress::NormalWeightedSumProb(
 }
 
 void polca_parallel::EmAlgorithmRegress::init_regress_coeff() {
-  for (int i = 0; i < this->n_parameters_; ++i) {
-    this->regress_coeff_[i] = 0.0;
-  }
+  std::fill(this->regress_coeff_, this->regress_coeff_ + this->n_parameters_,
+            0.0);
 }
 
 void polca_parallel::EmAlgorithmRegress::CalcGrad() {

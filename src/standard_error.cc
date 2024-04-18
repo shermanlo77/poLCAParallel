@@ -127,7 +127,7 @@ void polca_parallel::StandardError::CalcScoreProbsCol(int outcome_index,
   for (double* score = score_start; score < score_start + this->n_data_;
        ++score) {
     is_outcome = outcome_index == (*response - 1);
-    *score = *posterior * (((double)is_outcome) - *prob);
+    *score = *posterior * (static_cast<double>(is_outcome) - *prob);
     ++posterior;
     ++response;
   }

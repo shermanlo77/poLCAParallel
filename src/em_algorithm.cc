@@ -171,21 +171,19 @@ void polca_parallel::EmAlgorithm::Reset(
 void polca_parallel::EmAlgorithm::InitPrior() {
   // prior probabilities are the same for all data points in this
   // implementation
-  for (int i = 0; i < this->n_cluster_; ++i) {
-    this->prior_[i] = 1.0 / static_cast<double>(this->n_cluster_);
-  }
+  std::fill(this->prior_, this->prior_ + this->n_cluster_,
+            1.0 / static_cast<double>(this->n_cluster_));
 }
 
 void polca_parallel::EmAlgorithm::FinalPrior() {
   // Copying prior probabilities as each data point as the same prior
-  double prior_copy[this->n_cluster_];
-  std::memcpy(&prior_copy, this->prior_,
-              this->n_cluster_ * sizeof(*this->prior_));
+  double* prior_copy = new double[this->n_cluster_];
+  memcpy(prior_copy, this->prior_, this->n_cluster_ * sizeof(*this->prior_));
   for (int m = 0; m < this->n_cluster_; ++m) {
-    for (int i = 0; i < this->n_data_; ++i) {
-      this->prior_[m * this->n_data_ + i] = prior_copy[m];
-    }
+    std::fill(this->prior_ + m * this->n_data_,
+              this->prior_ + (m + 1) * this->n_data_, prior_copy[m]);
   }
+  delete[] prior_copy;
 }
 
 double polca_parallel::EmAlgorithm::GetPrior(int data_index,
@@ -195,30 +193,21 @@ double polca_parallel::EmAlgorithm::GetPrior(int data_index,
 
 void polca_parallel::EmAlgorithm::EStep() {
   double* estimated_prob;  // for pointing to elements in estimated_prob_
-  // used for likelihood calculation for a data point P(Y^{(i)})
-  double normaliser;
-
   for (int i_data = 0; i_data < this->n_data_; ++i_data) {
-    // normalise over cluster, so loop over cluster here
-    // PosteriorUnnormalize() will fill in posterior_ with unnormalised
-    // posteriors
-    // to normalise it, divide each row of posterior_ by the sum of row
-    normaliser = 0.0;
-
     estimated_prob = this->estimated_prob_;
     for (int i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
       // access to posterior_ in this manner should result in cache misses
       // however PosteriorUnnormalize() is designed for cache efficiency
       this->PosteriorUnnormalize(i_data, i_cluster, &estimated_prob);
-      normaliser += this->posterior_[i_cluster * this->n_data_ + i_data];
     }
-    // normalise
-    for (int i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
-      this->posterior_[i_cluster * this->n_data_ + i_data] /= normaliser;
-    }
-    // store the log likelihood for this data point
-    this->ln_l_array_[i_data] = log(normaliser);
   }
+
+  arma::Mat<double> posterior(this->posterior_, this->n_data_, this->n_cluster_,
+                              false, true);
+  arma::Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false, true);
+  ln_l_array = arma::sum(posterior, 1);  // row sum
+  posterior.each_col() /= ln_l_array;    // normalise by the row sum
+  ln_l_array = arma::log(ln_l_array);    // log likelihood
 }
 
 void polca_parallel::EmAlgorithm::PosteriorUnnormalize(
@@ -238,11 +227,10 @@ bool polca_parallel::EmAlgorithm::MStep() {
   // estimate prior
   // for this implementation, the mean posterior, taking the mean over data
   // points
-  arma::Mat<double> posterior_arma(this->posterior_, this->n_data_,
-                                   this->n_cluster_, false);
-  arma::Row<double> prior = mean(posterior_arma, 0);
-  std::memcpy(this->prior_, prior.begin(),
-              this->n_cluster_ * sizeof(*this->prior_));
+  arma::Mat<double> posterior(this->posterior_, this->n_data_, this->n_cluster_,
+                              false);
+  arma::Row<double> prior(this->prior_, this->n_cluster_, false, true);
+  prior = mean(posterior, 0);
 
   // estimate outcome probabilities
   this->EstimateProbability();
@@ -252,10 +240,9 @@ bool polca_parallel::EmAlgorithm::MStep() {
 
 void polca_parallel::EmAlgorithm::EstimateProbability() {
   // set all estimated response probability to zero
-  for (int i = 0; i < this->n_cluster_ * this->sum_outcomes_; ++i) {
-    this->estimated_prob_[i] = 0.0;
-  }
-
+  std::fill(this->estimated_prob_,
+            this->estimated_prob_ + this->n_cluster_ * this->sum_outcomes_,
+            0.0);
   // for each cluster
   for (int m = 0; m < this->n_cluster_; ++m) {
     // estimate outcome probabilities
@@ -296,20 +283,13 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(int cluster_index) {
 
 void polca_parallel::EmAlgorithm::NormalWeightedSumProb(int cluster_index,
                                                         double normaliser) {
-  int n_outcome;
-  // point to outcome probabilites for given cluster
-  double* estimated_prob =
-      this->estimated_prob_ + cluster_index * this->sum_outcomes_;
   // normalise by the sum of posteriors
   // calculations can be reused as the prior is the mean of posteriors
   // from the E step
-  for (int j = 0; j < this->n_category_; ++j) {
-    n_outcome = this->n_outcomes_[j];
-    for (int k = 0; k < n_outcome; ++k) {
-      estimated_prob[k] /= normaliser;
-    }
-    estimated_prob += n_outcome;
-  }
+  arma::Col<double> estimated_prob(
+      this->estimated_prob_ + cluster_index * this->sum_outcomes_,
+      this->sum_outcomes_, false, true);
+  estimated_prob /= normaliser;
 }
 
 double polca_parallel::PosteriorUnnormalize(int* responses_i, int n_category,
@@ -377,7 +357,7 @@ void polca_parallel::GenerateNewProb(
   for (int m = 0; m < n_cluster; ++m) {
     for (int j = 0; j < n_category; ++j) {
       n_outcome = n_outcomes[j];
-      arma::Col<double> prob_vector(prob, n_outcome, false);
+      arma::Col<double> prob_vector(prob, n_outcome, false, true);
       prob_vector /= sum(prob_vector);
       prob += n_outcome;
     }
