@@ -19,6 +19,49 @@
 #include "standard_error.h"
 #include "standard_error_regress.h"
 
+/**
+ * To be exported to R, calculate the standard error for a poLCA model
+ *
+ * @param features Design matrix of features, matrix with dimensions
+ * <ul>
+ *   <li>dim 0: for each data point</li>
+ *   <li>dim 1: for each feature</li>
+ * </ul>
+ * @param responses Design matrix of responses, matrix containing
+ * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
+ * has dimensions
+ * <ul>
+ *   <li>dim 0: for each data point</li>
+ *   <li>dim 1: for each category</li>
+ * </ul>
+ * @param probs Vector of probabilities for each outcome, for each category,
+ * for each cluster flatten list of matrices
+ * <ul>
+ *   <li>dim 0: for each outcome</li>
+ *   <li>dim 1: for each category</li>
+ *   <li>dim 2: for each cluster</li>
+ * </ul>
+ * @param prior Design matrix of prior probabilities, probability data point
+ * is in cluster m NOT given responses after calculations, it shall be in
+ * matrix form with dimensions
+ * <ul>
+ *   <li>dim 0: for each data</li>
+ *   <li>dim 1: for each cluster</li>
+ * </ul>
+ * @param posterior Design matrix of posterior probabilities (also called
+ * responsibility), probability data point is in cluster m given responses
+ * matrix
+ * <ul>
+ *   <li>dim 0: for each data</li>
+ *   <li>dim 1: for each cluster</li>
+ * </ul>
+ * @param n_data Number of data points
+ * @param n_feature Number of features
+ * @param n_category Number of categories
+ * @param n_outcomes Array of number of outcomes, for each category
+ * @param n_cluster Number of clusters fitted
+ * @return Rcpp::List
+ */
 // [[Rcpp::export]]
 Rcpp::List StandardErrorRcpp(Rcpp::NumericVector features,
                              Rcpp::IntegerMatrix responses,

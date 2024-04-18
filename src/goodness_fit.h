@@ -26,13 +26,12 @@
 #include <vector>
 
 #include "RcppArmadillo.h"
-
 #include "em_algorithm.h"
 
 namespace polca_parallel {
 
 /**
- * For storing the observed and expected frequency, used for chi squared test
+ * For storing the observed and expected frequency, used for chi-squared test
  */
 struct Frequency {
   int observed;
@@ -40,57 +39,73 @@ struct Frequency {
 };
 
 /**
+ * Create a map of unique observations and their count
+ *
  * Iterate through all the responses, then find and count unique combinations of
  * outcomes which were observed in the dataset. Results are stored in a map.
+ * Observations are presented as a std::vector<int> of length n_category, each
+ * element contains an int which represents the resulting outcome for each
+ * category.
  *
- * @param responses design matrix transpose of responses, matrix n_category x
- * n_data
+ * @param responses Design matrix TRANSPOSED of responses, matrix containing
+ * outcomes/responses
+ * for each category as integers 1, 2, 3, .... The matrix has dimensions
+ * <ul>
+ *   <li>dim 0: for each category</li>
+ *   <li>dim 1: for each data point</li>
+ * </ul>
  * @param n_data number of data points
  * @param n_category number of categories
- * @param unique_freq map to write results to, key: unique integer vectors,
- * value: Frequency containing the number of times it was observed in the
- * dataset
+ * @param unique_freq map to write results to, a map with the following
+ * <ul>
+ *   <li>key: unique integer vector representing the observed responses</li>
+ *   <li>value: Frequency with the observed attributed containing the number of
+ *   times those unique responses were observed in the dataset</li>
+ * </ul>
  */
 void GetUniqueObserved(int* responses, int n_data, int n_category,
                        std::map<std::vector<int>, Frequency>* unique_freq);
 
 /**
- * Update the expected frequency in a map of vector<int>:Frequency by modifying
- * the value of Frequency.expected with the likelihood of that unique
+ * Update a map of observed responses to contain expected frequencies
+ *
+ * Update the expected frequency in a map of <vector<int>, Frequency> by
+ * modifying the value of Frequency.expected with the likelihood of that unique
  * reponse with multiplied by n_data
  *
- * @param responses design matrix transpose of responses, matrix n_category x
- * n_data
  * @param prior vector of prior probabilities (probability in a cluster),
  * length n_cluster
- * @param outcome_prob array of outcome probabilities for each category and
- * cluster, flatten list of matrices
+ * @param outcome_prob Vector of estimated response probabilities, conditioned
+ * on cluster, for each category. A flattened list in the following order
  * <ul>
  *   <li>dim 0: for each outcome</li>
  *   <li>dim 1: for each category</li>
- *   <li>dim 2: for each model</li>
+ *   <li>dim 2: for each cluster</li>
  * </ul>
  * @param n_data number of data points
  * @param n_category number of categories
  * @param n_outcomes array of integers, number of outcomes for each category,
  * array of length n_category
  * @param n_cluster number of clusters (or classes)
- * @param unique_freq map to modify with results to, key: unique integer
- * vectors, value: Frequency with the expected frequency modified
+ * @param unique_freq map to update, a map with the following
+ * <ul>
+ *   <li>key: unique integer vector representing the observed responses</li>
+ *   <li>value: Frequency, the expected attributed shall be modified</li>
+ * </ul>
  */
-void GetExpected(int* responses, double* prior, double* outcome_prob,
-                 int n_data, int n_category, int* n_outcomes, int n_cluster,
+void GetExpected(double* prior, double* outcome_prob, int n_data,
+                 int n_category, int* n_outcomes, int n_cluster,
                  std::map<std::vector<int>, Frequency>* unique_freq);
 
 /**
- * Get chi-squared and log likelihood ratio statistics
+ * Get chi-squared and log-likelihood ratio statistics
  *
- * Calculate and return the chi-squared statistics and log likelihood ratio
+ * Calculate and return the chi-squared statistics and log-likelihood ratio
  *
  * @param unique_freq map of unique responses and their frequencies, both
  * observed and expected
  * @param n_data number of data points
- * @return std::array<double, 2> containing log likelihood ratio and chi squared
+ * @return std::array<double, 2> containing log-likelihood ratio and chi-squared
  * statistics
  */
 std::array<double, 2> GetStatistics(

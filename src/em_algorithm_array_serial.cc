@@ -62,7 +62,8 @@ void polca_parallel::EmAlgorithmArraySerial::SetFitterRng(
 
 void polca_parallel::EmAlgorithmArraySerial::MoveRngBackFromFitter(
     polca_parallel::EmAlgorithm* fitter) {
-  // do not check this->rng != NULL as it will always be NULL
+  // do not check this->rng != NULL as it will always be NULL after calling
+  // SetFitterRng()
   //
   // if the rng was set before hand, it will be set to null after transferring
   // ownership to a EmAlgorithm object, thus this method does need to be called
@@ -71,6 +72,6 @@ void polca_parallel::EmAlgorithmArraySerial::MoveRngBackFromFitter(
   // A EmAlgorithm object will always have a rng even if no rng has been set
   //
   // So if no rng has been set, at the end of a Fit(), rng will be set to the
-  // rng instantiated by the first EmAlgorithm object
+  // default instantiated rng
   this->rng_ = fitter->move_rng();
 }

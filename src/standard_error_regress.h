@@ -22,6 +22,12 @@
 
 namespace polca_parallel {
 
+/**
+ * For calculating the standard errors of the fitted poLCA regression parameters
+ *
+ * See the superclass StandardError. This implementation caters for poLCA
+ * regression models
+ */
 class StandardErrorRegress : public polca_parallel::StandardError {
  public:
   /**
@@ -30,9 +36,18 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    * Call Calc() and the resulting errors will be saved to prior_error,
    * prob_error and regress_coeff_error
    *
-   * @param features Design matrix of features, matrix n_data x n_feature
-   * @param responses Design matrix transpose of responses, matrix n_category x
-   * n_data
+   * @param features Design matrix of features, matrix with dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each feature</li>
+   * </ul>
+   * @param responses Design matrix of responses, matrix containing
+   * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
+   * has dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each category</li>
+   * </ul>
    * @param probs Vector of probabilities for each outcome, for each category,
    * for each cluster flatten list of matrices
    * <ul>

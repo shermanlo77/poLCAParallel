@@ -74,18 +74,20 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    *   <li>regress_coeff</li>
    * </ul>
    *
-   * @param features Design matrix of features
+   * @param features Design matrix of features, matrix with dimensions
    * <ul>
-   *   <li>dim 0: for each data point, length n_data</li>
-   *   <li>dim 1: for each feature, length n_feature</li>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each feature</li>
    * </ul>
-   * @param responses Design matrix transpose of responses, one based
+   * @param responses Design matrix TRANSPOSED of responses, matrix containing
+   * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
+   * has dimensions
    * <ul>
-   *   <li>dim 0: for each data point, length n_data</li>
-   *   <li>dim 1: for each category, length n_category</li>
+   *   <li>dim 0: for each category</li>
+   *   <li>dim 1: for each data point</li>
    * </ul>
    * @param initial_prob Vector of initial probabilities for each category and
-   * responses, flatten list of matrices
+   * outcome, flatten list in the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -100,24 +102,26 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * @param max_iter Maximum number of iterations for EM algorithm
    * @param tolerance Tolerance for difference in log likelihood, used for
    * stopping condition
-   * @param posterior Design matrix of posterior probabilities (also called
-   * responsibility) probability data point is in cluster m given responses
-   * matrix
+   * @param posterior Modified to contain the resulting posterior probabilities
+   * after calling Fit(). Design matrix of posterior probabilities (also called
+   * responsibility). It's the probability a data point is in cluster m given
+   * responses. The matrix has the following dimensions
    * <ul>
    *   <li>dim 0: for each data</li>
    *   <li>dim 1: for each cluster</li>
    * </ul>
-   * @param prior Design matrix of prior probabilities, probability data point
-   * is in cluster m NOT given responses after calculations, it shall be in
-   * matrix form with dimensions
+   * @param prior Modified to contain the resulting prior probabilities after
+   * calling Fit(). Design matrix of prior probabilities. It's the probability a
+   * data point is in cluster m NOT given responses after calculations. The
+   * matrix has the following dimensions dimensions
    * <ul>
    *   <li>dim 0: for each data</li>
    *   <li>dim 1: for each cluster</li>
    * </ul>
-   * During the start and calculations, it may take on a different form,
-   * use the method GetPrior() to get the prior for a data point and cluster
-   * @param estimated_prob Vector of estimated response probabilities,
-   * conditioned on cluster, for each category, flatten list of matrices
+   * @param estimated_prob Modified to contain the resulting outcome
+   * probabilities after calling Fit(). Vector of estimated response
+   * probabilities, conditioned on cluster, for each category. A flatten list in
+   * the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -136,6 +140,13 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   ~EmAlgorithmRegress() override;
 
  protected:
+  /**
+   * Reset parameters for a re-run
+   *
+   * Reset the parameters estimated_prob_ with random starting values and
+   * regress_coeff_ all to zero
+   * @param uniform required to generate random probabilities
+   */
   void Reset(std::uniform_real_distribution<double>* uniform) override;
 
   void InitPrior() override;
@@ -147,13 +158,14 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   bool IsInvalidLikelihood(double ln_l_difference) override;
 
   /**
-   * Do M step, update the regression coefficient, prior probabilities and
-   * estimated response probabilities given the posterior probabilities
-   * modifies the member variables regress_coeff_, gradient_, hessian_, prior_
+   * Do M step
+   *
+   * Update the regression coefficient, prior probabilities and
+   * estimated response probabilities given the posterior probabilities.
+   * Modifies the member variables regress_coeff_, gradient_, hessian_, prior_
    * and estimated_prob_
    *
-   * @return true if the solver cannot find a solution
-   * @return false if successful
+   * @return true if the solver cannot find a solution, false if successful
    */
   bool MStep() override;
 
@@ -164,19 +176,22 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   void init_regress_coeff();
 
   /**
-   * Calculate gradient of the log likelihood.
+   * Calculate gradient of the log likelihood
+   *
    * Updates the member variable gradient_
    */
   void CalcGrad();
 
   /**
-   * Calculate hessian of the log likelihood.
+   * Calculate hessian of the log likelihood
+   *
    * Updates the member variable hessian_
    */
   void CalcHess();
 
   /**
-   * Calculate one of the blocks of the hessian.
+   * Calculate one of the blocks of the hessian
+   *
    * Updates the member variable hessian_ with one of the blocks.
    * The hessian consist of (n_cluster-1) by (n_cluster-1) blocks, each
    * corresponding to cluster 1, 2, 3, ..., n_cluster-1.

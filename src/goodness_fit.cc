@@ -23,6 +23,7 @@ void polca_parallel::GetUniqueObserved(
   // iterate through each data point
   std::vector<int> response_i(n_category);
   for (int i = 0; i < n_data; ++i) {
+    // get the outcomes for each category
     for (int j = 0; j < n_category; ++j) {
       response_i[j] = responses[j];
     }
@@ -39,14 +40,11 @@ void polca_parallel::GetUniqueObserved(
 }
 
 void polca_parallel::GetExpected(
-    int* responses, double* prior, double* outcome_prob, int n_data,
-    int n_category, int* n_outcomes, int n_cluster,
+    double* prior, double* outcome_prob, int n_data, int n_category,
+    int* n_outcomes, int n_cluster,
     std::map<std::vector<int>, Frequency>* unique_freq) {
-  double p;
   double total_p;
   double* outcome_prob_ptr;
-  int n_outcome;
-  int y;
   std::vector<int> response_i;
 
   // iterate through the map
@@ -59,10 +57,10 @@ void polca_parallel::GetExpected(
 
     // iterate through each cluster
     for (int m = 0; m < n_cluster; ++m) {
-      p = polca_parallel::PosteriorUnnormalize(
+      // polca_parallel::PosteriorUnnormalize is located in em_algorithm
+      total_p += polca_parallel::PosteriorUnnormalize(
           response_i.data(), n_category, n_outcomes, &outcome_prob_ptr,
           prior[m]);
-      total_p += p;
     }
 
     iter->second.expected = total_p * n_data;
@@ -71,7 +69,6 @@ void polca_parallel::GetExpected(
 
 std::array<double, 2> polca_parallel::GetStatistics(
     std::map<std::vector<int>, Frequency>* unique_freq, int n_data) {
-  std::vector<int> response_i;
   Frequency frequency;
 
   int n_unique = unique_freq->size();
@@ -84,7 +81,7 @@ std::array<double, 2> polca_parallel::GetStatistics(
   double observed;
   double diff_squared;
 
-  // extract and calculate statistics for each one each unique response,
+  // extract and calculate statistics for each unique response
   int index = 0;
   for (auto iter = unique_freq->begin(); iter != unique_freq->end(); ++iter) {
     frequency = iter->second;

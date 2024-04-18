@@ -24,11 +24,41 @@
 
 namespace polca_parallel {
 
+/**
+ * For calculating the standard errors of the fitted poLCA parameters
+ *
+ * For calculating the standard errors of the fitted poLCA parameters such as
+ * <ul>
+ *   <li>The prior probabilities for each cluster/class</li>
+ *   <li>The probabilities for each outcome, category and cluster</li>
+ *   <li>The regression coefficients
+ * </ul>
+ *
+ * How to use:
+ * <ul>
+ *   <li>Instantiate and pass the required parameters, this includes allocated
+ *   memory to store the resulting standard errors</li>
+ *   <li>Call the method Calc()</li>
+ * </ul>
+ */
 class StandardError {
  protected:
-  /** Design matrix of features, matrix n_data x n_feature */
+  /**
+   * Design matrix of features, matrix with dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each feature</li>
+   * </ul>
+   */
   double* features_;
-  /** Design matrix transpose of responses, matrix n_category x n_data */
+  /**
+   * Design matrix of responses, matrix containing outcomes/responses
+   * for each category as integers 1, 2, 3, .... The matrix has dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each category</li>
+   * </ul>
+   */
   int* responses_;
   /**
    * Vector of probabilities for each category and response,
@@ -102,9 +132,14 @@ class StandardError {
    * Call Calc() and the resulting errors will be saved to prior_error and
    * prob_error
    *
-   * @param features Design matrix of features, matrix n_data x n_feature
-   * @param responses Design matrix transpose of responses, matrix n_category x
-   * n_data
+   * @param features Not used
+   * @param responses Design matrix of responses, matrix containing
+   * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
+   * has dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each category</li>
+   * </ul>
    * @param probs Vector of probabilities for each outcome, for each category,
    * for each cluster flatten list of matrices
    * <ul>

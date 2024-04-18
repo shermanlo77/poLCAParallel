@@ -41,6 +41,7 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
   this->regress_coeff_ = regress_coeff;
   this->is_regress_ = is_regress;
 
+  // ensure each thread run at least one repetition
   if (n_thread > n_rep) {
     n_thread = n_rep;
   }
@@ -114,12 +115,6 @@ void polca_parallel::EmAlgorithmArray::MoveRngBackFromFitter(
 }
 
 void polca_parallel::EmAlgorithmArray::FitThread() {
-  polca_parallel::EmAlgorithm* fitter;
-  bool is_working = true;
-  // which initial probability this thread is working on
-  int rep_index;
-  double ln_l;
-
   int n_data = this->n_data_;
   int n_feature = this->n_feature_;
   int sum_outcomes = this->sum_outcomes_;
@@ -137,14 +132,22 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
     best_initial_prob = new double[sum_outcomes * n_cluster];
   }
 
+  // which initial probability this thread is working on
+  int rep_index;
+  polca_parallel::EmAlgorithm* fitter;
+  double ln_l;
+
+  bool is_working = true;
   while (is_working) {
-    // lock to retrive initial probability
+    // lock to retrive initial probability and other variables
+    // lock is outside the if statement so that this->n_rep_done_ can be read
+    // without modification from other threads
     // shall be unlocked in both if and else branches
     this->n_rep_done_lock_->lock();
     if (this->n_rep_done_ < this->n_rep_) {
-      rep_index = this->n_rep_done_;
       // increment for the next worker to work on
-      ++this->n_rep_done_;
+      rep_index = this->n_rep_done_++;
+
       this->n_rep_done_lock_->unlock();
 
       // transfer pointer to data and where to store results
@@ -164,6 +167,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
             n_cluster, this->max_iter_, this->tolerance_, posterior, prior,
             estimated_prob, regress_coeff);
       }
+      // each repetition uses their own rng
       this->SetFitterRng(fitter, rep_index);
       if (is_get_initial_prob) {
         fitter->set_best_initial_prob(best_initial_prob);
