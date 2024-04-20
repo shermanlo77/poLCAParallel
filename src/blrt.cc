@@ -22,38 +22,38 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
                            double* prob_alt, int n_cluster_alt, int n_data,
                            int n_category, int* n_outcomes, int sum_outcomes,
                            int n_bootstrap, int n_rep, int n_thread,
-                           int max_iter, double tolerance,
-                           double* ratio_array) {
-  this->prior_null_ = prior_null;
-  this->prob_null_ = prob_null;
-  this->n_cluster_null_ = n_cluster_null;
-  this->prior_alt_ = prior_alt;
-  this->prob_alt_ = prob_alt;
-  this->n_cluster_alt_ = n_cluster_alt;
-  this->n_data_ = n_data;
-  this->n_category_ = n_category;
-  this->n_outcomes_ = n_outcomes;
-  this->sum_outcomes_ = sum_outcomes;
-  this->n_bootstrap_ = n_bootstrap;
-  this->n_rep_ = n_rep;
-  this->n_thread_ = n_thread;
-  this->max_iter_ = max_iter;
-  this->tolerance_ = tolerance;
-  this->ratio_array_ = ratio_array;
-  this->n_bootstrap_done_lock_ = new std::mutex();
+                           int max_iter, double tolerance, double* ratio_array)
+    : prior_null_(prior_null),
+      prob_null_(prob_null),
+      n_cluster_null_(n_cluster_null),
+      prior_alt_(prior_alt),
+      prob_alt_(prob_alt),
+      n_cluster_alt_(n_cluster_alt),
+      n_data_(n_data),
+      n_category_(n_category),
+      n_outcomes_(n_outcomes),
+      sum_outcomes_(sum_outcomes),
+      n_bootstrap_(n_bootstrap),
+      n_rep_(n_rep),
+      n_thread_(n_thread),
+      max_iter_(max_iter),
+      tolerance_(tolerance),
+      ratio_array_(ratio_array),
+      n_bootstrap_done_lock_(std::make_unique<std::mutex>()) {
+  // default to random seeds
+  std::seed_seq seed(
+      {std::chrono::system_clock::now().time_since_epoch().count()});
+  this->SetSeed(&seed);
 }
 
-polca_parallel::Blrt::~Blrt() { delete this->n_bootstrap_done_lock_; }
-
 void polca_parallel::Blrt::SetSeed(std::seed_seq* seed) {
-  this->seed_array_ =
-      std::unique_ptr<unsigned[]>(new unsigned[this->n_bootstrap_]);
+  this->seed_array_ = std::make_unique<unsigned[]>(this->n_bootstrap_);
   unsigned* seed_array = this->seed_array_.get();
   seed->generate(seed_array, seed_array + this->n_bootstrap_);
 }
 
 void polca_parallel::Blrt::Run() {
-  std::thread* thread_array = new std::thread[this->n_thread_ - 1];
+  std::vector<std::thread> thread_array(this->n_thread_ - 1);
   for (int i = 0; i < this->n_thread_ - 1; ++i) {
     thread_array[i] = std::thread(&Blrt::RunThread, this);
   }
@@ -63,7 +63,6 @@ void polca_parallel::Blrt::Run() {
   for (int i = 0; i < this->n_thread_ - 1; ++i) {
     thread_array[i].join();
   }
-  delete[] thread_array;
 }
 
 void polca_parallel::Blrt::RunThread() {
@@ -74,33 +73,35 @@ void polca_parallel::Blrt::RunThread() {
   int* bootstrap_data = new int[this->n_data_ * this->n_category_];
 
   // allocate memory for storing initial values for the probabilities
-  double* init_prob_null =
-      new double[this->sum_outcomes_ * this->n_cluster_null_ * this->n_rep_];
-  double* init_prob_alt =
-      new double[this->sum_outcomes_ * this->n_cluster_alt_ * this->n_rep_];
+  std::vector<double> init_prob_null(this->sum_outcomes_ *
+                                     this->n_cluster_null_ * this->n_rep_);
+  std::vector<double> init_prob_alt(this->sum_outcomes_ * this->n_cluster_alt_ *
+                                    this->n_rep_);
 
   // use the fitted values as the initial values when fitting onto the bootstrap
   // samples
-  memcpy(init_prob_null, this->prob_null_,
-         this->sum_outcomes_ * this->n_cluster_null_ * sizeof(*init_prob_null));
-  memcpy(init_prob_alt, this->prob_alt_,
-         this->sum_outcomes_ * this->n_cluster_alt_ * sizeof(*init_prob_alt));
+  memcpy(init_prob_null.data(), this->prob_null_,
+         this->sum_outcomes_ * this->n_cluster_null_ *
+             sizeof(init_prob_null.front()));
+  memcpy(init_prob_alt.data(), this->prob_alt_,
+         this->sum_outcomes_ * this->n_cluster_alt_ *
+             sizeof(init_prob_alt.front()));
 
   // allocate memory for all required arrays, a lot of them aren't used after
   // fitting
-  double* features = new double[this->n_data_];
-  double* fitted_posterior_null =
-      new double[this->n_data_ * this->n_cluster_null_];
-  double* fitted_posterior_alt =
-      new double[this->n_data_ * this->n_cluster_alt_];
-  double* fitted_prior_null = new double[this->n_data_ * this->n_cluster_null_];
-  double* fitted_prior_alt = new double[this->n_data_ * this->n_cluster_alt_];
-  double* fitted_prob_null =
-      new double[this->n_cluster_null_ * this->sum_outcomes_];
-  double* fitted_prob_alt =
-      new double[this->n_cluster_alt_ * this->sum_outcomes_];
-  double* fitted_regress_coeff_null = new double[this->n_cluster_null_ - 1];
-  double* fitted_regress_coeff_alt = new double[this->n_cluster_alt_ - 1];
+  std::vector<double> features(this->n_data_);
+  std::vector<double> fitted_posterior_null(this->n_data_ *
+                                            this->n_cluster_null_);
+  std::vector<double> fitted_posterior_alt(this->n_data_ *
+                                           this->n_cluster_alt_);
+  std::vector<double> fitted_prior_null(this->n_data_ * this->n_cluster_null_);
+  std::vector<double> fitted_prior_alt(this->n_data_ * this->n_cluster_alt_);
+  std::vector<double> fitted_prob_null(this->n_cluster_null_ *
+                                       this->sum_outcomes_);
+  std::vector<double> fitted_prob_alt(this->n_cluster_alt_ *
+                                      this->sum_outcomes_);
+  std::vector<double> fitted_regress_coeff_null(this->n_cluster_null_ - 1);
+  std::vector<double> fitted_regress_coeff_alt(this->n_cluster_alt_ - 1);
 
   while (is_working) {
     // lock to retrive n_bootstrap_done_
@@ -113,8 +114,8 @@ void polca_parallel::Blrt::RunThread() {
       this->n_bootstrap_done_lock_->unlock();
 
       // instantiate a rng
-      std::unique_ptr<std::mt19937_64> rng(
-          new std::mt19937_64(this->seed_array_[i_bootstrap]));
+      std::unique_ptr<std::mt19937_64> rng =
+          std::make_unique<std::mt19937_64>(this->seed_array_[i_bootstrap]);
 
       std::uniform_real_distribution<double> uniform(0.0, 1.0);
 
@@ -123,13 +124,14 @@ void polca_parallel::Blrt::RunThread() {
         polca_parallel::GenerateNewProb(
             rng.get(), &uniform, this->n_outcomes_, this->sum_outcomes_,
             this->n_category_, this->n_cluster_null_,
-            init_prob_null +
+            init_prob_null.data() +
                 i_rep * this->sum_outcomes_ * this->n_cluster_null_);
 
         polca_parallel::GenerateNewProb(
             rng.get(), &uniform, this->n_outcomes_, this->sum_outcomes_,
             this->n_category_, this->n_cluster_alt_,
-            init_prob_alt + i_rep * this->sum_outcomes_ * this->n_cluster_alt_);
+            init_prob_alt.data() +
+                i_rep * this->sum_outcomes_ * this->n_cluster_alt_);
       }
 
       // bootstrap data using null model
@@ -138,22 +140,24 @@ void polca_parallel::Blrt::RunThread() {
 
       // null model fit
       polca_parallel::EmAlgorithmArraySerial null_model(
-          features, bootstrap_data, init_prob_null, this->n_data_, 1,
-          this->n_category_, this->n_outcomes_, this->sum_outcomes_,
+          features.data(), bootstrap_data, init_prob_null.data(), this->n_data_,
+          1, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
           this->n_cluster_null_, this->n_rep_, 1, this->max_iter_,
-          this->tolerance_, fitted_posterior_null, fitted_prior_null,
-          fitted_prob_null, fitted_regress_coeff_null, false);
+          this->tolerance_, fitted_posterior_null.data(),
+          fitted_prior_null.data(), fitted_prob_null.data(),
+          fitted_regress_coeff_null.data(), false);
       null_model.SetRng(&rng);
       null_model.Fit();
       rng = null_model.MoveRng();
 
       // alt model fit
       polca_parallel::EmAlgorithmArraySerial alt_model(
-          features, bootstrap_data, init_prob_alt, this->n_data_, 1,
-          this->n_category_, this->n_outcomes_, this->sum_outcomes_,
+          features.data(), bootstrap_data, init_prob_alt.data(), this->n_data_,
+          1, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
           this->n_cluster_alt_, this->n_rep_, 1, this->max_iter_,
-          this->tolerance_, fitted_posterior_alt, fitted_prior_alt,
-          fitted_prob_alt, fitted_regress_coeff_alt, false);
+          this->tolerance_, fitted_posterior_alt.data(),
+          fitted_prior_alt.data(), fitted_prob_alt.data(),
+          fitted_regress_coeff_alt.data(), false);
       alt_model.SetRng(&rng);
       alt_model.Fit();
       rng = alt_model.MoveRng();
@@ -168,19 +172,6 @@ void polca_parallel::Blrt::RunThread() {
       is_working = false;
     }
   }
-
-  delete[] bootstrap_data;
-  delete[] init_prob_null;
-  delete[] init_prob_alt;
-  delete[] features;
-  delete[] fitted_posterior_null;
-  delete[] fitted_posterior_alt;
-  delete[] fitted_prior_null;
-  delete[] fitted_prior_alt;
-  delete[] fitted_prob_null;
-  delete[] fitted_prob_alt;
-  delete[] fitted_regress_coeff_null;
-  delete[] fitted_regress_coeff_alt;
 }
 
 /**

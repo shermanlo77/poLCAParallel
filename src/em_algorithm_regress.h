@@ -20,6 +20,8 @@
 
 #define ARMA_WARN_LEVEL 1
 
+#include <vector>
+
 #include "RcppArmadillo.h"
 #include "em_algorithm.h"
 
@@ -57,9 +59,9 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   /** Number of parameters to estimate for the softmax */
   int n_parameters_;
   /** vector, length n_parameters_, gradient of the log likelihood */
-  double* gradient_;
+  std::vector<double> gradient_;
   /** matrix, n_parameters_ x n_parameters, hessian of the log likelihood */
-  double* hessian_;
+  std::vector<double> hessian_;
 
  public:
   /**
@@ -136,8 +138,6 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
                      int sum_outcomes, int n_cluster, int max_iter,
                      double tolerance, double* posterior, double* prior,
                      double* estimated_prob, double* regress_coeff);
-
-  ~EmAlgorithmRegress() override;
 
  protected:
   /**

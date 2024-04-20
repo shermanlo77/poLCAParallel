@@ -97,26 +97,22 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
 
   // fit using EM algorithm
   bool is_regress = n_feature > 1;
-  polca_parallel::EmAlgorithmArray* fitter =
-      new polca_parallel::EmAlgorithmArray(
-          features.begin(), responses.begin(), initial_prob.begin(), n_data,
-          n_feature, n_category, n_outcomes.begin(), sum_outcomes, n_cluster,
-          n_rep, n_thread, max_iter, tolerance, posterior.begin(),
-          prior.begin(), estimated_prob.begin(), regress_coeff.begin(),
-          is_regress);
+  polca_parallel::EmAlgorithmArray fitter(
+      features.begin(), responses.begin(), initial_prob.begin(), n_data,
+      n_feature, n_category, n_outcomes.begin(), sum_outcomes, n_cluster, n_rep,
+      n_thread, max_iter, tolerance, posterior.begin(), prior.begin(),
+      estimated_prob.begin(), regress_coeff.begin(), is_regress);
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
-  fitter->SetSeed(&seed_seq);
-  fitter->set_best_initial_prob(best_initial_prob.begin());
-  fitter->set_ln_l_array(ln_l_array.begin());
+  fitter.SetSeed(&seed_seq);
+  fitter.set_best_initial_prob(best_initial_prob.begin());
+  fitter.set_ln_l_array(ln_l_array.begin());
 
-  fitter->Fit();
+  fitter.Fit();
 
-  int best_rep_index = fitter->get_best_rep_index();
-  int n_iter = fitter->get_n_iter();
-  bool has_restarted = fitter->get_has_restarted();
-
-  delete fitter;
+  int best_rep_index = fitter.get_best_rep_index();
+  int n_iter = fitter.get_n_iter();
+  bool has_restarted = fitter.get_has_restarted();
 
   Rcpp::List to_return;
   to_return.push_back(posterior);

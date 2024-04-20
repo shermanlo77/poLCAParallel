@@ -21,51 +21,43 @@ polca_parallel::StandardError::StandardError(
     double* features, int* responses, double* probs, double* prior,
     double* posterior, int n_data, int n_feature, int n_category,
     int* n_outcomes, int sum_outcomes, int n_cluster, double* prior_error,
-    double* prob_error, double* regress_coeff_error) {
-  this->features_ = features;
-  this->responses_ = responses;
-  this->probs_ = probs;
-  this->prior_ = prior;
-  this->posterior_ = posterior;
-  this->n_data_ = n_data;
-  this->n_feature_ = n_feature;
-  this->n_category_ = n_category;
-  this->n_outcomes_ = n_outcomes;
-  this->sum_outcomes_ = sum_outcomes;
-  this->n_cluster_ = n_cluster;
-  this->prior_error_ = prior_error;
-  this->prob_error_ = prob_error;
-  this->regress_coeff_error_ = regress_coeff_error;
-  this->info_size_ =
-      this->n_feature_ * (this->n_cluster_ - 1) +
-      this->n_cluster_ * (this->sum_outcomes_ - this->n_category_);
-  this->jacobian_width_ =
-      this->n_cluster_ + this->n_cluster_ * this->sum_outcomes_;
-}
+    double* prob_error, double* regress_coeff_error)
+    : features_(features),
+      responses_(responses),
+      probs_(probs),
+      prior_(prior),
+      posterior_(posterior),
+      n_data_(n_data),
+      n_feature_(n_feature),
+      n_category_(n_category),
+      n_outcomes_(n_outcomes),
+      sum_outcomes_(sum_outcomes),
+      n_cluster_(n_cluster),
+      prior_error_(prior_error),
+      prob_error_(prob_error),
+      regress_coeff_error_(regress_coeff_error),
+      info_size_(n_feature_ * (n_cluster_ - 1) +
+                 n_cluster_ * (sum_outcomes_ - n_category_)),
+      jacobian_width_(n_cluster_ + n_cluster_ * sum_outcomes_) {}
 
 void polca_parallel::StandardError::Calc() {
   // calcaulte the info matrix
-  double* info = new double[this->info_size_ * this->info_size_];
-  this->CalcInfo(info);
+  std::vector<double> info(this->info_size_ * this->info_size_);
+  this->CalcInfo(info.data());
 
   // calculate the Jacobian matrix
-  double* jacobian = new double[this->info_size_ * this->jacobian_width_];
-  this->CalcJacobian(jacobian);
+  std::vector<double> jacobian(this->info_size_ * this->jacobian_width_);
+  this->CalcJacobian(jacobian.data());
 
-  this->ExtractError(info, jacobian);
-
-  delete[] jacobian;
-  delete[] info;
+  this->ExtractError(info.data(), jacobian.data());
 }
 
 void polca_parallel::StandardError::CalcInfo(double* info) {
+  arma::Mat<double> score_arma(this->n_data_, this->info_size_);
+  this->CalcScore(score_arma.memptr());
   arma::Mat<double> info_arma(info, this->info_size_, this->info_size_, false,
                               true);
-  double* score = new double[this->n_data_ * this->info_size_];
-  this->CalcScore(score);
-  arma::Mat<double> score_arma(score, this->n_data_, this->info_size_, false);
   info_arma = score_arma.t() * score_arma;
-  delete[] score;
 }
 
 void polca_parallel::StandardError::CalcScore(double* score) {

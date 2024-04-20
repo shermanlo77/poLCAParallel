@@ -92,17 +92,15 @@ Rcpp::NumericVector BlrtRcpp(Rcpp::NumericVector prior_null,
   // allocate memory for storing log likelihood ratios
   Rcpp::NumericVector ratio_array(n_bootstrap);
 
-  polca_parallel::Blrt* blrt = new polca_parallel::Blrt(
+  polca_parallel::Blrt blrt(
       prior_null.begin(), prob_null.begin(), n_cluster_null, prior_alt.begin(),
       prob_alt.begin(), n_cluster_alt, n_data, n_category, n_outcomes.begin(),
       sum_outcomes, n_bootstrap, n_rep, n_thread, max_iter, tolerance,
       ratio_array.begin());
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
-  blrt->SetSeed(&seed_seq);
-
-  blrt->Run();
-  delete blrt;
+  blrt.SetSeed(&seed_seq);
+  blrt.Run();
 
   return ratio_array;
 }

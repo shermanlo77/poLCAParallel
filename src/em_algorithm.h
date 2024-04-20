@@ -25,6 +25,7 @@
 #include <memory>
 #include <random>
 #include <utility>
+#include <vector>
 
 #include "RcppArmadillo.h"
 
@@ -158,7 +159,7 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  double* best_initial_prob_ = NULL;
+  double* best_initial_prob_ = nullptr;
 
   /** Log likelihood, updated at each iteration of EM */
   double ln_l_ = -INFINITY;
@@ -166,7 +167,7 @@ class EmAlgorithm {
    * Vector, for each data point, the log-likelihood for each data point, the
    * total log-likelihood is the sum
    */
-  double* ln_l_array_;
+  std::vector<double> ln_l_array_;
   /** Number of iterations done right now */
   int n_iter_ = 0;
   /**
@@ -246,8 +247,6 @@ class EmAlgorithm {
               double* posterior, double* prior, double* estimated_prob,
               double* regress_coeff);
 
-  virtual ~EmAlgorithm();
-
   /**
    * Fit data to model using EM algorithm
    *
@@ -293,10 +292,20 @@ class EmAlgorithm {
   /** Set rng using a seed, for generating new random initial values */
   void set_seed(unsigned seed);
 
-  /** Set rng by transferring ownership of an rng to this object */
+  /**
+   * Set rng by transferring ownership of an rng to this object
+   *
+   * Use this method if you want to use your own rng instead of the default
+   * rng
+   */
   void set_rng(std::unique_ptr<std::mt19937_64>* rng);
 
-  /** Transfer ownership of rng from this object*/
+  /**
+   * Transfer ownership of rng from this object
+   *
+   * Use this method if you want to ensure the rng you pass in set_rng() lives
+   * when this object goes out of scope
+   * */
   std::unique_ptr<std::mt19937_64> move_rng();
 
  protected:

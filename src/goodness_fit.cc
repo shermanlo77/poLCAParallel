@@ -73,9 +73,9 @@ std::array<double, 2> polca_parallel::GetStatistics(
   int n_unique = unique_freq->size();
 
   // store statistics for each unique response
-  double* chi_squared_array = new double[n_unique];
-  double* ln_l_ratio_array = new double[n_unique];
-  double* expected_array = new double[n_unique];
+  std::vector<double> chi_squared_array(n_unique);
+  std::vector<double> ln_l_ratio_array(n_unique);
+  std::vector<double> expected_array(n_unique);
   double expected;
   double observed;
   double diff_squared;
@@ -101,14 +101,11 @@ std::array<double, 2> polca_parallel::GetStatistics(
 
   // chi squared calculation also use unobserved responses
   chi_squared =
-      arma::sum(arma::Row<double>(chi_squared_array, n_unique, false)) +
+      arma::sum(arma::Row<double>(chi_squared_array.data(), n_unique, false)) +
       (static_cast<double>(n_data) -
-       arma::sum(arma::Row<double>(expected_array, n_unique, false)));
-  ln_l_ratio = 2.0 * sum(arma::Row<double>(ln_l_ratio_array, n_unique, false));
-
-  delete[] chi_squared_array;
-  delete[] ln_l_ratio_array;
-  delete[] expected_array;
+       arma::sum(arma::Row<double>(expected_array.data(), n_unique, false)));
+  ln_l_ratio =
+      2.0 * sum(arma::Row<double>(ln_l_ratio_array.data(), n_unique, false));
 
   return {ln_l_ratio, chi_squared};
 }

@@ -22,6 +22,7 @@
 #include <mutex>
 #include <random>
 #include <thread>
+#include <vector>
 
 #include "em_algorithm.h"
 #include "em_algorithm_regress.h"
@@ -119,12 +120,12 @@ class EmAlgorithmArray {
    * results_lock_ when using multiple threads. It shall be the same format as
    * the member variable with the same name in EmAlgorithm.
    */
-  double* best_initial_prob_ = NULL;
+  double* best_initial_prob_ = nullptr;
 
   /** Number of initial values to try */
   int n_rep_;
   /** The best log-likelihood found so far */
-  double optimal_ln_l_;
+  double optimal_ln_l_ = -INFINITY;
   /**
    * Number of iterations the optimal fitter has done. Accessing and writing
    * should be done with locking and unlocking results_lock_ when using multiple
@@ -143,28 +144,28 @@ class EmAlgorithmArray {
    * be done with locking and unlocking n_rep_done_lock_ when using multiple
    * threads.
    */
-  int n_rep_done_;
+  int n_rep_done_ = 0;
   /**
    * Optional, maximum log-likelihood for each repetition. Set using
    * set_ln_l_array()
    */
-  double* ln_l_array_ = NULL;
+  double* ln_l_array_ = nullptr;
   /** Index of which initial value has the best log-likelihood */
   int best_rep_index_;
   /** Number of threads */
   int n_thread_;
 
   /** For locking n_rep_done_ */
-  std::mutex* n_rep_done_lock_;
+  std::unique_ptr<std::mutex> n_rep_done_lock_;
   /** For locking optimal_ln_l_, best_rep_index_, n_iter_ and has_restarted_ */
-  std::mutex* results_lock_;
+  std::unique_ptr<std::mutex> results_lock_;
 
  protected:
   /**
    * An array of seeds, for each repetition, used to seed each repetition, only
    * used if a run fails and needs to generate new initial values
    */
-  std::unique_ptr<unsigned[]> seed_array_ = NULL;
+  std::unique_ptr<unsigned[]> seed_array_;
 
  public:
   /**
@@ -235,8 +236,6 @@ class EmAlgorithmArray {
                    int max_iter, double tolerance, double* posterior,
                    double* prior, double* estimated_prob, double* regress_coeff,
                    bool is_regress);
-
-  ~EmAlgorithmArray();
 
   /**
    * Fit (in parallel) using the EM algorithm.

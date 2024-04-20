@@ -18,10 +18,12 @@
 #ifndef BLRT_H_
 #define BLRT_H_
 
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <thread>
+#include <vector>
 
 #include "em_algorithm.h"
 #include "em_algorithm_array_serial.h"
@@ -107,10 +109,10 @@ class Blrt {
   double* ratio_array_;
 
   /** For locking n_bootstrap_done_ */
-  std::mutex* n_bootstrap_done_lock_;
+  std::unique_ptr<std::mutex> n_bootstrap_done_lock_;
 
   /** Array of seeds, for each bootstrap sample*/
-  std::unique_ptr<unsigned[]> seed_array_ = NULL;
+  std::unique_ptr<unsigned[]> seed_array_;
 
  public:
   /**
@@ -164,8 +166,6 @@ class Blrt {
        int n_category, int* n_outcomes, int sum_outcomes, int n_bootstrap,
        int n_rep, int n_thread, int max_iter, double tolerance,
        double* ratio_array);
-
-  ~Blrt();
 
   /** Set the rng seed for each bootstrap sample */
   void SetSeed(std::seed_seq* seed);

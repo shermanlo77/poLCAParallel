@@ -20,6 +20,8 @@
 
 #include <math.h>
 
+#include <vector>
+
 #include "RcppArmadillo.h"
 
 namespace polca_parallel {

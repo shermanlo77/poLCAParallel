@@ -15,6 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+#include <memory>
+
 #include "RcppArmadillo.h"
 #include "standard_error.h"
 #include "standard_error_regress.h"
@@ -84,16 +86,16 @@ Rcpp::List StandardErrorRcpp(Rcpp::NumericVector features,
   Rcpp::NumericVector probs_error(sum_outcomes * n_cluster);
   Rcpp::NumericMatrix regress_coeff_error(len_regress_coeff, len_regress_coeff);
 
-  polca_parallel::StandardError* error;
+  std::unique_ptr<polca_parallel::StandardError> error;
 
   if (n_feature == 1) {
-    error = new polca_parallel::StandardError(
+    error = std::make_unique<polca_parallel::StandardError>(
         features.begin(), responses.begin(), probs.begin(), prior.begin(),
         posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
         sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
         regress_coeff_error.begin());
   } else {
-    error = new polca_parallel::StandardErrorRegress(
+    error = std::make_unique<polca_parallel::StandardErrorRegress>(
         features.begin(), responses.begin(), probs.begin(), prior.begin(),
         posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
         sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
@@ -101,8 +103,6 @@ Rcpp::List StandardErrorRcpp(Rcpp::NumericVector features,
   }
 
   error->Calc();
-
-  delete error;
 
   Rcpp::List to_return;
   to_return.push_back(prior_error);

@@ -24,30 +24,26 @@ polca_parallel::EmAlgorithm::EmAlgorithm(
     double* features, int* responses, double* initial_prob, int n_data,
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
     int n_cluster, int max_iter, double tolerance, double* posterior,
-    double* prior, double* estimated_prob, double* regress_coeff) {
-  this->features_ = features;
-  this->responses_ = responses;
-  this->initial_prob_ = initial_prob;
-  this->n_data_ = n_data;
-  this->n_feature_ = n_feature;
-  this->n_category_ = n_category;
-  this->n_outcomes_ = n_outcomes;
-  this->sum_outcomes_ = sum_outcomes;
-  this->n_cluster_ = n_cluster;
-  this->max_iter_ = max_iter;
-  this->tolerance_ = tolerance;
-  this->posterior_ = posterior;
-  this->prior_ = prior;
-  this->estimated_prob_ = estimated_prob;
-  this->regress_coeff_ = regress_coeff;
-  this->ln_l_array_ = new double[this->n_data_];
-
+    double* prior, double* estimated_prob, double* regress_coeff)
+    : features_(features),
+      responses_(responses),
+      initial_prob_(initial_prob),
+      n_data_(n_data),
+      n_feature_(n_feature),
+      n_category_(n_category),
+      n_outcomes_(n_outcomes),
+      sum_outcomes_(sum_outcomes),
+      n_cluster_(n_cluster),
+      max_iter_(max_iter),
+      tolerance_(tolerance),
+      posterior_(posterior),
+      prior_(prior),
+      estimated_prob_(estimated_prob),
+      regress_coeff_(regress_coeff),
+      ln_l_array_(n_data) {
   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-  std::mt19937_64* rng = new std::mt19937_64(seed);
-  this->rng_ = std::unique_ptr<std::mt19937_64>(rng);
+  this->rng_ = std::make_unique<std::mt19937_64>(seed);
 }
-
-polca_parallel::EmAlgorithm::~EmAlgorithm() { delete[] this->ln_l_array_; }
 
 void polca_parallel::EmAlgorithm::Fit() {
   bool is_first_run = true;
@@ -61,9 +57,9 @@ void polca_parallel::EmAlgorithm::Fit() {
   while (!is_success) {
     if (is_first_run) {
       // copy initial prob to estimated prob
-      std::memcpy(this->estimated_prob_, this->initial_prob_,
-                  this->n_cluster_ * this->sum_outcomes_ *
-                      sizeof(*this->estimated_prob_));
+      memcpy(this->estimated_prob_, this->initial_prob_,
+             this->n_cluster_ * this->sum_outcomes_ *
+                 sizeof(*this->estimated_prob_));
     } else {
       // reach this condition if the first run has a problem
       // reset all required parameters
@@ -71,10 +67,10 @@ void polca_parallel::EmAlgorithm::Fit() {
     }
 
     // make a copy initial probabilities if requested
-    if (this->best_initial_prob_ != NULL) {
-      std::memcpy(this->best_initial_prob_, this->estimated_prob_,
-                  this->n_cluster_ * this->sum_outcomes_ *
-                      sizeof(*this->best_initial_prob_));
+    if (this->best_initial_prob_) {
+      memcpy(this->best_initial_prob_, this->estimated_prob_,
+             this->n_cluster_ * this->sum_outcomes_ *
+                 sizeof(*this->best_initial_prob_));
     }
 
     ln_l_before = -INFINITY;
@@ -98,7 +94,8 @@ void polca_parallel::EmAlgorithm::Fit() {
       this->EStep();
 
       // E step updates ln_l_array_, use that to calculate log likelihood
-      arma::Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false);
+      arma::Col<double> ln_l_array(this->ln_l_array_.data(), this->n_data_,
+                                   false);
       this->ln_l_ = sum(ln_l_array);
 
       // check for any errors
@@ -146,8 +143,7 @@ bool polca_parallel::EmAlgorithm::get_has_restarted() {
 }
 
 void polca_parallel::EmAlgorithm::set_seed(unsigned seed) {
-  std::mt19937_64* rng = new std::mt19937_64(seed);
-  this->rng_ = std::unique_ptr<std::mt19937_64>(rng);
+  this->rng_ = std::make_unique<std::mt19937_64>(seed);
 }
 
 void polca_parallel::EmAlgorithm::set_rng(
@@ -177,13 +173,13 @@ void polca_parallel::EmAlgorithm::InitPrior() {
 
 void polca_parallel::EmAlgorithm::FinalPrior() {
   // Copying prior probabilities as each data point as the same prior
-  double* prior_copy = new double[this->n_cluster_];
-  memcpy(prior_copy, this->prior_, this->n_cluster_ * sizeof(*this->prior_));
+  std::vector<double> prior_copy(this->n_cluster_);
+  memcpy(prior_copy.data(), this->prior_,
+         this->n_cluster_ * sizeof(*this->prior_));
   for (int m = 0; m < this->n_cluster_; ++m) {
     std::fill(this->prior_ + m * this->n_data_,
               this->prior_ + (m + 1) * this->n_data_, prior_copy[m]);
   }
-  delete[] prior_copy;
 }
 
 double polca_parallel::EmAlgorithm::GetPrior(int data_index,
@@ -204,7 +200,8 @@ void polca_parallel::EmAlgorithm::EStep() {
 
   arma::Mat<double> posterior(this->posterior_, this->n_data_, this->n_cluster_,
                               false, true);
-  arma::Col<double> ln_l_array(this->ln_l_array_, this->n_data_, false, true);
+  arma::Col<double> ln_l_array(this->ln_l_array_.data(), this->n_data_, false,
+                               true);
   ln_l_array = arma::sum(posterior, 1);  // row sum
   posterior.each_col() /= ln_l_array;    // normalise by the row sum
   ln_l_array = arma::log(ln_l_array);    // log likelihood
