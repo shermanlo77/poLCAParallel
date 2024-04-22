@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "RcppArmadillo.h"
+#include "smoother.h"
 
 namespace polca_parallel {
 
@@ -126,6 +127,8 @@ class StandardError {
   int info_size_;
   /** The width of the Jacobian matrix*/
   int jacobian_width_;
+  /** For smoothing the probabilities in prior, posterior and probs */
+  std::unique_ptr<polca_parallel::Smoother> smoother_;
 
  public:
   /**
@@ -196,6 +199,15 @@ class StandardError {
   virtual void Calc();
 
  protected:
+  /**
+   * Smooth the probabilities prior, posterior and prob if a smoother exists
+   *
+   * Smooth the probabilities prior, posterior and prob if a smoother exists.
+   * The pointers probs_, prior_ and posterior_ will point to the smoothed
+   * probabilities.
+   */
+  void SmoothProbs();
+
   /**
    * Calculate the information matrix
    *

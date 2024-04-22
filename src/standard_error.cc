@@ -41,6 +41,8 @@ polca_parallel::StandardError::StandardError(
       jacobian_width_(n_cluster_ + n_cluster_ * sum_outcomes_) {}
 
 void polca_parallel::StandardError::Calc() {
+  this->SmoothProbs();
+
   // calcaulte the info matrix
   std::vector<double> info(this->info_size_ * this->info_size_);
   this->CalcInfo(info.data());
@@ -50,6 +52,15 @@ void polca_parallel::StandardError::Calc() {
   this->CalcJacobian(jacobian.data());
 
   this->ExtractError(info.data(), jacobian.data());
+}
+
+void polca_parallel::StandardError::SmoothProbs() {
+  if (this->smoother_) {
+    this->smoother_->Smooth();
+    this->probs_ = this->smoother_->get_probs();
+    this->prior_ = this->smoother_->get_prior();
+    this->posterior_ = this->smoother_->get_posterior();
+  }
 }
 
 void polca_parallel::StandardError::CalcInfo(double* info) {
