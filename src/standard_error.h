@@ -332,12 +332,19 @@ class StandardError {
   void ExtractError(double* info, double* jacobian);
 
   /**
-   * Extract errors of interest given the inverse of the information matrix
+   * Extract errors of interest from eigen calculations
    *
-   * @param info_inv the inverse information matrix
+   * Extract errors of interest given the eigenvectors and inverse eigenvalues
+   * of the information matrix. Saves them to the member variables such as
+   * prior_error, prob_error and regress_coeff_error
+   *
+   * @param eigval_inv the inverse of the eigenvalues of the information matrix
+   * @param eigven eigenvectors of the information matrix
    * @param jacobian the jacobian matrix
    */
-  virtual void ExtractErrorGivenInfoInv(double* info_inv, double* jacobian);
+  virtual void ExtractErrorGivenEigen(arma::Col<double>* eigval_inv,
+                                      arma::Mat<double>* eigvec,
+                                      double* jacobian);
 };
 
 }  // namespace polca_parallel

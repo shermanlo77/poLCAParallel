@@ -196,38 +196,43 @@ void polca_parallel::StandardError::CalcJacobianBlock(double* probs, int n_prob,
 
 void polca_parallel::StandardError::ExtractError(double* info,
                                                  double* jacobian) {
-  // calculate the inverse information matrix
   arma::Mat<double> info_arma(info, this->info_size_, this->info_size_, false);
-  arma::Mat<double> info_arma_inv = arma::pinv(info_arma);
 
-  this->ExtractErrorGivenInfoInv(info_arma_inv.memptr(), jacobian);
+  // required to ensure symmetry, espically if using a preconditioner in further
+  // development of this code
+  info_arma = arma::symmatu(info_arma);
+
+  arma::Col<double> eigval;
+  arma::Mat<double> eigvec;
+  arma::eig_sym(eigval, eigvec, info_arma);
+
+  // remove small eigenvalues, use same tol as in pinv
+  // required as info is usually ill-conditioned
+  double tol = this->info_size_ * eigval[this->info_size_ - 1] *
+               std::numeric_limits<double>::epsilon();
+  // take the sqrt inverse for large eigenvalues
+  for (double* eigval_i = eigval.begin(); eigval_i < eigval.end(); ++eigval_i) {
+    if (*eigval_i < tol) {
+      *eigval_i = 0.0;
+    } else {
+      *eigval_i = 1 / *eigval_i;
+    }
+  }
+  this->ExtractErrorGivenEigen(&eigval, &eigvec, jacobian);
 }
 
-void polca_parallel::StandardError::ExtractErrorGivenInfoInv(double* info_inv,
-                                                             double* jacobian) {
-  arma::Mat<double> info_arma_inv(info_inv, this->info_size_, this->info_size_,
-                                  false);
+void polca_parallel::StandardError::ExtractErrorGivenEigen(
+    arma::Col<double>* eigval_inv, arma::Mat<double>* eigvec,
+    double* jacobian) {
+  // extract errors for the prior and outcome probs
+  arma::Mat<double> jac_arma(jacobian, this->info_size_, this->jacobian_width_,
+                             false);
+  // do root columns sum of squares, faster than full matrix multiplication
+  arma::Row<double> std_err = arma::vecnorm(
+      arma::diagmat(arma::sqrt(*eigval_inv)) * eigvec->t() * jac_arma, 2, 0);
 
-  // calculate the diagonal of the covariance matrix
-  arma::Col<double> covariance_diag_arma(this->jacobian_width_);
-
-  // for each diagonal of the covariance, do a vector x matrix x vector
-  // calculation
-  // the vector is a column from the jacobian
-  double* jacobian_col = jacobian;
-  for (double* cov_diag = covariance_diag_arma.begin();
-       cov_diag < covariance_diag_arma.end(); cov_diag++) {
-    arma::Col<double> jacobian_col_arma(jacobian_col, this->info_size_, false);
-    arma::Col<double> covariance_diag_i_arma(cov_diag, 1, false, true);
-    covariance_diag_i_arma =
-        jacobian_col_arma.t() * info_arma_inv * jacobian_col_arma;
-    jacobian_col += this->info_size_;
-  }
-
-  covariance_diag_arma = arma::sqrt(covariance_diag_arma);
-
-  memcpy(this->prior_error_, covariance_diag_arma.memptr(),
+  memcpy(this->prior_error_, std_err.memptr(),
          this->n_cluster_ * sizeof(*this->prior_error_));
-  memcpy(this->prob_error_, covariance_diag_arma.memptr() + this->n_cluster_,
+  memcpy(this->prob_error_, std_err.memptr() + this->n_cluster_,
          this->sum_outcomes_ * this->n_cluster_ * sizeof(*this->prob_error_));
 }

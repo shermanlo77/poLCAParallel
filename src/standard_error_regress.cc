@@ -75,14 +75,24 @@ void polca_parallel::StandardErrorRegress::CalcJacobianPrior(
   *jacobian_ptr += (this->n_cluster_ - 1) * this->n_feature_;
 }
 
-void polca_parallel::StandardErrorRegress::ExtractErrorGivenInfoInv(
-    double* info_inv, double* jacobian) {
+void polca_parallel::StandardErrorRegress::ExtractErrorGivenEigen(
+    arma::Col<double>* eigval_inv, arma::Mat<double>* eigvec,
+    double* jacobian) {
+  // extract errors for the prior and outcome probs
+  this->StandardError::ExtractErrorGivenEigen(eigval_inv, eigvec, jacobian);
   int size = this->n_feature_ * (this->n_cluster_ - 1);
-  arma::Mat<double> info_arma(info_inv, this->info_size_, this->info_size_,
-                              false);
+  // then extract covariance matrix
+  arma::Mat<double> jac_arma(jacobian, this->info_size_, this->jacobian_width_,
+                             false);
+
   arma::Mat<double> regress_coeff_error(this->regress_coeff_error_, size, size,
                                         false, true);
-  regress_coeff_error = info_arma.submat(0, 0, size - 1, size - 1);
-  this->polca_parallel::StandardError::ExtractErrorGivenInfoInv(info_inv,
-                                                                jacobian);
+
+  // make a copy of the submat which contains the dimensions for the
+  // coefficients, this is used to create the covariance for the coefficients
+  // no need to do full pinv(info) multiplication
+  //
+  // making a copy is faster than submat() * diagmat() * submat().t()
+  arma::Mat<double> sub = eigvec->submat(0, 0, size - 1, this->info_size_ - 1);
+  regress_coeff_error = sub * arma::diagmat(*eigval_inv) * sub.t();
 }

@@ -97,7 +97,9 @@ class StandardErrorRegress : public polca_parallel::StandardError {
  protected:
   void CalcScorePrior(double** score_start) override;
   void CalcJacobianPrior(double** jacobian_ptr) override;
-  void ExtractErrorGivenInfoInv(double* info_inv, double* jacobian) override;
+  void ExtractErrorGivenEigen(arma::Col<double>* eigval_inv_root,
+                              arma::Mat<double>* eigvec,
+                              double* jacobian) override;
 };
 
 }  // namespace polca_parallel
