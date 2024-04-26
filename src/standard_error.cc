@@ -43,15 +43,16 @@ polca_parallel::StandardError::StandardError(
 void polca_parallel::StandardError::Calc() {
   this->SmoothProbs();
 
-  // calcaulte the info matrix
-  std::vector<double> info(this->info_size_ * this->info_size_);
-  this->CalcInfo(info.data());
+  // calculate the score matrix
+  std::vector<double> score(this->n_data_ * this->info_size_);
+  this->CalcScore(score.data());
 
   // calculate the Jacobian matrix
   std::vector<double> jacobian(this->info_size_ * this->jacobian_width_);
   this->CalcJacobian(jacobian.data());
 
-  this->ExtractError(info.data(), jacobian.data());
+  std::unique_ptr<polca_parallel::ErrorSolver> solver = this->InitErrorSolver();
+  solver->Solve(score.data(), jacobian.data());
 }
 
 void polca_parallel::StandardError::SmoothProbs() {
@@ -63,12 +64,12 @@ void polca_parallel::StandardError::SmoothProbs() {
   }
 }
 
-void polca_parallel::StandardError::CalcInfo(double* info) {
-  arma::Mat<double> score_arma(this->n_data_, this->info_size_);
-  this->CalcScore(score_arma.memptr());
-  arma::Mat<double> info_arma(info, this->info_size_, this->info_size_, false,
-                              true);
-  info_arma = score_arma.t() * score_arma;
+std::unique_ptr<polca_parallel::ErrorSolver>
+polca_parallel::StandardError::InitErrorSolver() {
+  return (std::make_unique<polca_parallel::InfoEigenSolver>(
+      this->n_data_, this->n_feature_, this->sum_outcomes_, this->n_cluster_,
+      this->info_size_, this->jacobian_width_, this->prior_error_,
+      this->prob_error_, this->regress_coeff_error_));
 }
 
 void polca_parallel::StandardError::CalcScore(double* score) {
@@ -192,47 +193,4 @@ void polca_parallel::StandardError::CalcJacobianBlock(double* probs, int n_prob,
   // shift to the bottom right corner of the block matrix, ready for next block
   // matrix
   *jacobian_ptr += n_prob - 1;
-}
-
-void polca_parallel::StandardError::ExtractError(double* info,
-                                                 double* jacobian) {
-  arma::Mat<double> info_arma(info, this->info_size_, this->info_size_, false);
-
-  // required to ensure symmetry, espically if using a preconditioner in further
-  // development of this code
-  info_arma = arma::symmatu(info_arma);
-
-  arma::Col<double> eigval;
-  arma::Mat<double> eigvec;
-  arma::eig_sym(eigval, eigvec, info_arma);
-
-  // remove small eigenvalues, use same tol as in pinv
-  // required as info is usually ill-conditioned
-  double tol = this->info_size_ * eigval[this->info_size_ - 1] *
-               std::numeric_limits<double>::epsilon();
-  // take the sqrt inverse for large eigenvalues
-  for (double* eigval_i = eigval.begin(); eigval_i < eigval.end(); ++eigval_i) {
-    if (*eigval_i < tol) {
-      *eigval_i = 0.0;
-    } else {
-      *eigval_i = 1 / *eigval_i;
-    }
-  }
-  this->ExtractErrorGivenEigen(&eigval, &eigvec, jacobian);
-}
-
-void polca_parallel::StandardError::ExtractErrorGivenEigen(
-    arma::Col<double>* eigval_inv, arma::Mat<double>* eigvec,
-    double* jacobian) {
-  // extract errors for the prior and outcome probs
-  arma::Mat<double> jac_arma(jacobian, this->info_size_, this->jacobian_width_,
-                             false);
-  // do root columns sum of squares, faster than full matrix multiplication
-  arma::Row<double> std_err = arma::vecnorm(
-      arma::diagmat(arma::sqrt(*eigval_inv)) * eigvec->t() * jac_arma, 2, 0);
-
-  memcpy(this->prior_error_, std_err.memptr(),
-         this->n_cluster_ * sizeof(*this->prior_error_));
-  memcpy(this->prob_error_, std_err.memptr() + this->n_cluster_,
-         this->sum_outcomes_ * this->n_cluster_ * sizeof(*this->prob_error_));
 }

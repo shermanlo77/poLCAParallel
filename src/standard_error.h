@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "RcppArmadillo.h"
+#include "error_solver.h"
 #include "smoother.h"
 
 namespace polca_parallel {
@@ -196,7 +197,7 @@ class StandardError {
    * Calculate the standard errors. Results are saved in the provided pointers
    * prior_error, prob_error and regress_coeff_error
    */
-  virtual void Calc();
+  void Calc();
 
  protected:
   /**
@@ -208,12 +209,8 @@ class StandardError {
    */
   void SmoothProbs();
 
-  /**
-   * Calculate the information matrix
-   *
-   * @param info pointer to save the information matrix
-   */
-  void CalcInfo(double* info);
+  /** Instantiate and return an error_solver_*/
+  virtual std::unique_ptr<polca_parallel::ErrorSolver> InitErrorSolver();
 
   /**
    * Calculate the scores
@@ -319,32 +316,6 @@ class StandardError {
    * matrix after calling this method
    */
   void CalcJacobianBlock(double* probs, int n_prob, double** jacobian_ptr);
-
-  /**
-   * Extract errors of interest
-   *
-   * Extract errors of interest such as prior_error, prob_error and
-   * regress_coeff_error
-   *
-   * @param info the information matrix
-   * @param jacobian the jacobian matrix
-   */
-  void ExtractError(double* info, double* jacobian);
-
-  /**
-   * Extract errors of interest from eigen calculations
-   *
-   * Extract errors of interest given the eigenvectors and inverse eigenvalues
-   * of the information matrix. Saves them to the member variables such as
-   * prior_error, prob_error and regress_coeff_error
-   *
-   * @param eigval_inv the inverse of the eigenvalues of the information matrix
-   * @param eigven eigenvectors of the information matrix
-   * @param jacobian the jacobian matrix
-   */
-  virtual void ExtractErrorGivenEigen(arma::Col<double>* eigval_inv,
-                                      arma::Mat<double>* eigvec,
-                                      double* jacobian);
 };
 
 }  // namespace polca_parallel
