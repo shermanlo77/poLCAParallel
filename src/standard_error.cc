@@ -51,6 +51,7 @@ void polca_parallel::StandardError::Calc() {
   std::vector<double> jacobian(this->info_size_ * this->jacobian_width_);
   this->CalcJacobian(jacobian.data());
 
+  // for solving equations, see error_solver.cc
   std::unique_ptr<polca_parallel::ErrorSolver> solver = this->InitErrorSolver();
   solver->Solve(score.data(), jacobian.data());
 }
@@ -66,7 +67,7 @@ void polca_parallel::StandardError::SmoothProbs() {
 
 std::unique_ptr<polca_parallel::ErrorSolver>
 polca_parallel::StandardError::InitErrorSolver() {
-  return (std::make_unique<polca_parallel::InfoEigenSolver>(
+  return (std::make_unique<polca_parallel::ScoreSvdSolver>(
       this->n_data_, this->n_feature_, this->sum_outcomes_, this->n_cluster_,
       this->info_size_, this->jacobian_width_, this->prior_error_,
       this->prob_error_, this->regress_coeff_error_));

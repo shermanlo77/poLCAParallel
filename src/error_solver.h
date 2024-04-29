@@ -32,10 +32,10 @@ namespace polca_parallel {
  * Pass the properties of the dataset and pointers to save the resulting errors
  * to the constructor. Then call Solve(), passing the score and Jacobian
  * matrices to calculate the standard errors (and covariance where appropriate)
- * and saves it at the provided pointers.
+ * and save it at the provided pointers.
  *
  * Derived classes are to implement the method Solve() to work out the standard
- * errors and saves it, eg using eigen decomposition, SVD, inv(), pinv(), ...etc
+ * errors and save it, eg using eigen decomposition, SVD, inv(), pinv(), ...etc
  */
 class ErrorSolver {
  protected:
@@ -82,7 +82,7 @@ class ErrorSolver {
    * Pass the properties of the dataset and pointers to save the resulting
    * errors to the constructor. Then call Solve(), passing the score and
    * Jacobian matrices to calculate the standard errors (and covariance where
-   * appropriate) and saves it at the provided pointers.
+   * appropriate) and save it at the provided pointers.
    *
    * @param n_data Number of data points
    * @param n_feature Number of features, required to be 1
@@ -132,21 +132,27 @@ class ErrorSolver {
  * Calculates standard errors from the eigencomposition of the info matrix
  *
  * Calculates the standard errors for the prior_error and prob_error. It
- * calculates the information matrix, from the score matrix, and invert it. The
+ * calculates the information matrix, from the score matrix, and inverts it. The
  * information matrix is typically ill-conditioned (very small positive and
- * negative eigenvalue), hence the justiciation for using an eigen
+ * negative eigenvalue), hence the justification for using an eigen
  * decomposition. As the same as pinv(), the inversion is done by inverting
  * the large eigenvalues and setting the small eigenvalues to zero. The root of
- * the inverted eigenvalues are taken so that the standard errors can be
+ * the inverted eigenvalues is taken so that the standard errors can be
  * obtained by the root column sum of squares.
+ *
+ * Note: the information matrix is calculated by S^T S where S is the score
+ * matrix. This may cause numerical instability as S is commonly
+ * ill-conditioned.
  *
  * Q = matrix containing columns of eigenvectors
  * D = diagonal of eigenvalues
  * J = jacobian matrix
  *
- * Eigendecomposition is given as score matrix = Q D Q^T
+ * Eigendecomposition is given as = Q D Q^T
  *
- * Take root column sum of squares D^{1/2} Q^T J
+ * The covariance of interest is J^T Q D^{-1} Q^T J
+ *
+ * For standard errors, take root column sum of squares D^{-1/2} Q^T J
  */
 class InfoEigenSolver : public polca_parallel::ErrorSolver {
  public:
@@ -178,23 +184,32 @@ class InfoEigenSolver : public polca_parallel::ErrorSolver {
  *
  * Calculates the standard errors for the prior_error, prob_error.and
  * regress_coeff_error. It calculates the information matrix, from the score
- * matrix, and invert it. The information matrix is typically ill-conditioned
- * (very small positive and negative eigenvalue), hence the justiciation for
+ * matrix, and inverts it. The information matrix is typically ill-conditioned
+ * (very small positive and negative eigenvalue), hence the justification for
  * using an eigen decomposition. As the same as pinv(), the inversion is done by
  * inverting the large eigenvalues and setting the small eigenvalues to zero.
- * The root of the inverted eigenvalues are taken so that the standard errors
+ * The root of the inverted eigenvalues is taken so that the standard errors
  * can be obtained by the root column sum of squares.
  *
  * The covariance matrix of the regression coefficients can be obtained directly
  * from the inverted information matrix, ie submatrix.
  *
+ * Note: the information matrix is calculated by S^T S where S is the score
+ * matrix. This may cause numerical instability as S is commonly
+ * ill-conditioned.
+ *
  * Q = matrix containing columns of eigenvectors
  * D = diagonal of eigenvalues
  * J = jacobian matrix
  *
- * Eigendecomposition is given as score matrix = Q D Q^T
+ * Eigendecomposition is given as = Q D Q^T
  *
- * Take root column sum of squares D^{1/2} Q^T J
+ * The covariance of interest is J^T Q D^{-1} Q^T J
+ *
+ * For standard errors, take root column sum of squares D^{-1/2} Q^T J
+ *
+ * For the regression coefficients covariance, take the top left (ie sub-matrix)
+ * of the covariance of interest
  */
 class InfoEigenRegressSolver : public polca_parallel::InfoEigenSolver {
  public:
@@ -206,6 +221,102 @@ class InfoEigenRegressSolver : public polca_parallel::InfoEigenSolver {
  protected:
   void ExtractErrorGivenEigen(arma::Col<double>* eigval_inv,
                               arma::Mat<double>* eigvec,
+                              double* jacobian) override;
+};
+
+/**
+ * Calculates standard errors from the eigencomposition of the info matrix
+ *
+ * Calculates the standard errors for the prior_error and prob_error. It does an
+ * SVD decomposition of the score matrix, which is typically ill-conditioned
+ * with very small positive (and sometimes value zero) singular values. As with
+ * pinv(), the inversion is done by inverting the large singular values and
+ * setting the small singular values to zero. The standard errors can be
+ * obtained by the root column sum of squares.
+ *
+ * The covariance matrix of the regression coefficients can be obtained directly
+ * from the inverted information matrix, ie submatrix.
+ *
+ * This is supposed to be more numerically stable as it avoids doing S^T S
+ * calculation. Benchmark vs InfoEigneSolver varies depending on the size of
+ * S and perhaps more.
+ *
+ * S = score matrix (size n x p)
+ * U = left orthogonal matrix (not needed) (size n x n)
+ * V = right orthogonal matrix (size p x p)
+ * D = diagonal matrix containing singular values (size n x p)
+ * J = jacobian matrix
+ *
+ * S = U D V^T
+ *
+ * The covariance of interest is J^T (S^T S) ^{-1} J = J^T V D^{-2} V J
+ *
+ * For standard errors, take root column sum of squares D^{-1} Q^T J
+ */
+class ScoreSvdSolver : public polca_parallel::ErrorSolver {
+ public:
+  ScoreSvdSolver(int n_data, int n_feature, int sum_outcomes, int n_cluster,
+                 int info_size, int jacobian_width, double* prior_error,
+                 double* prob_error, double* regress_coeff_error);
+
+  void Solve(double* score, double* jacobian) override;
+
+  /**
+   * Extract errors of interest from the SVD
+   *
+   * Extract errors of interest given the SVD of the score matrix. Saves them to
+   * the member variables such as prior_error, prob_error and
+   * regress_coeff_error
+   *
+   * @param singular_inv the inverse of the eigenvalues of the information
+   * matrix
+   * @param v_mat eigenvectors of the information matrix
+   * @param jacobian the jacobian matrix
+   */
+  virtual void ExtractErrorGivenEigen(arma::Col<double>* singular_inv,
+                                      arma::Mat<double>* v_mat,
+                                      double* jacobian);
+};
+
+/**
+ * Calculates standard errors from the eigencomposition of the info matrix
+ *
+ * Calculates the standard errors for the prior_error, prob_error and
+ * regress_coeff_error. It does an SVD decomposition of the score matrix, which
+ * is typically ill-conditioned with very small positive (and sometimes value
+ * zero) singular values. As with pinv(), the inversion is done by inverting the
+ * large singular values and setting the small singular values to zero. The
+ * standard errors can be obtained by the root column sum of squares.
+ *
+ * This is supposed to be more numerically stable as it avoids doing S^T S
+ * calculation. Benchmark vs InfoEigneSolver varies depending on the size of
+ * S and perhaps more.
+ *
+ * S = score matrix (size n x p)
+ * U = left orthogonal matrix (not needed) (size n x n)
+ * V = right orthogonal matrix (size p x p)
+ * D = diagonal matrix containing singular values (size n x p)
+ * J = jacobian matrix
+ *
+ * S = U D V^T
+ *
+ * The covariance of interest is J^T (S^T S) ^{-1} J = J^T V D^{-2} V J
+ *
+ * For standard errors, take root column sum of squares D^{-1} Q^T J
+ *
+ * For the regression coefficients covariance, take the top left (ie sub-matrix)
+ * of the covariance of interest
+ */
+class ScoreSvdRegressSolver : public polca_parallel::ScoreSvdSolver {
+ public:
+  ScoreSvdRegressSolver(int n_data, int n_feature, int sum_outcomes,
+                        int n_cluster, int info_size, int jacobian_width,
+                        double* prior_error, double* prob_error,
+                        double* regress_coeff_error);
+
+ protected:
+  void ExtractErrorGivenEigen(arma::Col<double>* singular_inv,
+                              arma::Mat<double>* v_mat_t,
                               double* jacobian) override;
 };
 
