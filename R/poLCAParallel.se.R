@@ -9,12 +9,15 @@
 #' poLCA with no regression
 #'
 #' @param polca the resulting poLCA object from calling poLCA()
+#' @param is_smooth Logical, experimental, for calculating the standard errors,
+#'     whether to smooth the outcome probabilities to produce more numerical
+#'     stable results as a cost of bias.
 #'
 #' @return the poLCA object with the attributes $P.se, $probs.se, $coeff.se and
 #' $coeff.V modified or added
 #'
 #' @export
-poLCAParallel.se <- function(polca) {
+poLCAParallel.se <- function(polca, is_smooth = FALSE) {
   # extract required variables (or attributes)
   y <- polca$y
   formula <- formula(
@@ -37,7 +40,7 @@ poLCAParallel.se <- function(polca) {
   # call the C++ function
   results <- StandardErrorRcpp(
     features, responses, probs, prior, posterior,
-    n_data, n_feature, n_category, n_outcomes, n_cluster
+    n_data, n_feature, n_category, n_outcomes, n_cluster, is_smooth
   )
 
   # standard errors for the prior

@@ -125,6 +125,9 @@
 #'     statistics, the chi squared statistics and the log likelihood ratio.
 #'     The default is `TRUE`.
 #' @param n.thread Integer, the number of threads used to run each repetition.
+#' @param se.smooth Logical, experimental, for calculating the standard errors,
+#'     whether to smooth the outcome probabilities to produce more numerical
+#'     stable results as a cost of bias.
 #'
 #' @return an object of class poLCA; a list containing the following elements:
 #'   * y: data frame of manifest variables.
@@ -222,7 +225,8 @@ poLCA <- function(formula,
                   verbose = TRUE,
                   calc.se = TRUE,
                   calc.chisq = TRUE,
-                  n.thread = parallel::detectCores()) {
+                  n.thread = parallel::detectCores(),
+                  se.smooth = FALSE) {
 
     # nclass == 1 will use original code
     # poLCAParallel edits the original code for the nclass > 1 case
@@ -351,7 +355,7 @@ poLCA <- function(formula,
 
     # calculate the standard errors
     if (calc.se) {
-        ret <- poLCAParallel.se(ret)
+        ret <- poLCAParallel.se(ret, se.smooth)
     }
 
     # if rows are fully observed and chi squared requested

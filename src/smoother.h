@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "RcppArmadillo.h"
+#include "em_algorithm.h"
 
 namespace polca_parallel {
 
@@ -48,9 +49,10 @@ namespace polca_parallel {
  */
 class Smoother {
  private:
+  int* responses_;
   /**
    * Vector of smoothed probabilities for the outcome probabilities. Flatten
-   * list of in the order
+   * list in the order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -94,6 +96,13 @@ class Smoother {
    * Creates a copy of probs, prior and posterior. Call Smooth() to smooth
    * these probabilities
    *
+   * @param responses Design matrix of responses, matrix containing
+   * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
+   * has dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each category</li>
+   * </ul>
    * @param probs Vector of probabilities for each outcome, for each category,
    * for each cluster flatten list in the order
    * <ul>
@@ -119,8 +128,9 @@ class Smoother {
    * @param sum_outcomes Sum of all integers in n_outcomes
    * @param n_cluster Number of clusters
    */
-  Smoother(double* probs, double* prior, double* posterior, int n_data,
-           int n_category, int* n_outcomes, int sum_outcomes, int n_cluster);
+  Smoother(int* responses, double* probs, double* prior, double* posterior,
+           int n_data, int n_category, int* n_outcomes, int sum_outcomes,
+           int n_cluster);
 
   /**
    * Smooth the probabilities probs_, prior_ and posterior_
@@ -151,8 +161,8 @@ class Smoother {
    * @param num_add see equation
    * @param demo_add see equation
    */
-  void Smooth(double* probs, int length, int n_data, double num_add,
-              int demo_add);
+  void Smooth(double* probs, int length, double n_data, double num_add,
+              double demo_add);
 };
 
 }  // namespace polca_parallel

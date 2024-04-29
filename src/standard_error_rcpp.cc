@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "RcppArmadillo.h"
+#include "regularised_error.h"
 #include "standard_error.h"
 #include "standard_error_regress.h"
 
@@ -62,16 +63,15 @@
  * @param n_category Number of categories
  * @param n_outcomes Array of number of outcomes, for each category
  * @param n_cluster Number of clusters fitted
+ * @param use_smooth True to smooth the outcome probabilities
  * @return Rcpp::List
  */
 // [[Rcpp::export]]
-Rcpp::List StandardErrorRcpp(Rcpp::NumericVector features,
-                             Rcpp::IntegerMatrix responses,
-                             Rcpp::NumericVector probs,
-                             Rcpp::NumericMatrix prior,
-                             Rcpp::NumericMatrix posterior, int n_data,
-                             int n_feature, int n_category,
-                             Rcpp::IntegerVector n_outcomes, int n_cluster) {
+Rcpp::List StandardErrorRcpp(
+    Rcpp::NumericVector features, Rcpp::IntegerMatrix responses,
+    Rcpp::NumericVector probs, Rcpp::NumericMatrix prior,
+    Rcpp::NumericMatrix posterior, int n_data, int n_feature, int n_category,
+    Rcpp::IntegerVector n_outcomes, int n_cluster, bool use_smooth) {
   int sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
   for (int i = 0; i < n_category; ++i) {
@@ -89,17 +89,33 @@ Rcpp::List StandardErrorRcpp(Rcpp::NumericVector features,
   std::unique_ptr<polca_parallel::StandardError> error;
 
   if (n_feature == 1) {
-    error = std::make_unique<polca_parallel::StandardError>(
-        features.begin(), responses.begin(), probs.begin(), prior.begin(),
-        posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
-        sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
-        regress_coeff_error.begin());
+    if (use_smooth) {
+      error = std::make_unique<polca_parallel::RegularisedError>(
+          features.begin(), responses.begin(), probs.begin(), prior.begin(),
+          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
+          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          regress_coeff_error.begin());
+    } else {
+      error = std::make_unique<polca_parallel::StandardError>(
+          features.begin(), responses.begin(), probs.begin(), prior.begin(),
+          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
+          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          regress_coeff_error.begin());
+    }
   } else {
-    error = std::make_unique<polca_parallel::StandardErrorRegress>(
-        features.begin(), responses.begin(), probs.begin(), prior.begin(),
-        posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
-        sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
-        regress_coeff_error.begin());
+    if (use_smooth) {
+      error = std::make_unique<polca_parallel::RegularisedRegressError>(
+          features.begin(), responses.begin(), probs.begin(), prior.begin(),
+          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
+          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          regress_coeff_error.begin());
+    } else {
+      error = std::make_unique<polca_parallel::StandardErrorRegress>(
+          features.begin(), responses.begin(), probs.begin(), prior.begin(),
+          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
+          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          regress_coeff_error.begin());
+    }
   }
 
   error->Calc();
