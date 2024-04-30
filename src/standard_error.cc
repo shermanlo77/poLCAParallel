@@ -148,12 +148,12 @@ void polca_parallel::StandardError::CalcJacobian(double* jacobian) {
 
 void polca_parallel::StandardError::CalcJacobianPrior(double** jacobian_ptr) {
   // copy over the prior, they will be the same for all data points
-  double prior[this->n_cluster_];
+  std::vector<double> prior(this->n_cluster_);
   for (int cluster_index = 0; cluster_index < this->n_cluster_;
        ++cluster_index) {
     prior[cluster_index] = this->prior_[cluster_index * this->n_data_];
   }
-  this->CalcJacobianBlock(prior, this->n_cluster_, jacobian_ptr);
+  this->CalcJacobianBlock(prior.data(), this->n_cluster_, jacobian_ptr);
 }
 
 void polca_parallel::StandardError::CalcJacobianProbs(double** jacobian_ptr) {

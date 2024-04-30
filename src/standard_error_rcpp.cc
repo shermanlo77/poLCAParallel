@@ -78,7 +78,6 @@ Rcpp::List StandardErrorRcpp(
     sum_outcomes += n_outcomes_array[i];
   }
 
-  bool is_regress = n_feature > 1;
   int len_regress_coeff = n_feature * (n_cluster - 1);
 
   // allocate matrices to pass pointers to C++ code

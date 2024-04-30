@@ -18,6 +18,9 @@
 #ifndef ERROR_SOLVER_H
 #define ERROR_SOLVER_H
 
+#include <algorithm>
+#include <limits>
+
 #include "RcppArmadillo.h"
 
 namespace polca_parallel {

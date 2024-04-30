@@ -15,8 +15,6 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#define ARMA_WARN_LEVEL 1
-
 #include "RcppArmadillo.h"
 #include "blrt.h"
 

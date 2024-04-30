@@ -21,6 +21,7 @@
 #include <math.h>
 
 #include <limits>
+#include <memory>
 
 #include "RcppArmadillo.h"
 #include "error_solver.h"
@@ -30,7 +31,7 @@
 namespace polca_parallel {
 
 /**
- * Experimental
+ * For calculating the standard errors of the fitted poLCA parameters
  *
  * Uses a smoother to smooth the outcome probabilities. This increases numerical
  * stability by better conditioning the score matrix and prevent errors from
@@ -49,7 +50,7 @@ class RegularisedError : public polca_parallel::StandardError {
 };
 
 /**
- * Experimental
+ * For calculating the standard errors of the fitted poLCA parameters
  *
  * Uses a smoother to smooth the outcome probabilities. This increases numerical
  * stability by better conditioning the score matrix and prevent errors from

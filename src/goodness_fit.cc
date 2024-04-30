@@ -29,7 +29,7 @@ void polca_parallel::GetUniqueObserved(
     // add or update observation count
     try {
       ++unique_freq->at(response_i).observed;
-    } catch (std::out_of_range e) {
+    } catch (std::out_of_range& e) {
       Frequency frequency;
       frequency.observed = 1;
       unique_freq->insert({response_i, frequency});

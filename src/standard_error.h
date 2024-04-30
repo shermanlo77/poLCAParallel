@@ -20,6 +20,7 @@
 
 #include <math.h>
 
+#include <memory>
 #include <vector>
 
 #include "RcppArmadillo.h"

@@ -96,7 +96,7 @@ bool polca_parallel::EmAlgorithmRegress::MStep() {
   try {
     regress_coeff -=
         arma::solve(hessian, gradient, arma::solve_opts::likely_sympd);
-  } catch (const std::runtime_error) {
+  } catch (const std::runtime_error&) {
     return true;
   }
 

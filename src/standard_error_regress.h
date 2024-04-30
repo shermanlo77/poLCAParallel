@@ -18,6 +18,8 @@
 #ifndef STANDARD_ERROR_REGRESS_H
 #define STANDARD_ERROR_REGRESS_H
 
+#include <memory>
+
 #include "standard_error.h"
 
 namespace polca_parallel {

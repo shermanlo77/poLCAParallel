@@ -18,6 +18,7 @@
 #ifndef EM_ALGORITHM_ARRAY_H_
 #define EM_ALGORITHM_ARRAY_H_
 
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <random>
