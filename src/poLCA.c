@@ -90,6 +90,7 @@ void postclass(double *prior, double *probs, int *y, int *items, int *obs,
   }
 }
 
+// @deprecated
 // Function: probhat
 //     A function to return updates estimates the response probs
 //     within each class given the data and posterior distributions
@@ -151,6 +152,7 @@ void probhat(int *y, double *post, int *items, int *obs, int *numChoices,
   free(denom);
 }
 
+// @deprecated
 // Function: d2lldbeta2
 //	Gives the first and second derivatives of the (cond) likelihood
 //      w.r.t. the vector of betas.

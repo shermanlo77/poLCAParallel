@@ -7,7 +7,7 @@ Author: Sherman Lo <s.lo@qmul.ac.uk>,
         Jeffrey Lewis <jblewis@ucla.edu>.
 Maintainer: Sherman Lo <s.lo@qmul.ac.uk>
 Imports: Rcpp (>= 1.0.7), scatterplot3d, MASS, parallel, poLCA
-LinkingTo: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, RcppArmadillo (>= 0.12.4.1.0)
 Description: Latent class analysis and latent class regression models
     for polytomous outcome variables.  Also known as latent structure analysis.
 License: GPL (>= 2)

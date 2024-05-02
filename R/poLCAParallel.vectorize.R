@@ -15,7 +15,6 @@
 #'         * for each cluster, for each category, for each outcome
 #'   * numChoices: vector, number of outcomes for each category
 #'   * classes: integer, number of classes (or clusters)
-#' @export
 poLCAParallel.vectorize <- function(probs) {
     classes <- nrow(probs[[1]])
     vecprobs <- c()

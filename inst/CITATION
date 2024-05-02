@@ -9,7 +9,7 @@ citEntry(entry = "misc",
   textVersion  =
   paste("Lo, S.E. (2022).",
         "Speeding up and Parallelising R packages (using Rcpp and C++ | QMUL ITS Research Blog",
-        "URL https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html")
+        "URL https://blog.hpc.qmul.ac.uk/speeding_up_r_packages.html"))
 )
 
 citEntry(entry = "article",

@@ -182,7 +182,7 @@
 #'     specified by the user, otherwise `TRUE`.
 #'   * call: function call to `poLCA`.
 #'
-#' @example
+#' @examples
 #' ##
 #' ## Three models without covariates:
 #' ## M0: Loglinear independence model.
@@ -393,6 +393,8 @@ poLCA <- function(formula,
 #' @return List with attributes x and y. x contain the features as a matrix with
 #' size ndata x nfeature. y contain the responses as a matrix with size ndata x
 #' ncategory
+#'
+#' @noRd
 extract_data <- function(formula, data, na.rm) {
     mframe <- model.frame(formula, data, na.action = NULL)
     mf <- model.response(mframe)
@@ -440,6 +442,8 @@ extract_data <- function(formula, data, na.rm) {
 #'    * dim 1: for each category
 #'    * dim 2: for each cluster/class
 #'    * dim 3: for each repetition
+#'
+#' @noRd
 generate_initial_probs <- function(probs.start, nrep, ncategory,
                                    noutcomes, nclass) {
     probs.start.ok <- is_probs_start_ok(
@@ -493,6 +497,8 @@ generate_initial_probs <- function(probs.start, nrep, ncategory,
 #' @param nclass int, number of classes or clusters
 #'
 #' @return boolean, true if probs.start is valid
+#'
+#' @noRd
 is_probs_start_ok <- function(probs.start, ncategory, noutcomes, nclass) {
     if (is.null(probs.start)) {
         return(FALSE)
@@ -531,6 +537,8 @@ is_probs_start_ok <- function(probs.start, ncategory, noutcomes, nclass) {
 #'
 #' @return list of length n_category. For the ith entry, it contains a
 #' matrix of outcome probabilities with dimensions n_class x n_outcomes[i]
+#'
+#' @noRd
 unvectorize_probs <- function(probs_vec, noutcomes, nclass) {
     return(poLCAParallel.unvectorize(
         list(vecprobs = probs_vec, numChoices = noutcomes, classes = nclass)

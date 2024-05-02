@@ -15,7 +15,6 @@
 #'   * classes: integer, number of classes (or clusters)
 #' @return list of length n_category. For the ith entry, it contains a
 #' matrix of outcome probabilities with dimensions n_class x n_outcomes[i]
-#' @export
 poLCAParallel.unvectorize <- function(vp) {
     num_choices <- vp$numChoices
     n_category <- length(num_choices)

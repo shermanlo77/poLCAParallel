@@ -6,6 +6,8 @@ export(
   poLCA.entropy,
   poLCA.predcell,
   poLCA.posterior,
+  poLCAParallel.goodnessfit,
+  poLCAParallel.se,
   rmulti,
   blrt
 )
