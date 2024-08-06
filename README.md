@@ -234,7 +234,7 @@ the possible following prerequisites are installed:
 * [LAPACK](http://www.netlib.org/lapack/)
 * [OpenBLAS](https://www.openblas.net/)
 
-An [Apptainer](https://apptainer.org/) defintion file `poLCAParallel.def` is
+An [Apptainer](https://apptainer.org/) definition file `poLCAParallel.def` is
 provided which installs R, prerequisites and poLCAParallel in a container. This
 may be useful for further troubleshooting.
 
