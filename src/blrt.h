@@ -19,6 +19,7 @@
 #define BLRT_H_
 
 #include <chrono>
+#include <cstring>
 #include <memory>
 #include <mutex>
 #include <random>

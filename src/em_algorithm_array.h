@@ -19,6 +19,7 @@
 #define EM_ALGORITHM_ARRAY_H_
 
 #include <algorithm>
+#include <cstring>
 #include <memory>
 #include <mutex>
 #include <random>

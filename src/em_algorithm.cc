@@ -57,9 +57,9 @@ void polca_parallel::EmAlgorithm::Fit() {
   while (!is_success) {
     if (is_first_run) {
       // copy initial prob to estimated prob
-      memcpy(this->estimated_prob_, this->initial_prob_,
-             this->n_cluster_ * this->sum_outcomes_ *
-                 sizeof(*this->estimated_prob_));
+      std::memcpy(this->estimated_prob_, this->initial_prob_,
+                  this->n_cluster_ * this->sum_outcomes_ *
+                      sizeof(*this->estimated_prob_));
     } else {
       // reach this condition if the first run has a problem
       // reset all required parameters
@@ -68,9 +68,9 @@ void polca_parallel::EmAlgorithm::Fit() {
 
     // make a copy initial probabilities if requested
     if (this->best_initial_prob_) {
-      memcpy(this->best_initial_prob_, this->estimated_prob_,
-             this->n_cluster_ * this->sum_outcomes_ *
-                 sizeof(*this->best_initial_prob_));
+      std::memcpy(this->best_initial_prob_, this->estimated_prob_,
+                  this->n_cluster_ * this->sum_outcomes_ *
+                      sizeof(*this->best_initial_prob_));
     }
 
     ln_l_before = -INFINITY;
@@ -174,8 +174,8 @@ void polca_parallel::EmAlgorithm::InitPrior() {
 void polca_parallel::EmAlgorithm::FinalPrior() {
   // Copying prior probabilities as each data point as the same prior
   std::vector<double> prior_copy(this->n_cluster_);
-  memcpy(prior_copy.data(), this->prior_,
-         this->n_cluster_ * sizeof(*this->prior_));
+  std::memcpy(prior_copy.data(), this->prior_,
+              this->n_cluster_ * sizeof(*this->prior_));
   for (int m = 0; m < this->n_cluster_; ++m) {
     std::fill(this->prior_ + m * this->n_data_,
               this->prior_ + (m + 1) * this->n_data_, prior_copy[m]);

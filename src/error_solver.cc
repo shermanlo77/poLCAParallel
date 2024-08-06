@@ -79,10 +79,11 @@ void polca_parallel::InfoEigenSolver::ExtractErrorGivenEigen(
   arma::Row<double> std_err = arma::vecnorm(
       arma::diagmat(arma::sqrt(*eigval_inv)) * eigvec->t() * jac_arma, 2, 0);
 
-  memcpy(this->prior_error_, std_err.memptr(),
-         this->n_cluster_ * sizeof(*this->prior_error_));
-  memcpy(this->prob_error_, std_err.memptr() + this->n_cluster_,
-         this->sum_outcomes_ * this->n_cluster_ * sizeof(*this->prob_error_));
+  std::memcpy(this->prior_error_, std_err.memptr(),
+              this->n_cluster_ * sizeof(*this->prior_error_));
+  std::memcpy(
+      this->prob_error_, std_err.memptr() + this->n_cluster_,
+      this->sum_outcomes_ * this->n_cluster_ * sizeof(*this->prob_error_));
 }
 
 polca_parallel::InfoEigenRegressSolver::InfoEigenRegressSolver(
@@ -164,10 +165,11 @@ void polca_parallel::ScoreSvdSolver::ExtractErrorGivenEigen(
   arma::Row<double> std_err =
       arma::vecnorm(arma::diagmat(*singular_inv) * v_mat->t() * jac_arma, 2, 0);
 
-  memcpy(this->prior_error_, std_err.memptr(),
-         this->n_cluster_ * sizeof(*this->prior_error_));
-  memcpy(this->prob_error_, std_err.memptr() + this->n_cluster_,
-         this->sum_outcomes_ * this->n_cluster_ * sizeof(*this->prob_error_));
+  std::memcpy(this->prior_error_, std_err.memptr(),
+              this->n_cluster_ * sizeof(*this->prior_error_));
+  std::memcpy(
+      this->prob_error_, std_err.memptr() + this->n_cluster_,
+      this->sum_outcomes_ * this->n_cluster_ * sizeof(*this->prob_error_));
 }
 
 polca_parallel::ScoreSvdRegressSolver::ScoreSvdRegressSolver(

@@ -21,6 +21,7 @@
 #include <math.h>
 
 #include <array>
+#include <cstring>
 #include <map>
 #include <stdexcept>
 #include <vector>

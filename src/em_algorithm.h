@@ -21,6 +21,7 @@
 #include <math.h>
 
 #include <chrono>
+#include <cstring>
 #include <limits>
 #include <memory>
 #include <random>

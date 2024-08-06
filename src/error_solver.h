@@ -19,6 +19,7 @@
 #define ERROR_SOLVER_H
 
 #include <algorithm>
+#include <cstring>
 #include <limits>
 
 #include "RcppArmadillo.h"

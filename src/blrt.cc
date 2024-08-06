@@ -80,12 +80,12 @@ void polca_parallel::Blrt::RunThread() {
 
   // use the fitted values as the initial values when fitting onto the bootstrap
   // samples
-  memcpy(init_prob_null.data(), this->prob_null_,
-         this->sum_outcomes_ * this->n_cluster_null_ *
-             sizeof(init_prob_null.front()));
-  memcpy(init_prob_alt.data(), this->prob_alt_,
-         this->sum_outcomes_ * this->n_cluster_alt_ *
-             sizeof(init_prob_alt.front()));
+  std::memcpy(init_prob_null.data(), this->prob_null_,
+              this->sum_outcomes_ * this->n_cluster_null_ *
+                  sizeof(init_prob_null.front()));
+  std::memcpy(init_prob_alt.data(), this->prob_alt_,
+              this->sum_outcomes_ * this->n_cluster_alt_ *
+                  sizeof(init_prob_alt.front()));
 
   // allocate memory for all required arrays, a lot of them aren't used after
   // fitting
