@@ -18,10 +18,13 @@
 #ifndef EM_ALGORITHM_ARRAY_H_
 #define EM_ALGORITHM_ARRAY_H_
 
+#include <algorithm>
+#include <cstring>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <thread>
+#include <vector>
 
 #include "em_algorithm.h"
 #include "em_algorithm_regress.h"
@@ -29,10 +32,12 @@
 namespace polca_parallel {
 
 /**
- * For using EM algorithm with multiple inital probabilities
+ * For using the EM algorithm with multiple initial probabilities
  *
- * Run multiple EM algorithm with different initial probabilites to try to find
- * the global maximum. Multiple threads can be used.
+ * Run multiple EM algorithms with different initial probabilities to try to
+ * find the global maximum. Using a different initial probability is known as a
+ * repetition. Multiple threads can be used to run these repetitions in
+ * parallel.
  *
  * How to use:
  * <ul>
@@ -46,7 +51,7 @@ namespace polca_parallel {
  *   </li>
  *   <li>
  *     Call the method Fit() to run multiple EM algorithms. Results with the
- *     best log likelihood are stored
+ *     best log-likelihood are stored
  *   </li>
  *   <li>
  *     Call the methods get_best_rep_index(), get_n_iter() and/or
@@ -56,9 +61,14 @@ namespace polca_parallel {
  */
 class EmAlgorithmArray {
  private:
-  /** Features to provide EmAlgorithm with */
+  /**
+   * Features to provide EmAlgorithm with. See EmAlgorithm for further details.
+   */
   double* features_;
-  /** Reponses to provide EmAlgorithm with */
+  /**
+   * Responses to provide EmAlgorithm with. See EmAlgorithm for further details.
+   * format.
+   */
   int* responses_;
   /** Number of data points */
   int n_data_;
@@ -66,9 +76,9 @@ class EmAlgorithmArray {
   int n_feature_;
   /** Number of categories */
   int n_category_;
-  /** Vector of number of outcomes for each category */
+  /** Vector of the number of outcomes for each category */
   int* n_outcomes_;
-  /** Sum of n_outcomes */
+  /** Sum of n_outcomes_ */
   int sum_outcomes_;
   /** Number of clusters (classes in literature) to fit */
   int n_cluster_;
@@ -76,63 +86,108 @@ class EmAlgorithmArray {
   int max_iter_;
   /** To provide to EmAlgorithm */
   double tolerance_;
-  /** To store posterior results */
+  /**
+   * To store the posterior result from the best repetition. Accessing and
+   * writing should be done with locking and unlocking results_lock_ when using
+   * multiple threads. It shall be the same format as the member variable with
+   * the same name in EmAlgorithm.
+   */
   double* posterior_;
-  /** To store prior results */
+  /**
+   * To store the prior result from the best repetition. Accessing and writing
+   * should be done with locking and unlocking results_lock_ when using multiple
+   * threads. It shall be the same format as the member variable with the same
+   * name in EmAlgorithm.
+   */
   double* prior_;
-  /** To store estimated prob results */
+  /**
+   * To store the estimated probabilities from the best repetition. Accessing
+   * and writing should be done with locking and unlocking results_lock_ when
+   * using multiple threads. It shall be the same format as the member variable
+   * with the same name in EmAlgorithm.
+   */
   double* estimated_prob_;
-  /** To store regression coefficient results */
+  /**
+   * To store the regression coefficients from the best repetition. Accessing
+   * and writing should be done with locking and unlocking results_lock_ when
+   * using multiple threads. It shall be the same format as the member variable
+   * with the same name in EmAlgorithm.
+   */
   double* regress_coeff_;
   /** True if to use regression model */
   bool is_regress_;
-  /** Optional, to store initial prob to obtain max likelihood */
-  double* best_initial_prob_ = NULL;
+  /**
+   * Optional, to store initial prob to obtain max likelihood or from the best
+   * repetition. Accessing and writing should be done with locking and unlocking
+   * results_lock_ when using multiple threads. It shall be the same format as
+   * the member variable with the same name in EmAlgorithm.
+   */
+  double* best_initial_prob_ = nullptr;
 
   /** Number of initial values to try */
   int n_rep_;
-  /** The best log likelihood found so far */
-  double optimal_ln_l_;
-  /** Number of iterations optimal fitter has done */
+  /** The best log-likelihood found so far */
+  double optimal_ln_l_ = -INFINITY;
+  /**
+   * Number of iterations the optimal fitter has done. Accessing and writing
+   * should be done with locking and unlocking results_lock_ when using multiple
+   * threads.
+   */
   int n_iter_;
   /** True if the EM algorithm has to ever restart */
   bool has_restarted_ = false;
   /**
-   * Array of initial probabilities, each reptition uses sum_outcomes*n_cluster
-   * probabilities
+   * An array of initial probabilities, each repetition uses
+   * sum_outcomes*n_cluster probabilities
    */
   double* initial_prob_;
-  /** Which initial value is being worked on */
-  int n_rep_done_;
-  /** Maximum log likelihood for each reptition */
-  double* ln_l_array_ = NULL;
-  /** Index of which inital value has the best log likelihood */
+  /**
+   * The latest initial value is being worked on. Accessing and writing should
+   * be done with locking and unlocking n_rep_done_lock_ when using multiple
+   * threads.
+   */
+  int n_rep_done_ = 0;
+  /**
+   * Optional, maximum log-likelihood for each repetition. Set using
+   * set_ln_l_array()
+   */
+  double* ln_l_array_ = nullptr;
+  /** Index of which initial value has the best log-likelihood */
   int best_rep_index_;
   /** Number of threads */
   int n_thread_;
 
   /** For locking n_rep_done_ */
-  std::mutex* n_rep_done_lock_;
+  std::unique_ptr<std::mutex> n_rep_done_lock_;
   /** For locking optimal_ln_l_, best_rep_index_, n_iter_ and has_restarted_ */
-  std::mutex* results_lock_;
+  std::unique_ptr<std::mutex> results_lock_;
 
  protected:
   /**
-   * Array of seeds, for each repetition, used to seed each repetition, only
+   * An array of seeds, for each repetition, used to seed each repetition, only
    * used if a run fails and needs to generate new initial values
    */
-  std::unique_ptr<unsigned[]> seed_array_ = NULL;
+  std::unique_ptr<unsigned[]> seed_array_;
 
  public:
   /**
-   * Construct a new Em Algorithm Array object
+   * Construct a new EM Algorithm Array object
    *
-   * @param features Design matrix of features, matrix n_data x n_feature
-   * @param responses Design matrix transpose of responses, matrix n_category x
-   * n_data
+   * @param features Design matrix of features, matrix with dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each feature</li>
+   * </ul>
+   * @param responses Design matrix TRANSPOSED of responses, matrix containing
+   * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
+   * has dimensions
+   * <ul>
+   *   <li>dim 0: for each category</li>
+   *   <li>dim 1: for each data point</li>
+   * </ul>
    * @param initial_prob Vector of initial probabilities for each outcome, for
-   * each category, for each cluster and for each repetition, flatten list of
-   * matrices
+   * each category, for each cluster and for each repetition, flatten list in
+   * the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -142,30 +197,30 @@ class EmAlgorithmArray {
    * @param n_data Number of data points
    * @param n_feature Number of features
    * @param n_category Number of categories
-   * @param n_outcomes Array of number of outcomes, for each category
+   * @param n_outcomes Array of the number of outcomes, for each category
    * @param sum_outcomes Sum of all integers in n_outcomes
    * @param n_cluster Number of clusters to fit
-   * @param n_rep Number of repetitions to do, length of dim 3 for initial_prob
+   * @param n_rep Number of repetitions to do, this defines dim 3 of
+   * initial_prob
    * @param n_thread Number of threads to use
    * @param max_iter Maximum number of iterations for EM algorithm
-   * @param tolerance Tolerance for difference in log likelihood, used for
+   * @param tolerance Tolerance for the difference in log-likelihood, used for
    * stopping condition
    * @param posterior To store results, design matrix of posterior probabilities
-   * (also called responsibility), probability data point is in cluster
-   * m given responses, matrix
+   * (also called responsibility), the probability a data point is in cluster
+   * m given responses, matrix with dimensions
    * <ul>
    *   <li>dim 0: for each data</li>
    *   <li>dim 1: for each cluster</li>
    * </ul>
    * @param prior To store results, design matrix of prior probabilities,
-   * probability data point is in cluster m NOT given responses
+   * the probability a data point is in cluster m NOT given responses
    * <ul>
    *   <li>dim 0: for each data</li>
    *   <li>dim 1: for each cluster</li>
    * </ul>
    * @param estimated_prob To store results, vector of estimated response
-   * probabilities for each category,
-   * flatten list of matrices
+   * probabilities for each category, flatten list in the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each cluster</li>
@@ -184,16 +239,15 @@ class EmAlgorithmArray {
                    double* prior, double* estimated_prob, double* regress_coeff,
                    bool is_regress);
 
-  ~EmAlgorithmArray();
-
   /**
-   * Fit (in parallel) using EM algorithm. To be called right after
-   * construction or after setting optional settings. Results with the best log
-   * likelihood are recorded
+   * Fit (in parallel) using the EM algorithm.
+   *
+   * To be called right after construction or after setting optional settings.
+   * Results with the best log-likelihood are recorded.
    */
   void Fit();
 
-  /** Set the member variable seed_array_ with seeds for each repetition */
+  /** Set the member variable seed_array_ with a seed for each repetition */
   virtual void SetSeed(std::seed_seq* seed);
 
   /**
@@ -204,39 +258,56 @@ class EmAlgorithmArray {
    */
   void set_best_initial_prob(double* best_initial_prob);
 
-  /** Set where to store the log likelihood for each iteration */
+  /** Set where to store the log-likelihood for each iteration */
   void set_ln_l_array(double* ln_l_array);
 
-  /** Get the index of the repetition with the highest log likelihood */
+  /**
+   * Get the index of the repetition with the highest log-likelihood
+   *
+   * Only available after calling Fit()
+   */
   int get_best_rep_index();
 
-  /** Get the best log likelihood from all repetitions */
+  /**
+   * Get the best log-likelihood from all repetitions
+   *
+   * Only available after calling Fit()
+   */
   double get_optimal_ln_l();
 
   /**
    * Get the number of EM iterations done for the repetition with the highest
-   * log likelihood
+   * log-likelihood
+   *
+   * Only available after calling Fit()
    */
   int get_n_iter();
 
   /**
-   * Return if at least one repetition had to restart, eg due to a singular
+   * Return true if at least one repetition had to restart, eg due to a singular
    * matrix
+   *
+   * Only available after calling Fit()
    */
   bool get_has_restarted();
 
  protected:
-  /** Set the rng of a EmAlgorithm object given the rep_index */
+  /** Set the rng of a EmAlgorithm object given the rep_index it is working on*/
   virtual void SetFitterRng(polca_parallel::EmAlgorithm* fitter, int rep_index);
 
   /**
-   * Move ownership of a rng from a fitter back to here
+   * Retrieve ownership of an rng back from a fitter
    */
   virtual void MoveRngBackFromFitter(polca_parallel::EmAlgorithm* fitter);
 
  private:
   /**
-   * A thread calls this. For each initial probability, fit using EM algorithm
+   * For each initial probability, fit using the EM algorithm
+   *
+   * Each thread calls this, each repeatedly instantiates EmAlgorithm and calls
+   * Fit(). When a better log-likelihood is found after the fit, it copies the
+   * results over, such as the posterior, prior, estimate probabilities,
+   * regression coefficients and starting probabilities.
    */
   void FitThread();
 };

@@ -92,6 +92,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// StandardErrorRcpp
+Rcpp::List StandardErrorRcpp(Rcpp::NumericVector features, Rcpp::IntegerMatrix responses, Rcpp::NumericVector probs, Rcpp::NumericMatrix prior, Rcpp::NumericMatrix posterior, int n_data, int n_feature, int n_category, Rcpp::IntegerVector n_outcomes, int n_cluster, bool use_smooth);
+RcppExport SEXP _poLCAParallel_StandardErrorRcpp(SEXP featuresSEXP, SEXP responsesSEXP, SEXP probsSEXP, SEXP priorSEXP, SEXP posteriorSEXP, SEXP n_dataSEXP, SEXP n_featureSEXP, SEXP n_categorySEXP, SEXP n_outcomesSEXP, SEXP n_clusterSEXP, SEXP use_smoothSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type features(featuresSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type responses(responsesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type probs(probsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type posterior(posteriorSEXP);
+    Rcpp::traits::input_parameter< int >::type n_data(n_dataSEXP);
+    Rcpp::traits::input_parameter< int >::type n_feature(n_featureSEXP);
+    Rcpp::traits::input_parameter< int >::type n_category(n_categorySEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type n_outcomes(n_outcomesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_cluster(n_clusterSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_smooth(use_smoothSEXP);
+    rcpp_result_gen = Rcpp::wrap(StandardErrorRcpp(features, responses, probs, prior, posterior, n_data, n_feature, n_category, n_outcomes, n_cluster, use_smooth));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 RcppExport void d2lldbeta2(void *, void *, void *, void *, void *, void *, void *, void *);
 RcppExport void postclass(void *, void *, void *, void *, void *, void *, void *, void *);
@@ -102,6 +123,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_poLCAParallel_EmAlgorithmRcpp", (DL_FUNC) &_poLCAParallel_EmAlgorithmRcpp, 13},
     {"_poLCAParallel_ylik", (DL_FUNC) &_poLCAParallel_ylik, 6},
     {"_poLCAParallel_GoodnessFitRcpp", (DL_FUNC) &_poLCAParallel_GoodnessFitRcpp, 7},
+    {"_poLCAParallel_StandardErrorRcpp", (DL_FUNC) &_poLCAParallel_StandardErrorRcpp, 11},
     {"d2lldbeta2", (DL_FUNC) &d2lldbeta2, 8},
     {"postclass",  (DL_FUNC) &postclass,  8},
     {"probhat",    (DL_FUNC) &probhat,    7},

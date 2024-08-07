@@ -1,0 +1,39 @@
+Bootstrap: docker
+From: ubuntu
+
+%environment
+    export LC_ALL=C
+    export R_LIBS_USER=""
+    export DEBIAN_FRONTEND="noninteractive"
+    export DEBCONF_NONINTERACTIVE_SEEN=true
+
+%post
+    apt update -y
+    apt install -y wget
+    apt install -y git
+    apt install -y r-base
+    apt install -y libxml2-dev
+
+    # 'MASS' version 7.3-60.2 is in the repositories but depends on R (>= 4.4.0)
+    # 'MASS' version 7.3-60.2 is in the repositories but depends on R (>= 4.5)
+    cd /tmp
+    wget https://cran.r-project.org/src/contrib/Archive/MASS/MASS_7.3-59.tar.gz
+
+    R -e "install.packages('Rcpp')"
+    R -e "install.packages('RcppArmadillo')"
+    R -e "install.packages('roxygen2')"
+    R -e "install.packages('poLCA')"
+    R -e "install.packages('parallel')"
+    R -e "install.packages('scatterplot3d')"
+
+    R CMD INSTALL MASS*.tar.gz
+
+    cd /usr/src/
+    git clone https://github.com/QMUL/poLCAParallel.git
+
+    R -e "Rcpp::compileAttributes('poLCAParallel')"
+    R -e "roxygen2::roxygenize('poLCAParallel')"
+    R CMD INSTALL --preclean --no-multiarch poLCAParallel
+
+%runscript
+    R "$@"

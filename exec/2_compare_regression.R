@@ -14,7 +14,7 @@
 library(MASS)
 nrep <- 32
 n_thread <- 1
-set.seed(982258332)
+seed <- 982258332
 
 # for high number of classes, you get into numerical errors, this is where
 # poLCA and poLCAParallel diverge in methodology.
@@ -41,6 +41,7 @@ for (nclass in 2:5) {
     cat(paste("==========", nclass, "classes ==========\n"))
 
     # using original code
+    set.seed(seed)
     start_time <- Sys.time()
     lca <- poLCA::poLCA(
       f, dat,
@@ -50,6 +51,7 @@ for (nclass in 2:5) {
     units(diff_time_og) <- "secs"
 
     # using parallel code
+    set.seed(seed)
     start_time <- Sys.time()
     lca_parallel <- poLCAParallel::poLCA(
       f, dat,

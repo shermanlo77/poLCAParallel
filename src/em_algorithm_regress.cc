@@ -25,16 +25,11 @@ polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
     : polca_parallel::EmAlgorithm(
           features, responses, initial_prob, n_data, n_feature, n_category,
           n_outcomes, sum_outcomes, n_cluster, max_iter, tolerance, posterior,
-          prior, estimated_prob, regress_coeff) {
-  this->n_parameters_ = n_feature * (n_cluster - 1);
-  this->gradient_ = new double[this->n_parameters_];
-  this->hessian_ = new double[this->n_parameters_ * this->n_parameters_];
+          prior, estimated_prob, regress_coeff),
+      n_parameters_(n_feature * (n_cluster - 1)),
+      gradient_(this->n_parameters_),
+      hessian_(this->n_parameters_ * this->n_parameters_) {
   this->init_regress_coeff();
-}
-
-polca_parallel::EmAlgorithmRegress::~EmAlgorithmRegress() {
-  delete[] this->gradient_;
-  delete[] this->hessian_;
 }
 
 void polca_parallel::EmAlgorithmRegress::Reset(
@@ -51,27 +46,17 @@ void polca_parallel::EmAlgorithmRegress::InitPrior() {
                              false);
   arma::Mat<double> regress_coeff(this->regress_coeff_, this->n_feature_,
                                   this->n_cluster_ - 1, false);
-  arma::Mat<double> prior = features * regress_coeff;
-  prior = exp(prior);
+  arma::Mat<double> prior_except_0(this->prior_ + this->n_data_, this->n_data_,
+                                   this->n_cluster_ - 1, false, true);
 
   // for the 0th cluster, eta = 0, prior for 0th cluster propto 1
-  for (int i = 0; i < this->n_data_; ++i) {
-    this->prior_[i] = 1.0;
-  }
-  memcpy(this->prior_ + this->n_data_, prior.begin(),
-         prior.size() * sizeof(*this->prior_));
+  std::fill(this->prior_, this->prior_ + this->n_data_, 1.0);
+  prior_except_0 = exp(features * regress_coeff);
 
   // normalise so that prior_ are probabilities
-  arma::Mat<double> prior_arma(this->prior_, this->n_data_, this->n_cluster_,
-                               false);
-  arma::Col<double> normaliser = sum(prior_arma, 1);
-  double* prior_ptr = this->prior_;
-  for (int m = 0; m < this->n_cluster_; ++m) {
-    for (int i = 0; i < this->n_data_; ++i) {
-      *prior_ptr /= normaliser[i];
-      ++prior_ptr;
-    }
-  }
+  arma::Mat<double> prior(this->prior_, this->n_data_, this->n_cluster_, false,
+                          true);
+  prior.each_col() /= sum(prior, 1);
 }
 
 void polca_parallel::EmAlgorithmRegress::FinalPrior() {
@@ -103,14 +88,15 @@ bool polca_parallel::EmAlgorithmRegress::MStep() {
 
   // single Newton step
   arma::Col<double> regress_coeff(this->regress_coeff_, this->n_parameters_,
-                                  false);
-  arma::Col<double> gradient(this->gradient_, this->n_parameters_, false);
-  arma::Mat<double> hessian(this->hessian_, this->n_parameters_,
+                                  false, true);
+  arma::Col<double> gradient(this->gradient_.data(), this->n_parameters_,
+                             false);
+  arma::Mat<double> hessian(this->hessian_.data(), this->n_parameters_,
                             this->n_parameters_, false);
   try {
     regress_coeff -=
         arma::solve(hessian, gradient, arma::solve_opts::likely_sympd);
-  } catch (const std::runtime_error) {
+  } catch (const std::runtime_error&) {
     return true;
   }
 
@@ -132,13 +118,12 @@ void polca_parallel::EmAlgorithmRegress::NormalWeightedSumProb(
 }
 
 void polca_parallel::EmAlgorithmRegress::init_regress_coeff() {
-  for (int i = 0; i < this->n_parameters_; ++i) {
-    this->regress_coeff_[i] = 0.0;
-  }
+  std::fill(this->regress_coeff_, this->regress_coeff_ + this->n_parameters_,
+            0.0);
 }
 
 void polca_parallel::EmAlgorithmRegress::CalcGrad() {
-  double* gradient = this->gradient_;
+  double* gradient = this->gradient_.data();
   for (int m = 1; m < this->n_cluster_; ++m) {
     arma::Col<double> posterior_m(this->posterior_ + m * this->n_data_,
                                   this->n_data_, false);
@@ -232,7 +217,7 @@ double* polca_parallel::EmAlgorithmRegress::HessianAt(int cluster_index_0,
                                                       int cluster_index_1,
                                                       int feature_index_0,
                                                       int feature_index_1) {
-  return this->hessian_ +
+  return this->hessian_.data() +
          cluster_index_1 * this->n_parameters_ * this->n_feature_ +
          feature_index_1 * this->n_parameters_ +
          cluster_index_0 * this->n_feature_ + feature_index_0;

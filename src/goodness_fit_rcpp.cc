@@ -55,13 +55,15 @@ Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                            int n_category, Rcpp::IntegerVector n_outcomes,
                            int n_cluster) {
   // get observed and expected frequencies for each unique response
-  std::map<std::vector<int>, polca_parallel::Frequency>* unique_freq =
-      new std::map<std::vector<int>, polca_parallel::Frequency>();
-  GetUniqueObserved(responses.begin(), n_data, n_category, unique_freq);
-  GetExpected(responses.begin(), prior.begin(), outcome_prob.begin(), n_data,
-              n_category, n_outcomes.begin(), n_cluster, unique_freq);
+  // having problems doing static allocation and passing the pointer
+  std::unique_ptr<std::map<std::vector<int>, polca_parallel::Frequency>>
+      unique_freq = std::make_unique<
+          std::map<std::vector<int>, polca_parallel::Frequency>>();
+  GetUniqueObserved(responses.begin(), n_data, n_category, unique_freq.get());
+  GetExpected(prior.begin(), outcome_prob.begin(), n_data, n_category,
+              n_outcomes.begin(), n_cluster, unique_freq.get());
   // get log likelihood ratio and chi squared statistics
-  std::array<double, 2> stats = GetStatistics(unique_freq, n_data);
+  std::array<double, 2> stats = GetStatistics(unique_freq.get(), n_data);
 
   // transfer results from std::map unique_freq to a NumericMatrix
   // unique_freq_table
@@ -94,8 +96,6 @@ Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
   to_return.push_back(unique_freq_table);
   to_return.push_back(stats[0]);
   to_return.push_back(stats[1]);
-
-  delete unique_freq;
 
   return to_return;
 }

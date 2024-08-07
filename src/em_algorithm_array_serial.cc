@@ -29,18 +29,16 @@ polca_parallel::EmAlgorithmArraySerial::EmAlgorithmArraySerial(
           posterior, prior, estimated_prob, regress_coeff, is_regress) {}
 
 void polca_parallel::EmAlgorithmArraySerial::SetSeed(std::seed_seq* seed) {
-  this->seed_array_ = std::unique_ptr<unsigned[]>(new unsigned[1]);
+  this->seed_array_ = std::make_unique<unsigned[]>(1);
   unsigned* seed_array = this->seed_array_.get();
   seed->generate(seed_array, seed_array + 1);
-  std::mt19937_64* rng = new std::mt19937_64(seed_array[0]);
-  this->rng_ = std::unique_ptr<std::mt19937_64>(rng);
+  this->rng_ = std::make_unique<std::mt19937_64>(seed_array[0]);
 }
 
 void polca_parallel::EmAlgorithmArraySerial::SetSeed(unsigned seed) {
-  this->seed_array_ = std::unique_ptr<unsigned[]>(new unsigned[1]);
+  this->seed_array_ = std::make_unique<unsigned[]>(1);
   this->seed_array_.get()[0] = seed;
-  std::mt19937_64* rng = new std::mt19937_64(seed);
-  this->rng_ = std::unique_ptr<std::mt19937_64>(rng);
+  this->rng_ = std::make_unique<std::mt19937_64>(seed);
 }
 
 void polca_parallel::EmAlgorithmArraySerial::SetRng(
@@ -55,14 +53,15 @@ polca_parallel::EmAlgorithmArraySerial::MoveRng() {
 
 void polca_parallel::EmAlgorithmArraySerial::SetFitterRng(
     polca_parallel::EmAlgorithm* fitter, int rep_index) {
-  if (this->rng_ != NULL) {
+  if (this->rng_) {
     fitter->set_rng(&this->rng_);
   }
 }
 
 void polca_parallel::EmAlgorithmArraySerial::MoveRngBackFromFitter(
     polca_parallel::EmAlgorithm* fitter) {
-  // do not check this->rng != NULL as it will always be NULL
+  // do not check this->rng != NULL as it will always be NULL after calling
+  // SetFitterRng()
   //
   // if the rng was set before hand, it will be set to null after transferring
   // ownership to a EmAlgorithm object, thus this method does need to be called
@@ -71,6 +70,6 @@ void polca_parallel::EmAlgorithmArraySerial::MoveRngBackFromFitter(
   // A EmAlgorithm object will always have a rng even if no rng has been set
   //
   // So if no rng has been set, at the end of a Fit(), rng will be set to the
-  // rng instantiated by the first EmAlgorithm object
+  // default instantiated rng
   this->rng_ = fitter->move_rng();
 }

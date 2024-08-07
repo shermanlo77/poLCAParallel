@@ -1,3 +1,5 @@
+#' \deprecated
+#' @noRd
 poLCA.se <-
 function(y,x,probs,prior,rgivy) {
     J <- ncol(y)

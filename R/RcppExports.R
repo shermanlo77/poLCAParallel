@@ -17,3 +17,7 @@ GoodnessFitRcpp <- function(responses, prior, outcome_prob, n_data, n_category, 
     .Call(`_poLCAParallel_GoodnessFitRcpp`, responses, prior, outcome_prob, n_data, n_category, n_outcomes, n_cluster)
 }
 
+StandardErrorRcpp <- function(features, responses, probs, prior, posterior, n_data, n_feature, n_category, n_outcomes, n_cluster, use_smooth) {
+    .Call(`_poLCAParallel_StandardErrorRcpp`, features, responses, probs, prior, posterior, n_data, n_feature, n_category, n_outcomes, n_cluster, use_smooth)
+}
+

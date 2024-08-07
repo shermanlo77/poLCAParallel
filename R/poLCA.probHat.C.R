@@ -1,3 +1,5 @@
+#' \deprecated
+#' @noRd
 poLCA.probHat.C <-
 function(rgivy,y,vp) {
     ret <-  .C("probhat",

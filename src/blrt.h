@@ -18,10 +18,13 @@
 #ifndef BLRT_H_
 #define BLRT_H_
 
+#include <chrono>
+#include <cstring>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <thread>
+#include <vector>
 
 #include "em_algorithm.h"
 #include "em_algorithm_array_serial.h"
@@ -32,9 +35,9 @@ namespace polca_parallel {
  * Bootstrap likelihood ratio test (polca with no regression only supported)
  *
  * Does the bootstrap likelihood ratio test. Provide two fitted models, the
- * null model and the alt model which fits a different number of clusters.
+ * null model and the alt model which fit a different number of clusters.
  * Bootstrap samples are generated using the null model. The null model and alt
- * model are refitted on the bootstrap samples to investigate the log likelihood
+ * model are refitted on the bootstrap samples to investigate the log-likelihood
  * ratio of the two models.
  *
  * Runs in parallel for each bootstrap sample, potentially high memory if the
@@ -42,7 +45,7 @@ namespace polca_parallel {
  *
  * How to use: provide the null and alt models and an array to store the log
  * likelihood ratios to the constructor. Optionally, set the seed using
- * SetSeed(). Call Run() to collect bootstrap samples of the log likelihood
+ * SetSeed(). Call Run() to collect bootstrap samples of the log-likelihood
  * ratios
  */
 class Blrt {
@@ -54,7 +57,7 @@ class Blrt {
   double* prior_null_;
   /**
    * Vector of estimated response probabilities, conditioned on cluster, for
-   * each category, for the null model, flatten list of matrices
+   * each category, for the null model, flatten list in the order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -71,7 +74,7 @@ class Blrt {
   double* prior_alt_;
   /**
    * Vector of estimated response probabilities, conditioned on cluster, for
-   * each category, for the alt model, flatten list of matrices
+   * each category, for the alt model, flatten list in the order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -86,7 +89,7 @@ class Blrt {
   int n_data_;
   /** Number of categories */
   int n_category_;
-  /** Vector of number of outcomes for each category */
+  /** Vector of the number of outcomes for each category */
   int* n_outcomes_;
   /** Sum of n_outcomes */
   int sum_outcomes_;
@@ -103,21 +106,21 @@ class Blrt {
 
   /** What bootstrap sample is being worked on */
   int n_bootstrap_done_ = 0;
-  /** Log likelihood ratio for each bootstrap sample */
+  /** Log-likelihood ratio for each bootstrap sample */
   double* ratio_array_;
 
   /** For locking n_bootstrap_done_ */
-  std::mutex* n_bootstrap_done_lock_;
+  std::unique_ptr<std::mutex> n_bootstrap_done_lock_;
 
   /** Array of seeds, for each bootstrap sample*/
-  std::unique_ptr<unsigned[]> seed_array_ = NULL;
+  std::unique_ptr<unsigned[]> seed_array_;
 
  public:
   /**
    * @brief Construct a new Blrt object
    *
    * @param prior_null Null model, vector of prior probabilities for the null
-   * model, probability data point is in cluster m NOT given responses
+   * model, the probability data point is in cluster m NOT given responses
    * <ul>
    *   <li>dim 0: for each cluster</li>
    * </ul>
@@ -131,7 +134,7 @@ class Blrt {
    * </ul>
    * @param n_cluster_null Null model, number of clusters fitted
    * @param prior_alt Alt model, vector of prior probabilities for the null
-   * model, probability data point is in cluster m NOT given responses
+   * model, the probability data point is in cluster m NOT given responses
    * <ul>
    *   <li>dim 0: for each cluster</li>
    * </ul>
@@ -154,9 +157,9 @@ class Blrt {
    * samples
    * @param n_thread Number of threads to use
    * @param max_iter Maximum number of iterations for EM algorithm
-   * @param tolerance Tolerance for difference in log likelihood, used for
+   * @param tolerance Tolerance for difference in log-likelihood, used for
    * stopping condition
-   * @param ratio_array To store results, array, the log likelihood ratio for
+   * @param ratio_array To store results, array, the log-likelihood ratio for
    * each bootstrap sample
    */
   Blrt(double* prior_null, double* prob_null, int n_cluster_null,
@@ -164,8 +167,6 @@ class Blrt {
        int n_category, int* n_outcomes, int sum_outcomes, int n_bootstrap,
        int n_rep, int n_thread, int max_iter, double tolerance,
        double* ratio_array);
-
-  ~Blrt();
 
   /** Set the rng seed for each bootstrap sample */
   void SetSeed(std::seed_seq* seed);
@@ -182,7 +183,7 @@ class Blrt {
    * @param prior vector of probabilities, one for each cluster. Probability a
    * data point belongs to each cluster
    * @param prob Vector of estimated response probabilities, conditioned on
-   * cluster, for each category, flatten list of matrices
+   * the cluster, for each category, flatten list in the order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -191,7 +192,11 @@ class Blrt {
    * @param n_cluster number of clusters, length of prior
    * @param rng random number generator
    * @param response output, bootstrapped responses/data, design matrix
-   * transpose of responses, matrix n_category x n_data
+   * TRANSPOSED of responses, matrix with dimensions
+   * <ul>
+   *   <li>dim 0: for each category</li>
+   *   <li>dim 1: for each data point</li>
+   * </ul>
    */
   void Bootstrap(double* prior, double* prob, int n_cluster,
                  std::mt19937_64* rng, int* response);

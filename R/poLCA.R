@@ -125,6 +125,9 @@
 #'     statistics, the chi squared statistics and the log likelihood ratio.
 #'     The default is `TRUE`.
 #' @param n.thread Integer, the number of threads used to run each repetition.
+#' @param se.smooth Logical, experimental, for calculating the standard errors,
+#'     whether to smooth the outcome probabilities to produce more numerical
+#'     stable results as a cost of bias.
 #'
 #' @return an object of class poLCA; a list containing the following elements:
 #'   * y: data frame of manifest variables.
@@ -138,6 +141,7 @@
 #'     function basic latent class model, or the mean of the priors in the
 #'     latent class regression model.
 #'   * P.se: the standard errors of the estimated `P`.
+#'   * prior: matrix of prior class membership probabilities
 #'   * posterior: matrix of posterior class membership probabilities; also see
 #'     function 'poLCA.posterior'.
 #'   * predclass: vector of predicted class memberships, by modal assignment.
@@ -178,7 +182,7 @@
 #'     specified by the user, otherwise `TRUE`.
 #'   * call: function call to `poLCA`.
 #'
-#' @example
+#' @examples
 #' ##
 #' ## Three models without covariates:
 #' ## M0: Loglinear independence model.
@@ -221,11 +225,180 @@ poLCA <- function(formula,
                   verbose = TRUE,
                   calc.se = TRUE,
                   calc.chisq = TRUE,
-                  n.thread = parallel::detectCores()) {
+                  n.thread = parallel::detectCores(),
+                  se.smooth = FALSE) {
+
+    # nclass == 1 will use original code
+    # poLCAParallel edits the original code for the nclass > 1 case
+    if (nclass == 1) {
+        cat("\n ALERT: For nclass = 1, using the original poLCA code. \n\n")
+        return(poLCA::poLCA(
+            formula, data, nclass, maxiter, graphs, tol, na.rm,
+            probs.start, nrep, verbose, calc.se
+        ))
+    }
+
     starttime <- Sys.time()
+
+    data_x_y <- extract_data(formula, data, na.rm)
+
+    features <- data_x_y$x # features
+    responses <- data_x_y$y # responses
+    ndata <- nrow(responses) # number of data points
+    ncategory <- ncol(responses) # number of categories
+    # number of outcomes for each category
+    noutcomes <- t(matrix(apply(responses, 2, max)))
+    nfeature <- ncol(features) # number of features
+
+    # check probs.start and generate any additional probs if needed
+    probs.start <- generate_initial_probs(
+        probs.start, nrep, ncategory,
+        noutcomes, nclass
+    )
+
+    # random seed required to generate new initial values when needed
+    seed <- sample.int(
+        as.integer(.Machine$integer.max), 5,
+        replace = TRUE
+    )
+    # run C++ code here
+    em_results <- EmAlgorithmRcpp(
+        features,
+        t(responses),
+        probs.start$vector,
+        ndata,
+        nfeature,
+        ncategory,
+        noutcomes,
+        nclass,
+        nrep,
+        n.thread,
+        maxiter,
+        tol,
+        seed
+    )
+
+    # ========== EXTRACT RESULTS ========== #
+    # Put all outputs in a list ret, to be returned, making up the poLCA object
+    ret <- list()
+
+    ret$posterior <- em_results[[1]]
+    ret$prior <- em_results[[2]]
+
+    ret$probs <- unvectorize_probs(em_results[[3]], noutcomes, nclass)
+    names(ret$probs) <- colnames(responses)
+
+    # labelling coeff
+    if (nfeature > 1) {
+        ret$coeff <- em_results[[4]]
+        ret$coeff <- matrix(ret$coeff, nrow = nfeature)
+        rownames(ret$coeff) <- colnames(features)
+    } else {
+        ret$coeff <- NA
+    }
+
+    ret$attempts <- em_results[[5]]
+    # maximum value of the log-likelihood
+    # em_results[[6]] is best_rep_index
+    ret$llik <- ret$attempts[em_results[[6]]]
+    ret$numiter <- em_results[[7]]
+    # best starting values of class-conditional response probabilities
+    ret$probs.start <- unvectorize_probs(em_results[[8]], noutcomes, nclass)
+    ret$eflag <- em_results[[9]]
+
+    # Nx1 vector of predicted class memberships, by modal assignment
+    ret$predclass <- apply(ret$posterior, 1, which.max)
+    # estimated class population shares
+    ret$P <- colMeans(ret$posterior)
+    # if starting probs specified, logical indicating proper entry format
+    ret$probs.start.ok <- probs.start$ok
+
+    # placeholder for standard error
+    ret$P.se <- NA
+    ret$probs.se <- NA
+    ret$coeff.se <- NA
+    ret$coeff.V <- NA
+
+    # placeholder for goodness of fit
+    ret$Chisq <- NA
+    ret$Gsq <- NA
+    ret$predcell <- NA
+
+    # number of degrees of freedom used by the model (number of estimated
+    # parameters)
+    ret$npar <- (nclass * sum(noutcomes - 1)) + (nclass - 1)
+    if (nfeature > 1) {
+        ret$npar <- ret$npar + (nfeature * (nclass - 1)) - (nclass - 1)
+    }
+    # Akaike Information Criterion
+    ret$aic <- (-2 * ret$llik) + (2 * ret$npar)
+    # Schwarz-Bayesian Information Criterion
+    ret$bic <- (-2 * ret$llik) + (log(ndata) * ret$npar)
+    # number of fully observed cases (if na.rm=F)
+    ret$Nobs <- sum(rowSums(responses == 0) == 0)
+
+    responses[responses == 0] <- NA
+    ret$y <- data.frame(responses) # outcome variables
+    ret$x <- data.frame(features) # covariates, if specified
+    for (j in 1:ncategory) {
+        rownames(ret$probs[[j]]) <- paste("class ", 1:nclass, ": ", sep = "")
+        if (is.factor(data[, match(colnames(responses), colnames(data))[j]])) {
+            lev <- levels(data[, match(colnames(responses), colnames(data))[j]])
+            colnames(ret$probs[[j]]) <- lev
+            ret$y[, j] <- factor(ret$y[, j], labels = lev)
+        } else {
+            colnames(ret$probs[[j]]) <-
+                paste("Pr(", 1:ncol(ret$probs[[j]]), ")", sep = "")
+        }
+    }
+    ret$N <- ndata # number of observations
+
+    # calculate the standard errors
+    if (calc.se) {
+        ret <- poLCAParallel.se(ret, se.smooth)
+    }
+
+    # if rows are fully observed and chi squared requested
+    # do goodness of fit test
+    if (!(all(rowSums(responses == 0) > 0)) && calc.chisq) {
+        ret <- poLCAParallel.goodnessfit(ret)
+    }
+
+    ret$maxiter <- maxiter # maximum number of iterations specified by user
+    # number of residual degrees of freedom
+    ret$resid.df <- min(ret$N, (prod(noutcomes) - 1)) - ret$npar
+    class(ret) <- "poLCA"
+    if (graphs) {
+        plot.poLCA(ret)
+    }
+    if (verbose) {
+        print.poLCA(ret)
+    }
+    ret$time <- Sys.time() - starttime # how long it took to run the model
+    ret$call <- match.call()
+    return(ret)
+}
+
+#' Extract the responses and features given the data and formula
+#'
+#' Extract the responses and features given the data and formula from poLCA.
+#'
+#' @param formula A formula expression of the form `response ~ predictors`, see
+#' poLCA for further details
+#' @param data A data frame containing variables in `formula` see poLCA for
+#' further details
+#' @param na.rm boolean, to handle missing values or not see poLCA for further
+#' details
+#'
+#' @return List with attributes x and y. x contain the features as a matrix with
+#' size ndata x nfeature. y contain the responses as a matrix with size ndata x
+#' ncategory
+#'
+#' @noRd
+extract_data <- function(formula, data, na.rm) {
     mframe <- model.frame(formula, data, na.action = NULL)
     mf <- model.response(mframe)
-    if (any(mf < 1, na.rm = TRUE) | any(round(mf) != mf, na.rm = TRUE)) {
+    if (any(mf < 1, na.rm = TRUE) || any(round(mf) != mf, na.rm = TRUE)) {
         stop("\n ALERT: some manifest variables contain values that are not
               positive integers. For poLCA to run, please recode categorical
               outcome variables to increment from 1 to the maximum number of
@@ -245,257 +418,129 @@ poLCA <- function(formula,
         cat("\n ALERT: at least one manifest variable contained only one
              outcome category, and has been removed from the analysis. \n\n")
     }
-    x <- model.matrix(formula, mframe) # features
-    N <- nrow(y) # number of data points
-    J <- ncol(y) # number of categories
-    K.j <- t(matrix(apply(y, 2, max))) # number of outcomes for each category
-    R <- nclass
-    S <- ncol(x) # number of features
-    eflag <- FALSE # set to TRUE if find an error
-    probs.start.ok <- TRUE
-    ret <- list() # list of items to return
+    x <- model.matrix(formula, mframe)
+    return(list(x = x, y = y))
+}
 
-    # nclass == 1 will use original code
-    # poLCAParallel edits the orginial code for the nclass > 1 case
-    if (R == 1) {
-        ret$probs <- list()
-        for (j in 1:J) {
-            ret$probs[[j]] <- matrix(NA, nrow = 1, ncol = K.j[j])
-            for (k in 1:K.j[j]) {
-                ret$probs[[j]][k] <- sum(y[, j] == k) / sum(y[, j] > 0)
-            }
-        }
-        ret$probs.start <- ret$probs
-        ret$P <- 1
-        prior <- matrix(1, nrow = N, ncol = 1)
-        ret$predclass <- prior
-        ret$posterior <- ret$predclass
-        ret$llik <- sum(log(poLCA.ylik.C(poLCA.vectorize(ret$probs), y)))
-        if (calc.se) {
-            se <- poLCA.se(y, x, ret$probs, prior, ret$posterior)
-            # standard errors of class-conditional response probabilities
-            ret$probs.se <- se$probs
-            # standard errors of class population shares
-            ret$P.se <- se$P
-        } else {
-            ret$probs.se <- NA
-            ret$P.se <- NA
-        }
-        ret$numiter <- 1
-        ret$probs.start.ok <- TRUE
-        ret$coeff <- NA
-        ret$coeff.se <- NA
-        ret$coeff.V <- NA
-        ret$eflag <- FALSE
-        if (S > 1) {
-            cat("\n ALERT: covariates not allowed when nclass=1;
-                 will be ignored. \n \n")
-            S <- 1
-        }
-    } else {
-        # error checking on user-inputted probs.start
-        if (!is.null(probs.start)) {
-            if ((length(probs.start) != J) | (!is.list(probs.start))) {
-                probs.start.ok <- FALSE
-            } else {
-                if (sum(sapply(probs.start, dim)[1, ] == R) != J) {
-                    probs.start.ok <- FALSE
-                }
-                if (sum(sapply(probs.start, dim)[2, ] == K.j) != J) {
-                    probs.start.ok <- FALSE
-                }
-                if (sum(round(sapply(probs.start, rowSums), 4) == 1)
-                != (R * J)) {
-                    probs.start.ok <- FALSE
-                }
-            }
-        }
+#' Generate initial probabilities
+#'
+#' Checks the user provided probs.start and generate further initial
+#' probabilities for the EM algorithm
+#'
+#' @param probs.start A list of matrices of class-conditional response
+#' probabilities, see poLCA for further details
+#' @param nrep int, number of repetitions (or initial values) requested by the
+#' user
+#' @param ncategory int, number of categories
+#' @param noutcomes vector of int, number of outcomes for each category
+#' @param nclass int, number of classes or clusters
+#'
+#' @return list with attributes vector and ok
+#'  * vector contains all initial probabilites as a vector, or a flatten matrix
+#'    with the following dimensions
+#'    * dim 0: for each outcome
+#'    * dim 1: for each category
+#'    * dim 2: for each cluster/class
+#'    * dim 3: for each repetition
+#'
+#' @noRd
+generate_initial_probs <- function(probs.start, nrep, ncategory,
+                                   noutcomes, nclass) {
+    probs.start.ok <- is_probs_start_ok(
+        probs.start, ncategory, noutcomes, nclass
+    )
 
-        # perpare initial values
-        initial_prob <- list()
-        initial_prob_vector <- c()
-        irep <- 1
+    # perpare initial values
+    probs_list <- list()
+    probs_vector <- c()
+    irep <- 1
 
-        # see if can use user provided probs.start
-        if (probs.start.ok & !is.null(probs.start)) {
-            initial_prob[[1]] <- poLCAParallel.vectorize(probs.start)
-            initial_prob_vector <- c(
-                initial_prob_vector,
-                initial_prob[[1]]$vecprobs
-            )
-            irep <- irep + 1
-        }
+    # if can use user's provided probs.start
+    if (probs.start.ok) {
+        probs_list[[1]] <- poLCAParallel.vectorize(probs.start)
+        probs_vector <- c(
+            probs_vector,
+            probs_list[[1]]$vecprobs
+        )
+        irep <- irep + 1
+    }
+    # if cannot use the user's provided probs.start, generate a new one
 
-        # then generate random probabilities
-        if (nrep > 1 | irep == 1) {
-            for (repl in irep:nrep) {
-                probs <- list()
-                for (j in 1:J) {
-                    probs[[j]] <- matrix(
-                        runif(R * K.j[j]),
-                        nrow = R, ncol = K.j[j]
-                    )
-                    probs[[j]] <- probs[[j]] / rowSums(probs[[j]])
-                }
-                initial_prob[[repl]] <- poLCAParallel.vectorize(probs)
-                initial_prob_vector <- c(
-                    initial_prob_vector,
-                    initial_prob[[repl]]$vecprobs
+    # generate random probabilities
+    if (nrep > 1 || irep == 1) {
+        for (repl in irep:nrep) {
+            probs <- list()
+            for (j in 1:ncategory) {
+                probs[[j]] <- matrix(
+                    runif(nclass * noutcomes[j]),
+                    nrow = nclass, ncol = noutcomes[j]
                 )
+                probs[[j]] <- probs[[j]] / rowSums(probs[[j]])
             }
-        }
-
-        # random seed required to generate new initial values when needed
-        seed <- sample.int(
-            as.integer(.Machine$integer.max), 5,
-            replace = TRUE
-        )
-        # run C++ code here, extract results
-        em_results <- EmAlgorithmRcpp(
-            x,
-            t(y),
-            initial_prob_vector,
-            N,
-            S,
-            J,
-            K.j,
-            R,
-            nrep,
-            n.thread,
-            maxiter,
-            tol,
-            seed
-        )
-        rgivy <- em_results[[1]]
-        prior <- em_results[[2]]
-        estimated_prob <- em_results[[3]]
-        b <- em_results[[4]]
-        ret$attempts <- em_results[[5]]
-        best_rep_index <- em_results[[6]]
-        numiter <- em_results[[7]]
-        best_initial_prob <- em_results[[8]]
-        eflag <- em_results[[9]]
-
-        llik <- ret$attempts[best_rep_index]
-
-        # copy initial_prob[[1]] as it can be used as a parameter for
-        # poLCAParallel.unvectorize(vp)
-        # replace $vecprobs with the estimate probabilities
-        vp <- initial_prob[[1]]
-        vp$vecprobs <- estimated_prob
-
-        ret$probs.start <- initial_prob[[1]]
-        ret$probs.start$vecprobs <- best_initial_prob
-
-        # calculate standard error
-        if (calc.se) {
-            se <- poLCA.se(
-                y, x, poLCAParallel.unvectorize(vp),
-                prior, rgivy
-            )
-            rownames(se$b) <- colnames(x)
-        } else {
-            se <- list(
-                probs = NA, P = NA, b = matrix(nrow = S, ncol = R - 1),
-                var.b = NA
+            probs_list[[repl]] <- poLCAParallel.vectorize(probs)
+            probs_vector <- c(
+                probs_vector,
+                probs_list[[repl]]$vecprobs
             )
         }
-
-        # labelling b
-        if (S > 1) {
-            b <- matrix(b, nrow = S)
-            rownames(b) <- colnames(x)
-        } else {
-            b <- NA
-            se$b <- NA
-            se$var.b <- NA
-        }
-
-        # maximum value of the log-likelihood
-        ret$llik <- llik
-        # starting values of class-conditional response probabilities
-        ret$probs.start <- poLCAParallel.unvectorize(ret$probs.start)
-        # estimated class-conditional response probabilities
-        ret$probs <- poLCAParallel.unvectorize(vp)
-        # standard errors of class-conditional response probabilities
-        ret$probs.se <- se$probs
-        # standard errors of class population shares
-        ret$P.se <- se$P
-        # NxR matrix of posterior class membership probabilities
-        ret$posterior <- rgivy
-        # Nx1 vector of predicted class memberships, by modal assignment
-        ret$predclass <- apply(ret$posterior, 1, which.max)
-        # estimated class population shares
-        ret$P <- colMeans(ret$posterior)
-        # number of iterations until reaching convergence
-        ret$numiter <- numiter
-        # if starting probs specified, logical indicating proper entry
-        # format
-        ret$probs.start.ok <- probs.start.ok
-
-        ret$coeff <- b # coefficient estimates (when estimated)
-        # standard errors of coefficient estimates (when estimated)
-        ret$coeff.se <- se$b
-        # covariance matrix of coefficient estimates (when estimated)
-        ret$coeff.V <- se$var.b
-
-        # error flag, true if estimation algorithm ever needed to restart
-        # with new initial values
-        ret$eflag <- eflag
-    }
-    names(ret$probs) <- colnames(y)
-    if (calc.se) {
-        names(ret$probs.se) <- colnames(y)
-    }
-    # number of degrees of freedom used by the model (number of estimated
-    # parameters)
-    ret$npar <- (R * sum(K.j - 1)) + (R - 1)
-    if (S > 1) {
-        ret$npar <- ret$npar + (S * (R - 1)) - (R - 1)
-    }
-    # Akaike Information Criterion
-    ret$aic <- (-2 * ret$llik) + (2 * ret$npar)
-    # Schwarz-Bayesian Information Criterion
-    ret$bic <- (-2 * ret$llik) + (log(N) * ret$npar)
-    # number of fully observed cases (if na.rm=F)
-    ret$Nobs <- sum(rowSums(y == 0) == 0)
-
-    y[y == 0] <- NA
-    ret$y <- data.frame(y) # outcome variables
-    ret$x <- data.frame(x) # covariates, if specified
-    for (j in 1:J) {
-        rownames(ret$probs[[j]]) <- paste("class ", 1:R, ": ", sep = "")
-        if (is.factor(data[, match(colnames(y), colnames(data))[j]])) {
-            lev <- levels(data[, match(colnames(y), colnames(data))[j]])
-            colnames(ret$probs[[j]]) <- lev
-            ret$y[, j] <- factor(ret$y[, j], labels = lev)
-        } else {
-            colnames(ret$probs[[j]]) <-
-                paste("Pr(", 1:ncol(ret$probs[[j]]), ")", sep = "")
-        }
-    }
-    ret$N <- N # number of observations
-
-    # if no rows are fully observed or chi squared not requested
-    if ((all(rowSums(y == 0) > 0)) | !calc.chisq) {
-        ret$Chisq <- NA
-        ret$Gsq <- NA
-        ret$predcell <- NA
-    } else {
-        ret <- poLCAParallel.goodnessfit(ret)
     }
 
-    ret$maxiter <- maxiter # maximum number of iterations specified by user
-    # number of residual degrees of freedom
-    ret$resid.df <- min(ret$N, (prod(K.j) - 1)) - ret$npar
-    class(ret) <- "poLCA"
-    if (graphs) {
-        plot.poLCA(ret)
+    return(list(vector = probs_vector, ok = probs.start.ok))
+}
+
+# Check if the user's provided probs.start is valid
+#'
+#' @param probs.start A list of matrices of class-conditional response
+#' probabilities, see poLCA for further detailsr
+#' @param ncategory int, number of categories
+#' @param noutcomes vector of int, number of outcomes for each category
+#' @param nclass int, number of classes or clusters
+#'
+#' @return boolean, true if probs.start is valid
+#'
+#' @noRd
+is_probs_start_ok <- function(probs.start, ncategory, noutcomes, nclass) {
+    if (is.null(probs.start)) {
+        return(FALSE)
     }
-    if (verbose) {
-        print.poLCA(ret)
+    if (length(probs.start) != ncategory) {
+        return(FALSE)
     }
-    ret$time <- Sys.time() - starttime # how long it took to run the model
-    ret$call <- match.call()
-    return(ret)
+    if (!is.list(probs.start)) {
+        return(FALSE)
+    }
+    if (sum(sapply(probs.start, dim)[1, ] == nclass) != ncategory) {
+        return(FALSE)
+    }
+    if (sum(sapply(probs.start, dim)[2, ] == noutcomes) != ncategory) {
+        return(FALSE)
+    }
+    if (sum(round(sapply(probs.start, rowSums), 4) == 1) !=
+        (nclass * ncategory)) {
+        return(FALSE)
+    }
+    return(TRUE)
+}
+
+#' Unvectorize probabilities
+#'
+#' Wrapper function around poLCAParallel.unvectorize so you can provide
+#' prob_vec, noutcomes and nclass separately, rather than all in one list
+#'
+#' @param probs_vec vector of outcome probabilities, a flattened list of
+#' matrices with dimensions
+#'  * dim 0: for each outcome
+#'  * dim 1: for each category
+#'  * dim 2: for each cluster
+#' @param noutcomes vector of int, number of outcomes for each category
+#' @param nclass int, number of classes or clusters
+#'
+#' @return list of length n_category. For the ith entry, it contains a
+#' matrix of outcome probabilities with dimensions n_class x n_outcomes[i]
+#'
+#' @noRd
+unvectorize_probs <- function(probs_vec, noutcomes, nclass) {
+    return(poLCAParallel.unvectorize(
+        list(vecprobs = probs_vec, numChoices = noutcomes, classes = nclass)
+    ))
 }

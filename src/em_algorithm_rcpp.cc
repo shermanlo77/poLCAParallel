@@ -15,8 +15,6 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#define ARMA_WARN_LEVEL 1
-
 #include <memory>
 
 #include "RcppArmadillo.h"
@@ -25,11 +23,22 @@
 
 /**
  * Function to be exported to R, fit using the EM algorithm
- * @param features: design matrix of features
- * @param responses design matrix transpose of responses
- * @param initial_prob vector of response probabilities for each cluster,
- * flatten list of matrices, from the return value of poLCAParallel.vectorize.R,
- * flatten list of matrices
+ *
+ * @param features: Design matrix of features, matrix with dimensions
+ * <ul>
+ *   <li>dim 0: for each data point</li>
+ *   <li>dim 1: for each feature</li>
+ * </ul>
+ * @param responses Design matrix TRANSPOSED of responses, matrix containing
+ * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
+ * has dimensions
+ * <ul>
+ *   <li>dim 0: for each category</li>
+ *   <li>dim 1: for each data point</li>
+ * </ul>
+ * @param initial_prob Vector of initial response probabilities for each
+ * outcome, category and cluster. Can be the return value of
+ * poLCAParallel.vectorize.R. Flatten list in the following order
  * <ul>
  *   <li>dim 0: for each outcome</li>
  *   <li>dim 1: for each category</li>
@@ -38,23 +47,28 @@
  * @param n_data number of data points
  * @param n_feature number of features
  * @param n_category number of categories
- * @param n_outcomes: vector, number of possible responses for each category
+ * @param n_outcomes: vector, number of possible outcomes for each category
  * @param n_cluster: number of clusters, or classes, to fit
  * @param n_rep: number of repetitions
  * @param max_iter: maximum number of iterations for EM algorithm
- * @param tolerance: stop fitting the log likelihood change less than this
+ * @param tolerance: stop fitting when the change in log likelihood is less than
+ * this
  * @param seed: array of integers to seed rng
  * @return a list containing
  * <ul>
- *   <li>posterior: matrix of posterior probabilities, dim 0: for each data
+ *   <li>[[1]]: matrix of posterior probabilities, dim 0: for each data
  *   point, dim 1: for each cluster</li>
- *   <li>prior: matrix of prior probabilities, dim 0: for each data point,
+ *   <li>[[2]]: matrix of prior probabilities, dim 0: for each data point,
  *   dim 1: for each cluster</li>
- *   <li>estimated_prob: vector of estimated response probabilities, in the same
+ *   <li>[[3]]: vector of estimated response probabilities, in the same
  *   format as initial_prob</li>
- *   <li>ln_l: log likelihood</li>
- *   <li>n_iter: number of iterations taken</li>
- *   <li>eflag: true if the em algorithm has to ever restart</li>
+ *   <li>[[4]]: vector of regression coefficients</li>
+ *   <li>[[5]]: log likelihood</li>
+ *   <li>[[6]]: integer, which repetition achived the best fit</li>
+ *   <li>[[7]]: number of iterations taken</li>
+ *   <li>[[8]]: vector of initial response probabilities, in the same
+ *   format as initial_prob, which achieved the best fit</li>
+ *   <li>[[9]]: true if the em algorithm has to ever restart</li>
  * </ul>
  */
 // [[Rcpp::export]]
@@ -81,26 +95,22 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
 
   // fit using EM algorithm
   bool is_regress = n_feature > 1;
-  polca_parallel::EmAlgorithmArray* fitter =
-      new polca_parallel::EmAlgorithmArray(
-          features.begin(), responses.begin(), initial_prob.begin(), n_data,
-          n_feature, n_category, n_outcomes.begin(), sum_outcomes, n_cluster,
-          n_rep, n_thread, max_iter, tolerance, posterior.begin(),
-          prior.begin(), estimated_prob.begin(), regress_coeff.begin(),
-          is_regress);
+  polca_parallel::EmAlgorithmArray fitter(
+      features.begin(), responses.begin(), initial_prob.begin(), n_data,
+      n_feature, n_category, n_outcomes.begin(), sum_outcomes, n_cluster, n_rep,
+      n_thread, max_iter, tolerance, posterior.begin(), prior.begin(),
+      estimated_prob.begin(), regress_coeff.begin(), is_regress);
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
-  fitter->SetSeed(&seed_seq);
-  fitter->set_best_initial_prob(best_initial_prob.begin());
-  fitter->set_ln_l_array(ln_l_array.begin());
+  fitter.SetSeed(&seed_seq);
+  fitter.set_best_initial_prob(best_initial_prob.begin());
+  fitter.set_ln_l_array(ln_l_array.begin());
 
-  fitter->Fit();
+  fitter.Fit();
 
-  int best_rep_index = fitter->get_best_rep_index();
-  int n_iter = fitter->get_n_iter();
-  bool has_restarted = fitter->get_has_restarted();
-
-  delete fitter;
+  int best_rep_index = fitter.get_best_rep_index();
+  int n_iter = fitter.get_n_iter();
+  bool has_restarted = fitter.get_has_restarted();
 
   Rcpp::List to_return;
   to_return.push_back(posterior);
