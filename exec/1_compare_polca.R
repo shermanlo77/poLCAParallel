@@ -11,7 +11,7 @@
 library(MASS)
 nrep <- 32
 n_thread <- 1
-set.seed(377086676)
+seed <- 377086676
 
 for (nclass in 2:5) {
   for (i in 1:5) {
@@ -48,6 +48,7 @@ for (nclass in 2:5) {
     cat(paste("==========", nclass, "classes ==========\n"))
 
     # using original code
+    set.seed(seed)
     start_time <- Sys.time()
     lca <- poLCA::poLCA(
       f, dat,
@@ -57,7 +58,7 @@ for (nclass in 2:5) {
     units(diff_time_og) <- "secs"
 
     # using parallel code
-    set.seed(0)
+    set.seed(seed)
     start_time <- Sys.time()
     lca_parallel <- poLCAParallel::poLCA(
       f, dat,
