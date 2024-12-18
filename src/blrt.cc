@@ -173,30 +173,6 @@ void polca_parallel::Blrt::RunThread() {
   }
 }
 
-/**
- * Generate a bootstrap sample
- *
- * @param prior Vector of prior probabilities for the null
- * model, probability data point is in cluster m NOT given responses
- * <ul>
- *   <li>dim 0: for each cluster</li>
- * </ul>
- * @param prob Vector of estimated response probabilities for
- * each category, flatten list of matrices. Used as an initial value when
- * fitting onto the bootstrap sample.
- * <ul>
- *   <li>dim 0: for each outcome</li>
- *   <li>dim 1: for each cluster</li>
- *   <li>dim 2: for each category</li>
- * </ul>
- * @param n_cluster Number of clusters
- * @param rng Random number generator
- * @param response To store results, design matrix transpose of responses
- * <ul>
- *   <li>dim 0: for each category</li>
- *   <li>dim 1: for each data point</li>
- * </ul>
- */
 void polca_parallel::Blrt::Bootstrap(double* prior, double* prob, int n_cluster,
                                      std::mt19937_64* rng, int* response) {
   int i_cluster;

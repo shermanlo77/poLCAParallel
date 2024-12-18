@@ -28,7 +28,7 @@ namespace polca_parallel {
 /**
  * Serial version of EmAlgorithmArray
  *
- * Only uses one thread (so the parameter n_thread is ignored) and each
+ * Only uses one thread (so the parameter n_thread is not provided) and each
  * repetition reuses one rng, rather than each repetition having a rng each.
  * Thus the member variable seed_array_ shall only contain one seed. The rng is
  * only used for creating new initial values should a repetition fail.

@@ -130,8 +130,8 @@ class Blrt {
    * fitting onto the bootstrap sample.
    * <ul>
    *   <li>dim 0: for each outcome</li>
-   *   <li>dim 1: for each cluster</li>
-   *   <li>dim 2: for each category</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
    * </ul>
    * @param n_cluster_null Null model, number of clusters fitted
    * @param prior_alt Alt model, vector of prior probabilities for the null
@@ -144,8 +144,8 @@ class Blrt {
    * fitting onto the bootstrap sample.
    * <ul>
    *   <li>dim 0: for each outcome</li>
-   *   <li>dim 1: for each cluster</li>
-   *   <li>dim 2: for each category</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
    * </ul>
    * @param n_cluster_alt Alt model, number of clusters fitted
    * @param n_data Number of data points, used to bootstrap this many data
@@ -180,20 +180,24 @@ class Blrt {
   void RunThread();
 
   /**
-   * Bootstrap data
-   * @param prior vector of probabilities, one for each cluster. Probability a
-   * data point belongs to each cluster
-   * @param prob Vector of estimated response probabilities, conditioned on
-   * the cluster, for each category, flatten list in the order
+   * Generate a bootstrap sample
+   *
+   * @param prior Vector of prior probabilities for the null
+   * model, probability data point is in cluster m NOT given responses
+   * <ul>
+   *   <li>dim 0: for each cluster</li>
+   * </ul>
+   * @param prob Vector of estimated response probabilities for
+   * each category, flatten list of matrices. Used as an initial value when
+   * fitting onto the bootstrap sample.
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
    *   <li>dim 2: for each cluster</li>
    * </ul>
-   * @param n_cluster number of clusters, length of prior
-   * @param rng random number generator
-   * @param response output, bootstrapped responses/data, design matrix
-   * TRANSPOSED of responses, matrix with dimensions
+   * @param n_cluster Number of clusters
+   * @param rng Random number generator
+   * @param response To store results, design matrix transpose of responses
    * <ul>
    *   <li>dim 0: for each category</li>
    *   <li>dim 1: for each data point</li>

@@ -51,8 +51,12 @@ namespace polca_parallel {
  *     set_ln_l_array()
  *   </li>
  *   <li>
- *     Call the method Fit() to run multiple EM algorithms. Results with the
- *     best log-likelihood are stored
+ *     Call the method Fit<EmAlgorithm>() to run multiple EM algorithms where
+ *     the type provided is EmAlgorithm or a subclass, ie: EmAlgorithm,
+ *     EmAlgorithmNan, EmAlgorithmRegress and EmAlgorithmNanRegress. Select the
+ *     one which best describes the problem and the data, ie if it is a
+ *     regression problem or not. ie if the responses contains nan encoded as
+ *     zeros. Results with the best log-likelihood are stored.
  *   </li>
  *   <li>
  *     Call the methods get_best_rep_index(), get_n_iter() and/or

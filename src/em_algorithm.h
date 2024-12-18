@@ -200,7 +200,8 @@ class EmAlgorithm {
    *   <li>dim 1: for each data point</li>
    * </ul>
    * @param initial_prob Vector of initial probabilities for each category and
-   * outcome, flatten list in the following order
+   * outcome. This can be nullptr and set later using the method NewRun().
+   * Flatten list in the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
