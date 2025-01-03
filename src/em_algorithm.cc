@@ -128,6 +128,14 @@ void polca_parallel::EmAlgorithm::Fit() {
   this->FinalPrior();
 }
 
+void polca_parallel::EmAlgorithm::NewRun(double* initial_prob) {
+  this->initial_prob_ = initial_prob;
+  this->ln_l_ = -INFINITY;
+  this->n_iter_ = 0;
+  this->has_restarted_ = false;
+  std::fill(this->ln_l_array_.begin(), this->ln_l_array_.end(), 0.0);
+}
+
 // Set where to store initial probabilities (optional)
 void polca_parallel::EmAlgorithm::set_best_initial_prob(
     double* best_initial_prob) {

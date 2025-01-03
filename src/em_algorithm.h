@@ -266,6 +266,20 @@ class EmAlgorithm {
   void Fit();
 
   /**
+   * Reset this object so that it can be re-used for another run with new
+   * initial probabilities
+   *
+   * @param initial_prob Vector of initial probabilities for each category and
+   * outcome, flatten list in the following order
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   */
+  void NewRun(double* initial_prob);
+
+  /**
    * Set where to store initial probabilities (optional)
    *
    * @param best_initial_prob Vector of INITIAL response probabilities used to
