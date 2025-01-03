@@ -115,8 +115,7 @@ class EmAlgorithmArray {
    * with the same name in EmAlgorithm.
    */
   double* regress_coeff_;
-  /** True if to use regression model */
-  bool is_regress_;
+
   /**
    * Optional, to store initial prob to obtain max likelihood or from the best
    * repetition. Accessing and writing should be done with locking and unlocking
@@ -128,8 +127,6 @@ class EmAlgorithmArray {
   /** Number of initial values to try */
   int n_rep_;
 
-  /** Indicate if NaN (encoded as zeros) has been removed in responses */
-  bool na_rm_;
   /** The best log-likelihood found so far */
   double optimal_ln_l_ = -INFINITY;
   /**
@@ -206,8 +203,6 @@ class EmAlgorithmArray {
    * @param n_cluster Number of clusters to fit
    * @param n_rep Number of repetitions to do, this defines dim 3 of
    * initial_prob
-   * @param na_rm Indicate if NaN (encoded as zeros) has been removed in
-   * responses
    * @param n_thread Number of threads to use
    * @param max_iter Maximum number of iterations for EM algorithm
    * @param tolerance Tolerance for the difference in log-likelihood, used for
@@ -236,21 +231,31 @@ class EmAlgorithmArray {
    * n_features_*(n_cluster-1), linear regression coefficient in matrix
    * form, to be multiplied to the features and linked to the prior
    * using softmax
-   * @param is_regress True if to use regression model
    */
   EmAlgorithmArray(double* features, int* responses, double* initial_prob,
                    int n_data, int n_feature, int n_category, int* n_outcomes,
-                   int sum_outcomes, int n_cluster, int n_rep, bool na_rm,
-                   int n_thread, int max_iter, double tolerance,
-                   double* posterior, double* prior, double* estimated_prob,
-                   double* regress_coeff, bool is_regress);
+                   int sum_outcomes, int n_cluster, int n_rep, int n_thread,
+                   int max_iter, double tolerance, double* posterior,
+                   double* prior, double* estimated_prob,
+                   double* regress_coeff);
 
   /**
-   * Fit (in parallel) using the EM algorithm.
+   * Fit (in parallel) using the EM algorithm
    *
    * To be called right after construction or after setting optional settings.
    * Results with the best log-likelihood are recorded.
+   *
+   * Provide the appropriate EmAlgorithm class to use via the template, ie if
+   * it is a regression problem or there are NaN numbers (encoded as zero) in
+   * the responses. Examples:
+   * <ul>
+   *   <li>Fit<EmAlgorithm>()</li>
+   *   <li>Fit<EmAlgorithmRegress>()</li>
+   *   <li>Fit<EmAlgorithmNan>()</li>
+   *   <li>Fit<EmAlgorithmNanRegress>()</li>
+   * </ul>
    */
+  template <typename EmAlgorithmType>
   void Fit();
 
   /** Set the member variable seed_array_ with a seed for each repetition */
@@ -314,7 +319,18 @@ class EmAlgorithmArray {
    * Fit(). When a better log-likelihood is found after the fit, it copies the
    * results over, such as the posterior, prior, estimate probabilities,
    * regression coefficients and starting probabilities.
+   *
+   * Provide the appropriate EmAlgorithm class to use via the template, ie if
+   * it is a regression problem or there are NaN numbers (encoded as zero) in
+   * the responses. Examples:
+   * <ul>
+   *   <li>FitThread<EmAlgorithm>()</li>
+   *   <li>FitThread<EmAlgorithmRegress>()</li>
+   *   <li>FitThread<EmAlgorithmNan>()</li>
+   *   <li>FitThread<EmAlgorithmNanRegress>()</li>
+   * </ul>
    */
+  template <typename EmAlgorithmType>
   void FitThread();
 };
 

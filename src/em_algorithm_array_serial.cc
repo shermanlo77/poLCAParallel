@@ -20,14 +20,12 @@
 polca_parallel::EmAlgorithmArraySerial::EmAlgorithmArraySerial(
     double* features, int* responses, double* initial_prob, int n_data,
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
-    int n_cluster, int n_rep, int n_thread, int max_iter, double tolerance,
-    double* posterior, double* prior, double* estimated_prob,
-    double* regress_coeff, bool is_regress)
+    int n_cluster, int n_rep, int max_iter, double tolerance, double* posterior,
+    double* prior, double* estimated_prob, double* regress_coeff)
     : polca_parallel::EmAlgorithmArray(
           features, responses, initial_prob, n_data, n_feature, n_category,
-          n_outcomes, sum_outcomes, n_cluster, n_rep, true, 1, max_iter,
-          tolerance, posterior, prior, estimated_prob, regress_coeff,
-          is_regress) {}
+          n_outcomes, sum_outcomes, n_cluster, n_rep, 1, max_iter, tolerance,
+          posterior, prior, estimated_prob, regress_coeff) {}
 
 void polca_parallel::EmAlgorithmArraySerial::SetSeed(std::seed_seq* seed) {
   this->seed_array_ = std::make_unique<unsigned[]>(1);

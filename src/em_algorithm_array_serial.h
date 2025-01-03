@@ -45,15 +45,14 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
  public:
   /**
    * @copydoc EmAlgorithmArraySerial::EmAlgorithmArray
-   * @param n_thread not used in EmAlgorithmArraySerial
+   * @param n_thread omitted EmAlgorithmArraySerial
    */
   EmAlgorithmArraySerial(double* features, int* responses, double* initial_prob,
                          int n_data, int n_feature, int n_category,
                          int* n_outcomes, int sum_outcomes, int n_cluster,
-                         int n_rep, int n_thread, int max_iter,
-                         double tolerance, double* posterior, double* prior,
-                         double* estimated_prob, double* regress_coeff,
-                         bool is_regress);
+                         int n_rep, int max_iter, double tolerance,
+                         double* posterior, double* prior,
+                         double* estimated_prob, double* regress_coeff);
 
   /**
    * Set the seed_array_ to contain only one seed and instantiate the rng_

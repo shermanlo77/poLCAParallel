@@ -32,7 +32,8 @@
 namespace polca_parallel {
 
 /**
- * Bootstrap likelihood ratio test (polca with no regression only supported)
+ * Bootstrap likelihood ratio test (polca with no regression and no nan only
+ * supported)
  *
  * Does the bootstrap likelihood ratio test. Provide two fitted models, the
  * null model and the alt model which fit a different number of clusters.
