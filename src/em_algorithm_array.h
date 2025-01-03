@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "em_algorithm.h"
+#include "em_algorithm_nan.h"
 #include "em_algorithm_regress.h"
 
 namespace polca_parallel {
@@ -126,6 +127,9 @@ class EmAlgorithmArray {
 
   /** Number of initial values to try */
   int n_rep_;
+
+  /** Indicate if NaN (encoded as zeros) has been removed in responses */
+  bool na_rm_;
   /** The best log-likelihood found so far */
   double optimal_ln_l_ = -INFINITY;
   /**
@@ -202,6 +206,8 @@ class EmAlgorithmArray {
    * @param n_cluster Number of clusters to fit
    * @param n_rep Number of repetitions to do, this defines dim 3 of
    * initial_prob
+   * @param na_rm Indicate if NaN (encoded as zeros) has been removed in
+   * responses
    * @param n_thread Number of threads to use
    * @param max_iter Maximum number of iterations for EM algorithm
    * @param tolerance Tolerance for the difference in log-likelihood, used for
@@ -234,10 +240,10 @@ class EmAlgorithmArray {
    */
   EmAlgorithmArray(double* features, int* responses, double* initial_prob,
                    int n_data, int n_feature, int n_category, int* n_outcomes,
-                   int sum_outcomes, int n_cluster, int n_rep, int n_thread,
-                   int max_iter, double tolerance, double* posterior,
-                   double* prior, double* estimated_prob, double* regress_coeff,
-                   bool is_regress);
+                   int sum_outcomes, int n_cluster, int n_rep, bool na_rm,
+                   int n_thread, int max_iter, double tolerance,
+                   double* posterior, double* prior, double* estimated_prob,
+                   double* regress_coeff, bool is_regress);
 
   /**
    * Fit (in parallel) using the EM algorithm.

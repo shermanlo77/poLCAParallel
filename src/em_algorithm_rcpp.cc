@@ -77,7 +77,7 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
                            Rcpp::NumericVector initial_prob, int n_data,
                            int n_feature, int n_category,
                            Rcpp::IntegerVector n_outcomes, int n_cluster,
-                           int n_rep, int n_thread, int max_iter,
+                           int n_rep, bool na_rm, int n_thread, int max_iter,
                            double tolerance, Rcpp::IntegerVector seed) {
   int sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
@@ -98,7 +98,7 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
   polca_parallel::EmAlgorithmArray fitter(
       features.begin(), responses.begin(), initial_prob.begin(), n_data,
       n_feature, n_category, n_outcomes.begin(), sum_outcomes, n_cluster, n_rep,
-      n_thread, max_iter, tolerance, posterior.begin(), prior.begin(),
+      na_rm, n_thread, max_iter, tolerance, posterior.begin(), prior.begin(),
       estimated_prob.begin(), regress_coeff.begin(), is_regress);
 
   std::seed_seq seed_seq(seed.begin(), seed.end());

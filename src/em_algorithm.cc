@@ -309,8 +309,11 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i, int n_category,
   // calculate conditioned on cluster m likelihood
   for (int j = 0; j < n_category; ++j) {
     y = responses_i[j];  // cache hit by accesing adjacent memory
-    // cache hit in estimated_prob by accesing memory n_outcomes + y -1 awa
-    likelihood *= (*estimated_prob)[y - 1];
+    if (y > 0) {
+      // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
+      likelihood *= (*estimated_prob)[y - 1];
+    }
+
     // increment to point to the next category
     *estimated_prob += n_outcomes[j];
 
@@ -319,19 +322,22 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i, int n_category,
       use_sum_log = true;
       break;
     }
-    // posterior = likelihood x prior
-    posterior = likelihood * prior;
   }
 
   // if underflow occured, use sum of logs instead
   // restart calculation
-  if (use_sum_log) {
+  if (!use_sum_log) {
+    posterior = likelihood * prior;
+  } else {
     double log_likelihood = 0;
     // calculate conditioned on cluster m likelihood
     for (int j = 0; j < n_category; ++j) {
       y = responses_i[j];  // cache hit by accesing adjacent memory
-      // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
-      log_likelihood += log((*estimated_prob)[y - 1]);
+      if (y > 0) {
+        // cache hit in estimated_prob by accessing memory n_outcomes + y -1
+        // away
+        log_likelihood += log((*estimated_prob)[y - 1]);
+      }
       // increment to point to the next category
       *estimated_prob += n_outcomes[j];
     }

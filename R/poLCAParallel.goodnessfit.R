@@ -16,18 +16,21 @@ poLCAParallel.goodnessfit <- function(results) {
     formula <- formula(
         paste0("cbind(", paste(colnames(y), collapse = ","), ")~1")
     )
-    mframe <- model.frame(formula, y)
+    mframe <- model.frame(formula, y, na.action = NULL)
     y <- model.response(mframe)
+    y[is.na(y)] <- 0
     prob_vec <- poLCAParallel.vectorize(results$probs)
     goodness_fit_results <- GoodnessFitRcpp(
         t(y),
         results$P,
         prob_vec$vecprobs,
         results$N,
+        results$Nobs,
         length(prob_vec$numChoices),
         prob_vec$numChoices,
         prob_vec$classes
     )
+
     results$predcell <- data.frame(goodness_fit_results[[1]])
     colnames(results$predcell) <- c(colnames(y), "observed", "expected")
     results$Gsq <- goodness_fit_results[[2]]

@@ -20,8 +20,8 @@
 polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
     double* features, int* responses, double* initial_prob, int n_data,
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
-    int n_cluster, int n_rep, int n_thread, int max_iter, double tolerance,
-    double* posterior, double* prior, double* estimated_prob,
+    int n_cluster, int n_rep, bool na_rm, int n_thread, int max_iter,
+    double tolerance, double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff, bool is_regress)
     : features_(features),
       responses_(responses),
@@ -39,6 +39,7 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
       regress_coeff_(regress_coeff),
       is_regress_(is_regress),
       n_rep_(n_rep),
+      na_rm_(na_rm),
       initial_prob_(initial_prob),
       n_thread_(std::min(n_thread, n_rep)),
       n_rep_done_lock_(std::make_unique<std::mutex>()),
@@ -132,20 +133,42 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
 
       // transfer pointer to data and where to store results
       // em fit
-      if (this->is_regress_) {
-        fitter = std::make_unique<polca_parallel::EmAlgorithmRegress>(
-            this->features_, this->responses_,
-            this->initial_prob_ + rep_index * sum_outcomes * n_cluster, n_data,
-            n_feature, this->n_category_, this->n_outcomes_, sum_outcomes,
-            n_cluster, this->max_iter_, this->tolerance_, posterior.data(),
-            prior.data(), estimated_prob.data(), regress_coeff.data());
+      if (this->na_rm_) {
+        if (this->is_regress_) {
+          fitter = std::make_unique<polca_parallel::EmAlgorithmRegress>(
+              this->features_, this->responses_,
+              this->initial_prob_ + rep_index * sum_outcomes * n_cluster,
+              n_data, n_feature, this->n_category_, this->n_outcomes_,
+              sum_outcomes, n_cluster, this->max_iter_, this->tolerance_,
+              posterior.data(), prior.data(), estimated_prob.data(),
+              regress_coeff.data());
+        } else {
+          fitter = std::make_unique<polca_parallel::EmAlgorithm>(
+              this->features_, this->responses_,
+              this->initial_prob_ + rep_index * sum_outcomes * n_cluster,
+              n_data, n_feature, this->n_category_, this->n_outcomes_,
+              sum_outcomes, n_cluster, this->max_iter_, this->tolerance_,
+              posterior.data(), prior.data(), estimated_prob.data(),
+              regress_coeff.data());
+        }
       } else {
-        fitter = std::make_unique<polca_parallel::EmAlgorithm>(
-            this->features_, this->responses_,
-            this->initial_prob_ + rep_index * sum_outcomes * n_cluster, n_data,
-            n_feature, this->n_category_, this->n_outcomes_, sum_outcomes,
-            n_cluster, this->max_iter_, this->tolerance_, posterior.data(),
-            prior.data(), estimated_prob.data(), regress_coeff.data());
+        if (this->is_regress_) {
+          fitter = std::make_unique<polca_parallel::EmAlgorithmNanRegress>(
+              this->features_, this->responses_,
+              this->initial_prob_ + rep_index * sum_outcomes * n_cluster,
+              n_data, n_feature, this->n_category_, this->n_outcomes_,
+              sum_outcomes, n_cluster, this->max_iter_, this->tolerance_,
+              posterior.data(), prior.data(), estimated_prob.data(),
+              regress_coeff.data());
+        } else {
+          fitter = std::make_unique<polca_parallel::EmAlgorithmNan>(
+              this->features_, this->responses_,
+              this->initial_prob_ + rep_index * sum_outcomes * n_cluster,
+              n_data, n_feature, this->n_category_, this->n_outcomes_,
+              sum_outcomes, n_cluster, this->max_iter_, this->tolerance_,
+              posterior.data(), prior.data(), estimated_prob.data(),
+              regress_coeff.data());
+        }
       }
       // each repetition uses their own rng
       this->SetFitterRng(fitter.get(), rep_index);
