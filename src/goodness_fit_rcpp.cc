@@ -1,3 +1,4 @@
+
 // poLCAParallel
 // Copyright (C) 2022 Sherman Lo
 
@@ -37,6 +38,7 @@
  *   <li>dim 2: for each cluster</li>
  * </ul>
  * @param n_data number of data points
+ * @param n_obs number of fully observed data points
  * @param n_category number of categories
  * @param n_outcomes vector, number of possible responses for each category
  * @param n_cluster number of clusters, or classes, to fit
@@ -52,15 +54,15 @@
 Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                            Rcpp::NumericVector prior,
                            Rcpp::NumericVector outcome_prob, int n_data,
-                           int n_category, Rcpp::IntegerVector n_outcomes,
-                           int n_cluster) {
+                           int n_obs, int n_category,
+                           Rcpp::IntegerVector n_outcomes, int n_cluster) {
   // get observed and expected frequencies for each unique response
   // having problems doing static allocation and passing the pointer
   std::unique_ptr<std::map<std::vector<int>, polca_parallel::Frequency>>
       unique_freq = std::make_unique<
           std::map<std::vector<int>, polca_parallel::Frequency>>();
   GetUniqueObserved(responses.begin(), n_data, n_category, unique_freq.get());
-  GetExpected(prior.begin(), outcome_prob.begin(), n_data, n_category,
+  GetExpected(prior.begin(), outcome_prob.begin(), n_data, n_obs, n_category,
               n_outcomes.begin(), n_cluster, unique_freq.get());
   // get log likelihood ratio and chi squared statistics
   std::array<double, 2> stats = GetStatistics(unique_freq.get(), n_data);

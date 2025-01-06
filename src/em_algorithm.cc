@@ -128,6 +128,14 @@ void polca_parallel::EmAlgorithm::Fit() {
   this->FinalPrior();
 }
 
+void polca_parallel::EmAlgorithm::NewRun(double* initial_prob) {
+  this->initial_prob_ = initial_prob;
+  this->ln_l_ = -INFINITY;
+  this->n_iter_ = 0;
+  this->has_restarted_ = false;
+  std::fill(this->ln_l_array_.begin(), this->ln_l_array_.end(), 0.0);
+}
+
 // Set where to store initial probabilities (optional)
 void polca_parallel::EmAlgorithm::set_best_initial_prob(
     double* best_initial_prob) {
@@ -309,8 +317,11 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i, int n_category,
   // calculate conditioned on cluster m likelihood
   for (int j = 0; j < n_category; ++j) {
     y = responses_i[j];  // cache hit by accesing adjacent memory
-    // cache hit in estimated_prob by accesing memory n_outcomes + y -1 awa
-    likelihood *= (*estimated_prob)[y - 1];
+    if (y > 0) {
+      // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
+      likelihood *= (*estimated_prob)[y - 1];
+    }
+
     // increment to point to the next category
     *estimated_prob += n_outcomes[j];
 
@@ -319,19 +330,22 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i, int n_category,
       use_sum_log = true;
       break;
     }
-    // posterior = likelihood x prior
-    posterior = likelihood * prior;
   }
 
   // if underflow occured, use sum of logs instead
   // restart calculation
-  if (use_sum_log) {
+  if (!use_sum_log) {
+    posterior = likelihood * prior;
+  } else {
     double log_likelihood = 0;
     // calculate conditioned on cluster m likelihood
     for (int j = 0; j < n_category; ++j) {
       y = responses_i[j];  // cache hit by accesing adjacent memory
-      // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
-      log_likelihood += log((*estimated_prob)[y - 1]);
+      if (y > 0) {
+        // cache hit in estimated_prob by accessing memory n_outcomes + y -1
+        // away
+        log_likelihood += log((*estimated_prob)[y - 1]);
+      }
       // increment to point to the next category
       *estimated_prob += n_outcomes[j];
     }

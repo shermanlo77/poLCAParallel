@@ -200,7 +200,8 @@ class EmAlgorithm {
    *   <li>dim 1: for each data point</li>
    * </ul>
    * @param initial_prob Vector of initial probabilities for each category and
-   * outcome, flatten list in the following order
+   * outcome. This can be nullptr and set later using the method NewRun().
+   * Flatten list in the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
@@ -264,6 +265,20 @@ class EmAlgorithm {
    * </ul>
    */
   void Fit();
+
+  /**
+   * Reset this object so that it can be re-used for another run with new
+   * initial probabilities
+   *
+   * @param initial_prob Vector of initial probabilities for each category and
+   * outcome, flatten list in the following order
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
+   */
+  void NewRun(double* initial_prob);
 
   /**
    * Set where to store initial probabilities (optional)
@@ -411,7 +426,7 @@ class EmAlgorithm {
    *
    * @param cluster_index which cluster to consider
    */
-  void WeightedSumProb(int cluster_index);
+  virtual void WeightedSumProb(int cluster_index);
 
   /**
    * Normalise the weighted sum following WeightedSumProb()
@@ -441,12 +456,13 @@ class EmAlgorithm {
 };
 
 /**
- * Calculates the unnormalize posterior, that is likelihood multiplied by prior
+ * Calculates the unnormalize posterior, that is likelihood multiplied by
+ * prior
  *
- * Calculates the unnormalize posterior, that is likelihood multiplied by prior
- * for a given data point and cluster. This corresponds to the probability that
- * this data point belongs to a given cluster given the responses and outcome
- * probabilities, up to a constant.
+ * Calculates the unnormalize posterior, that is likelihood multiplied by
+ * prior for a given data point and cluster. This corresponds to the
+ * probability that this data point belongs to a given cluster given the
+ * responses and outcome probabilities, up to a constant.
  *
  * The likelihood is the product of outcome probabilities (or estimated in the
  * EM algorithm) which corresponds to the outcome responses.
@@ -455,8 +471,8 @@ class EmAlgorithm {
  *
  * It should be noted in the likelihood calculations, probabilities are
  * iteratively multiplied. However, to avoid underflow errors, a sum of log
- * probabilities is done instead if an underflow is detected. It should be noted
- * the sum of logs is slower.
+ * probabilities is done instead if an underflow is detected. It should be
+ * noted the sum of logs is slower.
  *
  * @param responses_i the responses for a given data point, length n_catgeory
  * @param n_catgeory number of categories

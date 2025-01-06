@@ -142,24 +142,23 @@ void polca_parallel::Blrt::RunThread() {
       polca_parallel::EmAlgorithmArraySerial null_model(
           features.data(), bootstrap_data, init_prob_null.data(), this->n_data_,
           1, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-          this->n_cluster_null_, this->n_rep_, 1, this->max_iter_,
+          this->n_cluster_null_, this->n_rep_, this->max_iter_,
           this->tolerance_, fitted_posterior_null.data(),
           fitted_prior_null.data(), fitted_prob_null.data(),
-          fitted_regress_coeff_null.data(), false);
+          fitted_regress_coeff_null.data());
       null_model.SetRng(&rng);
-      null_model.Fit();
+      null_model.Fit<polca_parallel::EmAlgorithm>();
       rng = null_model.MoveRng();
 
       // alt model fit
       polca_parallel::EmAlgorithmArraySerial alt_model(
           features.data(), bootstrap_data, init_prob_alt.data(), this->n_data_,
           1, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-          this->n_cluster_alt_, this->n_rep_, 1, this->max_iter_,
-          this->tolerance_, fitted_posterior_alt.data(),
-          fitted_prior_alt.data(), fitted_prob_alt.data(),
-          fitted_regress_coeff_alt.data(), false);
+          this->n_cluster_alt_, this->n_rep_, this->max_iter_, this->tolerance_,
+          fitted_posterior_alt.data(), fitted_prior_alt.data(),
+          fitted_prob_alt.data(), fitted_regress_coeff_alt.data());
       alt_model.SetRng(&rng);
-      alt_model.Fit();
+      alt_model.Fit<polca_parallel::EmAlgorithm>();
       rng = alt_model.MoveRng();
 
       // work out the log ratio, save it
@@ -174,30 +173,6 @@ void polca_parallel::Blrt::RunThread() {
   }
 }
 
-/**
- * Generate a bootstrap sample
- *
- * @param prior Vector of prior probabilities for the null
- * model, probability data point is in cluster m NOT given responses
- * <ul>
- *   <li>dim 0: for each cluster</li>
- * </ul>
- * @param prob Vector of estimated response probabilities for
- * each category, flatten list of matrices. Used as an initial value when
- * fitting onto the bootstrap sample.
- * <ul>
- *   <li>dim 0: for each outcome</li>
- *   <li>dim 1: for each cluster</li>
- *   <li>dim 2: for each category</li>
- * </ul>
- * @param n_cluster Number of clusters
- * @param rng Random number generator
- * @param response To store results, design matrix transpose of responses
- * <ul>
- *   <li>dim 0: for each category</li>
- *   <li>dim 1: for each data point</li>
- * </ul>
- */
 void polca_parallel::Blrt::Bootstrap(double* prior, double* prob, int n_cluster,
                                      std::mt19937_64* rng, int* response) {
   int i_cluster;
