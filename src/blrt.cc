@@ -78,7 +78,8 @@ void polca_parallel::Blrt::RunThread() {
   int i_bootstrap;
 
   // to store the bootstrap samples
-  int* bootstrap_data = new int[this->n_data_ * this->n_category_];
+  std::unique_ptr<int[]> bootstrap_data =
+      std::make_unique<int[]>(this->n_data_ * this->n_category_);
 
   // allocate memory for storing initial values for the probabilities
   std::vector<double> init_prob_null(this->sum_outcomes_ *
@@ -144,14 +145,14 @@ void polca_parallel::Blrt::RunThread() {
 
       // bootstrap data using null model
       this->Bootstrap(this->prior_null_, this->prob_null_,
-                      this->n_cluster_null_, rng.get(), bootstrap_data);
+                      this->n_cluster_null_, rng.get(), bootstrap_data.get());
 
       // null model fit
       polca_parallel::EmAlgorithmArraySerial null_model(
-          features.data(), bootstrap_data, init_prob_null.data(), this->n_data_,
-          1, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-          this->n_cluster_null_, this->n_rep_, this->max_iter_,
-          this->tolerance_, fitted_posterior_null.data(),
+          features.data(), bootstrap_data.get(), init_prob_null.data(),
+          this->n_data_, 1, this->n_category_, this->n_outcomes_,
+          this->sum_outcomes_, this->n_cluster_null_, this->n_rep_,
+          this->max_iter_, this->tolerance_, fitted_posterior_null.data(),
           fitted_prior_null.data(), fitted_prob_null.data(),
           fitted_regress_coeff_null.data());
       null_model.SetRng(&rng);
@@ -160,11 +161,12 @@ void polca_parallel::Blrt::RunThread() {
 
       // alt model fit
       polca_parallel::EmAlgorithmArraySerial alt_model(
-          features.data(), bootstrap_data, init_prob_alt.data(), this->n_data_,
-          1, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-          this->n_cluster_alt_, this->n_rep_, this->max_iter_, this->tolerance_,
-          fitted_posterior_alt.data(), fitted_prior_alt.data(),
-          fitted_prob_alt.data(), fitted_regress_coeff_alt.data());
+          features.data(), bootstrap_data.get(), init_prob_alt.data(),
+          this->n_data_, 1, this->n_category_, this->n_outcomes_,
+          this->sum_outcomes_, this->n_cluster_alt_, this->n_rep_,
+          this->max_iter_, this->tolerance_, fitted_posterior_alt.data(),
+          fitted_prior_alt.data(), fitted_prob_alt.data(),
+          fitted_regress_coeff_alt.data());
       alt_model.SetRng(&rng);
       alt_model.Fit<polca_parallel::EmAlgorithm>();
       rng = alt_model.MoveRng();
