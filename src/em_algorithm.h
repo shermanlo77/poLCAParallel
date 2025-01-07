@@ -18,17 +18,9 @@
 #ifndef POLCAPARALLEL_SRC_EM_ALGORITHM_H_
 #define POLCAPARALLEL_SRC_EM_ALGORITHM_H_
 
-#include <math.h>
-
-#include <chrono>
-#include <cstring>
-#include <limits>
 #include <memory>
 #include <random>
-#include <utility>
 #include <vector>
-
-#include "RcppArmadillo.h"
 
 namespace polca_parallel {
 

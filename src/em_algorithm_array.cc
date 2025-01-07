@@ -17,6 +17,18 @@
 
 #include "em_algorithm_array.h"
 
+#include <algorithm>
+#include <cstring>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
+#include <vector>
+
+#include "em_algorithm.h"
+#include "em_algorithm_nan.h"
+#include "em_algorithm_regress.h"
+
 template void
 polca_parallel::EmAlgorithmArray::Fit<polca_parallel::EmAlgorithm>();
 template void

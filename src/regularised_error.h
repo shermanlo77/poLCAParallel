@@ -18,13 +18,6 @@
 #ifndef POLCAPARALLEL_SRC_REGULARISED_ERROR_H
 #define POLCAPARALLEL_SRC_REGULARISED_ERROR_H
 
-#include <math.h>
-
-#include <limits>
-#include <memory>
-
-#include "RcppArmadillo.h"
-#include "error_solver.h"
 #include "standard_error.h"
 #include "standard_error_regress.h"
 

@@ -17,6 +17,11 @@
 
 #include "em_algorithm_regress.h"
 
+#include <algorithm>
+#include <random>
+#include <stdexcept>
+#include <vector>
+
 polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
     double* features, int* responses, double* initial_prob, int n_data,
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,

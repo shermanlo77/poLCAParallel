@@ -20,7 +20,6 @@
 
 #include <vector>
 
-#include "RcppArmadillo.h"
 #include "em_algorithm.h"
 #include "em_algorithm_regress.h"
 

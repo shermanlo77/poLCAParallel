@@ -17,6 +17,13 @@
 
 #include "standard_error.h"
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
+#include "RcppArmadillo.h"
+#include "error_solver.h"
+
 polca_parallel::StandardError::StandardError(
     double* features, int* responses, double* probs, double* prior,
     double* posterior, int n_data, int n_feature, int n_category,

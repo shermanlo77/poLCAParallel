@@ -18,17 +18,10 @@
 #ifndef POLCAPARALLEL_SRC_EM_ALGORITHM_ARRAY_H_
 #define POLCAPARALLEL_SRC_EM_ALGORITHM_ARRAY_H_
 
-#include <algorithm>
-#include <cstring>
 #include <memory>
-#include <mutex>
 #include <random>
-#include <thread>
-#include <vector>
 
 #include "em_algorithm.h"
-#include "em_algorithm_nan.h"
-#include "em_algorithm_regress.h"
 
 namespace polca_parallel {
 

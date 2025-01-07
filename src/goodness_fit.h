@@ -19,16 +19,9 @@
 #ifndef POLCAPARALLEL_SRC_GOODNESS_FIT_H_
 #define POLCAPARALLEL_SRC_GOODNESS_FIT_H_
 
-#include <math.h>
-
 #include <array>
-#include <cstring>
 #include <map>
-#include <stdexcept>
 #include <vector>
-
-#include "RcppArmadillo.h"
-#include "em_algorithm.h"
 
 namespace polca_parallel {
 

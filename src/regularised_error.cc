@@ -17,6 +17,13 @@
 
 #include "regularised_error.h"
 
+#include <memory>
+
+#include "RcppArmadillo.h"
+#include "smoother.h"
+#include "standard_error.h"
+#include "standard_error_regress.h"
+
 polca_parallel::RegularisedError::RegularisedError(
     double* features, int* responses, double* probs, double* prior,
     double* posterior, int n_data, int n_feature, int n_category,

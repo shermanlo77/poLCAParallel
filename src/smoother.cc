@@ -17,6 +17,8 @@
 
 #include "smoother.h"
 
+#include "RcppArmadillo.h"
+
 polca_parallel::Smoother::Smoother(int* responses, double* probs, double* prior,
                                    double* posterior, int n_data,
                                    int n_category, int* n_outcomes,

@@ -17,6 +17,13 @@
 
 #include "em_algorithm_nan.h"
 
+#include <algorithm>
+#include <vector>
+
+#include "RcppArmadillo.h"
+#include "em_algorithm.h"
+#include "em_algorithm_regress.h"
+
 polca_parallel::EmAlgorithmNan::EmAlgorithmNan(
     double* features, int* responses, double* initial_prob, int n_data,
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,

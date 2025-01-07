@@ -17,6 +17,17 @@
 
 #include "em_algorithm.h"
 
+#include <chrono>
+#include <cmath>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <random>
+#include <utility>
+#include <vector>
+
+#include "RcppArmadillo.h"
+
 const int polca_parallel::kUnderflowThreshold =
     std::numeric_limits<double>::min();
 
@@ -225,7 +236,7 @@ void polca_parallel::EmAlgorithm::PosteriorUnnormalize(
 }
 
 bool polca_parallel::EmAlgorithm::IsInvalidLikelihood(double ln_l_difference) {
-  return isnan(this->ln_l_);
+  return std::isnan(this->ln_l_);
 }
 
 bool polca_parallel::EmAlgorithm::MStep() {
@@ -344,13 +355,13 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i, int n_category,
       if (y > 0) {
         // cache hit in estimated_prob by accessing memory n_outcomes + y -1
         // away
-        log_likelihood += log((*estimated_prob)[y - 1]);
+        log_likelihood += std::log((*estimated_prob)[y - 1]);
       }
       // increment to point to the next category
       *estimated_prob += n_outcomes[j];
     }
-    posterior = log_likelihood + log(prior);
-    posterior = exp(posterior);
+    posterior = log_likelihood + std::log(prior);
+    posterior = std::exp(posterior);
   }
 
   return posterior;

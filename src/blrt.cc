@@ -17,6 +17,14 @@
 
 #include "blrt.h"
 
+#include <chrono>
+#include <cstring>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
+#include <vector>
+
 polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
                            int n_cluster_null, double* prior_alt,
                            double* prob_alt, int n_cluster_alt, int n_data,

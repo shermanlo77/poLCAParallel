@@ -18,6 +18,16 @@
 
 #include "goodness_fit.h"
 
+#include <array>
+#include <cmath>
+#include <cstring>
+#include <map>
+#include <stdexcept>
+#include <vector>
+
+#include "RcppArmadillo.h"
+#include "em_algorithm.h"
+
 void polca_parallel::GetUniqueObserved(
     int* responses, int n_data, int n_category,
     std::map<std::vector<int>, Frequency>* unique_freq) {
@@ -104,7 +114,7 @@ std::array<double, 2> polca_parallel::GetStatistics(
 
     expected_array[index] = expected;
     chi_squared_array[index] = diff_squared / expected;
-    ln_l_ratio_array[index] = observed * log(observed / expected);
+    ln_l_ratio_array[index] = observed * std::log(observed / expected);
     ++index;
   }
 
@@ -116,8 +126,8 @@ std::array<double, 2> polca_parallel::GetStatistics(
       arma::sum(arma::Row<double>(chi_squared_array.data(), n_unique, false)) +
       (static_cast<double>(n_data) -
        arma::sum(arma::Row<double>(expected_array.data(), n_unique, false)));
-  ln_l_ratio =
-      2.0 * sum(arma::Row<double>(ln_l_ratio_array.data(), n_unique, false));
+  ln_l_ratio = 2.0 * arma::sum(arma::Row<double>(ln_l_ratio_array.data(),
+                                                 n_unique, false));
 
   return {ln_l_ratio, chi_squared};
 }

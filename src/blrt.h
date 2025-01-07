@@ -18,13 +18,9 @@
 #ifndef POLCAPARALLEL_SRC_BLRT_H_
 #define POLCAPARALLEL_SRC_BLRT_H_
 
-#include <chrono>
-#include <cstring>
 #include <memory>
 #include <mutex>
 #include <random>
-#include <thread>
-#include <vector>
 
 #include "em_algorithm.h"
 #include "em_algorithm_array_serial.h"

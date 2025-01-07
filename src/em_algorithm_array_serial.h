@@ -19,7 +19,7 @@
 #define POLCAPARALLEL_SRC_EM_ALGORITHM_ARRAY_SERIAL_H_
 
 #include <memory>
-#include <utility>
+#include <random>
 
 #include "em_algorithm_array.h"
 

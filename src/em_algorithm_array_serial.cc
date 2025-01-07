@@ -17,6 +17,10 @@
 
 #include "em_algorithm_array_serial.h"
 
+#include <memory>
+#include <random>
+#include <utility>
+
 polca_parallel::EmAlgorithmArraySerial::EmAlgorithmArraySerial(
     double* features, int* responses, double* initial_prob, int n_data,
     int n_feature, int n_category, int* n_outcomes, int sum_outcomes,

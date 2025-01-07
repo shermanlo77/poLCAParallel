@@ -17,7 +17,11 @@
 
 #include "standard_error_regress.h"
 
+#include <memory>
+
+#include "RcppArmadillo.h"
 #include "error_solver.h"
+#include "standard_error.h"
 
 polca_parallel::StandardErrorRegress::StandardErrorRegress(
     double* features, int* responses, double* probs, double* prior,

@@ -18,6 +18,8 @@
 
 #include <array>
 #include <map>
+#include <memory>
+#include <vector>
 
 #include "RcppArmadillo.h"
 #include "goodness_fit.h"

@@ -18,12 +18,8 @@
 #ifndef POLCAPARALLEL_SRC_STANDARD_ERROR_H
 #define POLCAPARALLEL_SRC_STANDARD_ERROR_H
 
-#include <math.h>
-
 #include <memory>
-#include <vector>
 
-#include "RcppArmadillo.h"
 #include "error_solver.h"
 #include "smoother.h"
 
