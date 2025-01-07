@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef REGULARISED_ERROR_H
-#define REGULARISED_ERROR_H
+#ifndef POLCAPARALLEL_SRC_REGULARISED_ERROR_H
+#define POLCAPARALLEL_SRC_REGULARISED_ERROR_H
 
 #include <math.h>
 
@@ -69,4 +69,4 @@ class RegularisedRegressError : public polca_parallel::StandardErrorRegress {
 };
 }  // namespace polca_parallel
 
-#endif  // REGULARISED_ERROR_H
+#endif  // POLCAPARALLEL_SRC_REGULARISED_ERROR_H

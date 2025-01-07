@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef BLRT_H_
-#define BLRT_H_
+#ifndef POLCAPARALLEL_SRC_BLRT_H_
+#define POLCAPARALLEL_SRC_BLRT_H_
 
 #include <chrono>
 #include <cstring>
@@ -209,4 +209,4 @@ class Blrt {
 
 }  // namespace polca_parallel
 
-#endif  // BLRT_H_
+#endif  // POLCAPARALLEL_SRC_BLRT_H_

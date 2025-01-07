@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef ERROR_SOLVER_H
-#define ERROR_SOLVER_H
+#ifndef POLCAPARALLEL_SRC_ERROR_SOLVER_H
+#define POLCAPARALLEL_SRC_ERROR_SOLVER_H
 
 #include <algorithm>
 #include <cstring>
@@ -326,4 +326,4 @@ class ScoreSvdRegressSolver : public polca_parallel::ScoreSvdSolver {
 
 }  // namespace polca_parallel
 
-#endif  // ERROR_SOLVER_H
+#endif  // POLCAPARALLEL_SRC_ERROR_SOLVER_H

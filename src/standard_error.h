@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef STANDARD_ERROR_H
-#define STANDARD_ERROR_H
+#ifndef POLCAPARALLEL_SRC_STANDARD_ERROR_H
+#define POLCAPARALLEL_SRC_STANDARD_ERROR_H
 
 #include <math.h>
 
@@ -321,4 +321,4 @@ class StandardError {
 
 }  // namespace polca_parallel
 
-#endif  // STANDARD_ERROR_H
+#endif  // POLCAPARALLEL_SRC_STANDARD_ERROR_H

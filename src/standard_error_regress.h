@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef STANDARD_ERROR_REGRESS_H
-#define STANDARD_ERROR_REGRESS_H
+#ifndef POLCAPARALLEL_SRC_STANDARD_ERROR_REGRESS_H_
+#define POLCAPARALLEL_SRC_STANDARD_ERROR_REGRESS_H_
 
 #include <memory>
 
@@ -104,4 +104,4 @@ class StandardErrorRegress : public polca_parallel::StandardError {
 
 }  // namespace polca_parallel
 
-#endif  // STANDARD_ERROR_REGRESS_H
+#endif  // POLCAPARALLEL_SRC_STANDARD_ERROR_REGRESS_H_

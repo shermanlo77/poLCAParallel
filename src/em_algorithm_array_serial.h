@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef EM_ALGORITHM_ARRAY_SERIAL_H_
-#define EM_ALGORITHM_ARRAY_SERIAL_H_
+#ifndef POLCAPARALLEL_SRC_EM_ALGORITHM_ARRAY_SERIAL_H_
+#define POLCAPARALLEL_SRC_EM_ALGORITHM_ARRAY_SERIAL_H_
 
 #include <memory>
 #include <utility>
@@ -105,4 +105,4 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
 
 }  // namespace polca_parallel
 
-#endif  // EM_ALGORITHM_ARRAY_SERIAL_H_
+#endif  // POLCAPARALLEL_SRC_EM_ALGORITHM_ARRAY_SERIAL_H_

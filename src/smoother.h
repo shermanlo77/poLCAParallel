@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef SMOOTHER_H
-#define SMOOTHER_H
+#ifndef POLCAPARALLEL_SRC_SMOOTHER_H
+#define POLCAPARALLEL_SRC_SMOOTHER_H
 
 #include <vector>
 
@@ -167,4 +167,4 @@ class Smoother {
 
 }  // namespace polca_parallel
 
-#endif  // SMOOTHER_H
+#endif  // POLCAPARALLEL_SRC_SMOOTHER_H

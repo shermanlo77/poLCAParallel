@@ -15,8 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#ifndef EM_ALGORITHM_NAN_H_
-#define EM_ALGORITHM_NAN_H_
+#ifndef POLCAPARALLEL_SRC_EM_ALGORITHM_NAN_H_
+#define POLCAPARALLEL_SRC_EM_ALGORITHM_NAN_H_
 
 #include <vector>
 
@@ -164,4 +164,4 @@ void NanNormalWeightedSumProb(int cluster_index, int n_category,
 
 }  // namespace polca_parallel
 
-#endif  // EM_ALGORITHM_NAN_H_
+#endif  // POLCAPARALLEL_SRC_EM_ALGORITHM_NAN_H_
