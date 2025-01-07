@@ -26,9 +26,10 @@
 
 polca_parallel::RegularisedError::RegularisedError(
     double* features, int* responses, double* probs, double* prior,
-    double* posterior, int n_data, int n_feature, int n_category,
-    int* n_outcomes, int sum_outcomes, int n_cluster, double* prior_error,
-    double* prob_error, double* regress_coeff_error)
+    double* posterior, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, double* prior_error, double* prob_error,
+    double* regress_coeff_error)
     : polca_parallel::StandardError(
           features, responses, probs, prior, posterior, n_data, n_feature,
           n_category, n_outcomes, sum_outcomes, n_cluster, prior_error,
@@ -41,9 +42,10 @@ polca_parallel::RegularisedError::RegularisedError(
 
 polca_parallel::RegularisedRegressError::RegularisedRegressError(
     double* features, int* responses, double* probs, double* prior,
-    double* posterior, int n_data, int n_feature, int n_category,
-    int* n_outcomes, int sum_outcomes, int n_cluster, double* prior_error,
-    double* prob_error, double* regress_coeff_error)
+    double* posterior, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, double* prior_error, double* prob_error,
+    double* regress_coeff_error)
     : polca_parallel::StandardErrorRegress(
           features, responses, probs, prior, posterior, n_data, n_feature,
           n_category, n_outcomes, sum_outcomes, n_cluster, prior_error,

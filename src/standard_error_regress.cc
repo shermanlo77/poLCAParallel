@@ -25,9 +25,10 @@
 
 polca_parallel::StandardErrorRegress::StandardErrorRegress(
     double* features, int* responses, double* probs, double* prior,
-    double* posterior, int n_data, int n_feature, int n_category,
-    int* n_outcomes, int sum_outcomes, int n_cluster, double* prior_error,
-    double* prob_error, double* regress_coeff_error)
+    double* posterior, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, double* prior_error, double* prob_error,
+    double* regress_coeff_error)
     : polca_parallel::StandardError(
           features, responses, probs, prior, posterior, n_data, n_feature,
           n_category, n_outcomes, sum_outcomes, n_cluster, prior_error,
@@ -44,7 +45,7 @@ polca_parallel::StandardErrorRegress::InitErrorSolver() {
 void polca_parallel::StandardErrorRegress::CalcScorePrior(double** score) {
   arma::Mat<double> features_arma(this->features_, this->n_data_,
                                   this->n_feature_, false);
-  for (int cluster_index = 1; cluster_index < this->n_cluster_;
+  for (std::size_t cluster_index = 1; cluster_index < this->n_cluster_;
        ++cluster_index) {
     arma::Mat<double> score_i_arma(*score, this->n_data_, this->n_feature_,
                                    false, true);
@@ -65,11 +66,12 @@ void polca_parallel::StandardErrorRegress::CalcJacobianPrior(
   double prior_i;
   double prior_j;
   double* feature;
-  for (int j_cluster = 0; j_cluster < this->n_cluster_; ++j_cluster) {
-    for (int i_cluster = 1; i_cluster < this->n_cluster_; ++i_cluster) {
+  for (std::size_t j_cluster = 0; j_cluster < this->n_cluster_; ++j_cluster) {
+    for (std::size_t i_cluster = 1; i_cluster < this->n_cluster_; ++i_cluster) {
       feature = this->features_;
-      for (int i_feature = 0; i_feature < this->n_feature_; ++i_feature) {
-        for (int i_data = 0; i_data < this->n_data_; ++i_data) {
+      for (std::size_t i_feature = 0; i_feature < this->n_feature_;
+           ++i_feature) {
+        for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
           prior_i = this->prior_[i_cluster * this->n_data_ + i_data];
           prior_j = this->prior_[j_cluster * this->n_data_ + i_data];
           jac_element = -prior_i * prior_j;

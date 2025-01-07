@@ -63,7 +63,7 @@ class Blrt {
    */
   double* prob_null_;
   /** Number of clusters fitted onto the null model */
-  int n_cluster_null_;
+  std::size_t n_cluster_null_;
   /**
    * Vector of probabilities, one for each cluster. Probability a data point
    * belongs to each cluster in the alt model.
@@ -80,29 +80,29 @@ class Blrt {
    */
   double* prob_alt_;
   /** Number of clusters fitted onto the alt model */
-  int n_cluster_alt_;
+  std::size_t n_cluster_alt_;
 
   /** Number of data points */
-  int n_data_;
+  std::size_t n_data_;
   /** Number of categories */
-  int n_category_;
+  std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  int* n_outcomes_;
+  std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  int sum_outcomes_;
+  std::size_t sum_outcomes_;
   /** Number of bootstrap samples to run */
-  int n_bootstrap_;
+  std::size_t n_bootstrap_;
   /** Number of initial values to try */
-  int n_rep_;
+  std::size_t n_rep_;
   /** Number of threads */
-  int n_thread_;
+  std::size_t n_thread_;
   /** Maximum number of iterations for EM algorithm */
-  int max_iter_;
+  unsigned int max_iter_;
   /** To provide to EmAlgorithm */
   double tolerance_;
 
   /** What bootstrap sample is being worked on */
-  int n_bootstrap_done_ = 0;
+  std::size_t n_bootstrap_done_ = 0;
   /** Log-likelihood ratio for each bootstrap sample */
   double* ratio_array_;
 
@@ -159,10 +159,11 @@ class Blrt {
    * @param ratio_array To store results, array, the log-likelihood ratio for
    * each bootstrap sample
    */
-  Blrt(double* prior_null, double* prob_null, int n_cluster_null,
-       double* prior_alt, double* prob_alt, int n_cluster_alt, int n_data,
-       int n_category, int* n_outcomes, int sum_outcomes, int n_bootstrap,
-       int n_rep, int n_thread, int max_iter, double tolerance,
+  Blrt(double* prior_null, double* prob_null, std::size_t n_cluster_null,
+       double* prior_alt, double* prob_alt, std::size_t n_cluster_alt,
+       std::size_t n_data, std::size_t n_category, std::size_t* n_outcomes,
+       std::size_t sum_outcomes, std::size_t n_bootstrap, std::size_t n_rep,
+       std::size_t n_thread, unsigned int max_iter, double tolerance,
        double* ratio_array);
 
   /** Set the rng seed for each bootstrap sample */
@@ -199,7 +200,7 @@ class Blrt {
    *   <li>dim 1: for each data point</li>
    * </ul>
    */
-  void Bootstrap(double* prior, double* prob, int n_cluster,
+  void Bootstrap(double* prior, double* prob, std::size_t n_cluster,
                  std::mt19937_64* rng, int* response);
 };
 

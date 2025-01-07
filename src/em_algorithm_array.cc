@@ -48,9 +48,10 @@ template void polca_parallel::EmAlgorithmArray::FitThread<
     polca_parallel::EmAlgorithmNanRegress>();
 
 polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
-    double* features, int* responses, double* initial_prob, int n_data,
-    int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
-    int n_cluster, int n_rep, int n_thread, int max_iter, double tolerance,
+    double* features, int* responses, double* initial_prob, std::size_t n_data,
+    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
+    std::size_t sum_outcomes, std::size_t n_cluster, std::size_t n_rep,
+    std::size_t n_thread, unsigned int max_iter, double tolerance,
     double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff)
     : features_(features),
@@ -77,15 +78,15 @@ template <typename EmAlgorithmType>
 void polca_parallel::EmAlgorithmArray::Fit() {
   // parallel run FitThread
   std::vector<std::thread> thread_array(this->n_thread_ - 1);
-  for (int i = 0; i < this->n_thread_ - 1; ++i) {
-    thread_array[i] =
+  for (std::size_t i = 0; i < this->n_thread_ - 1; ++i) {
+    thread_array.at(i) =
         std::thread(&EmAlgorithmArray::FitThread<EmAlgorithmType>, this);
   }
   // main thread run
   this->FitThread<EmAlgorithmType>();
   // join threads
-  for (int i = 0; i < this->n_thread_ - 1; ++i) {
-    thread_array[i].join();
+  for (std::size_t i = 0; i < this->n_thread_ - 1; ++i) {
+    thread_array.at(i).join();
   }
 }
 
@@ -104,7 +105,7 @@ void polca_parallel::EmAlgorithmArray::set_ln_l_array(double* ln_l_array) {
   this->ln_l_array_ = ln_l_array;
 }
 
-int polca_parallel::EmAlgorithmArray::get_best_rep_index() {
+std::size_t polca_parallel::EmAlgorithmArray::get_best_rep_index() {
   return this->best_rep_index_;
 }
 
@@ -112,14 +113,16 @@ double polca_parallel::EmAlgorithmArray::get_optimal_ln_l() {
   return this->optimal_ln_l_;
 }
 
-int polca_parallel::EmAlgorithmArray::get_n_iter() { return this->n_iter_; }
+unsigned int polca_parallel::EmAlgorithmArray::get_n_iter() {
+  return this->n_iter_;
+}
 
 bool polca_parallel::EmAlgorithmArray::get_has_restarted() {
   return this->has_restarted_;
 }
 
 void polca_parallel::EmAlgorithmArray::SetFitterRng(
-    polca_parallel::EmAlgorithm* fitter, int rep_index) {
+    polca_parallel::EmAlgorithm* fitter, std::size_t rep_index) {
   if (this->seed_array_) {
     fitter->set_seed(this->seed_array_[rep_index]);
   }
@@ -132,10 +135,10 @@ void polca_parallel::EmAlgorithmArray::MoveRngBackFromFitter(
 
 template <typename EmAlgorithmType>
 void polca_parallel::EmAlgorithmArray::FitThread() {
-  int n_data = this->n_data_;
-  int n_feature = this->n_feature_;
-  int sum_outcomes = this->sum_outcomes_;
-  int n_cluster = this->n_cluster_;
+  std::size_t n_data = this->n_data_;
+  std::size_t n_feature = this->n_feature_;
+  std::size_t sum_outcomes = this->sum_outcomes_;
+  std::size_t n_cluster = this->n_cluster_;
 
   // allocate memory for this thread
   std::vector<double> posterior(n_data * n_cluster);
@@ -156,7 +159,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
   }
 
   // which initial probability this thread is working on
-  int rep_index;
+  std::size_t rep_index;
   double ln_l;
 
   bool is_working = true;

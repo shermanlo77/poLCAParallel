@@ -16,6 +16,7 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <memory>
+#include <vector>
 
 #include "RcppArmadillo.h"
 #include "regularised_error.h"
@@ -67,18 +68,26 @@
  * @return Rcpp::List
  */
 // [[Rcpp::export]]
-Rcpp::List StandardErrorRcpp(
-    Rcpp::NumericVector features, Rcpp::IntegerMatrix responses,
-    Rcpp::NumericVector probs, Rcpp::NumericMatrix prior,
-    Rcpp::NumericMatrix posterior, int n_data, int n_feature, int n_category,
-    Rcpp::IntegerVector n_outcomes, int n_cluster, bool use_smooth) {
-  int sum_outcomes = 0;  // calculate sum of number of outcomes
+Rcpp::List StandardErrorRcpp(Rcpp::NumericVector features,
+                             Rcpp::IntegerMatrix responses,
+                             Rcpp::NumericVector probs,
+                             Rcpp::NumericMatrix prior,
+                             Rcpp::NumericMatrix posterior, std::size_t n_data,
+                             std::size_t n_feature, std::size_t n_category,
+                             Rcpp::IntegerVector n_outcomes,
+                             std::size_t n_cluster, bool use_smooth) {
+  std::size_t sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
-  for (int i = 0; i < n_category; ++i) {
-    sum_outcomes += n_outcomes_array[i];
+
+  std::vector<std::size_t> n_outcomes_size_t(n_category);
+  std::size_t n_outcomes_i;
+  for (std::size_t i = 0; i < n_category; ++i) {
+    n_outcomes_i = static_cast<std::size_t>(n_outcomes_array[i]);
+    n_outcomes_size_t.at(i) = n_outcomes_i;
+    sum_outcomes += n_outcomes_i;
   }
 
-  int len_regress_coeff = n_feature * (n_cluster - 1);
+  std::size_t len_regress_coeff = n_feature * (n_cluster - 1);
 
   // allocate matrices to pass pointers to C++ code
   Rcpp::NumericVector prior_error(n_cluster);
@@ -91,28 +100,32 @@ Rcpp::List StandardErrorRcpp(
     if (use_smooth) {
       error = std::make_unique<polca_parallel::RegularisedError>(
           features.begin(), responses.begin(), probs.begin(), prior.begin(),
-          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
-          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          posterior.begin(), n_data, n_feature, n_category,
+          n_outcomes_size_t.data(), sum_outcomes, n_cluster,
+          prior_error.begin(), probs_error.begin(),
           regress_coeff_error.begin());
     } else {
       error = std::make_unique<polca_parallel::StandardError>(
           features.begin(), responses.begin(), probs.begin(), prior.begin(),
-          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
-          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          posterior.begin(), n_data, n_feature, n_category,
+          n_outcomes_size_t.data(), sum_outcomes, n_cluster,
+          prior_error.begin(), probs_error.begin(),
           regress_coeff_error.begin());
     }
   } else {
     if (use_smooth) {
       error = std::make_unique<polca_parallel::RegularisedRegressError>(
           features.begin(), responses.begin(), probs.begin(), prior.begin(),
-          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
-          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          posterior.begin(), n_data, n_feature, n_category,
+          n_outcomes_size_t.data(), sum_outcomes, n_cluster,
+          prior_error.begin(), probs_error.begin(),
           regress_coeff_error.begin());
     } else {
       error = std::make_unique<polca_parallel::StandardErrorRegress>(
           features.begin(), responses.begin(), probs.begin(), prior.begin(),
-          posterior.begin(), n_data, n_feature, n_category, n_outcomes.begin(),
-          sum_outcomes, n_cluster, prior_error.begin(), probs_error.begin(),
+          posterior.begin(), n_data, n_feature, n_category,
+          n_outcomes_size_t.data(), sum_outcomes, n_cluster,
+          prior_error.begin(), probs_error.begin(),
           regress_coeff_error.begin());
     }
   }

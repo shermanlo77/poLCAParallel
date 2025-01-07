@@ -29,17 +29,17 @@
 #include "em_algorithm.h"
 
 void polca_parallel::GetUniqueObserved(
-    int* responses, int n_data, int n_category,
+    int* responses, std::size_t n_data, std::size_t n_category,
     std::map<std::vector<int>, Frequency>* unique_freq) {
   // iterate through each data point
   std::vector<int> response_i(n_category);
   bool fullyobserved;  // only considered fully observed responses
-  for (int i = 0; i < n_data; ++i) {
+  for (std::size_t i = 0; i < n_data; ++i) {
     fullyobserved = true;
     std::memcpy(response_i.data(), responses,
                 response_i.size() * sizeof(*responses));
 
-    for (size_t j = 0; j < response_i.size(); ++j) {
+    for (std::size_t j = 0; j < response_i.size(); ++j) {
       if (response_i.at(j) == 0) {
         fullyobserved = false;
         break;
@@ -61,8 +61,8 @@ void polca_parallel::GetUniqueObserved(
 }
 
 void polca_parallel::GetExpected(
-    double* prior, double* outcome_prob, int n_data, int n_obs, int n_category,
-    int* n_outcomes, int n_cluster,
+    double* prior, double* outcome_prob, std::size_t n_data, std::size_t n_obs,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t n_cluster,
     std::map<std::vector<int>, Frequency>* unique_freq) {
   double total_p;
   double* outcome_prob_ptr;
@@ -77,7 +77,7 @@ void polca_parallel::GetExpected(
     outcome_prob_ptr = outcome_prob;
 
     // iterate through each cluster
-    for (int m = 0; m < n_cluster; ++m) {
+    for (std::size_t m = 0; m < n_cluster; ++m) {
       // polca_parallel::PosteriorUnnormalize is located in em_algorithm
       total_p += polca_parallel::PosteriorUnnormalize(
           response_i.data(), n_category, n_outcomes, &outcome_prob_ptr,
@@ -89,10 +89,10 @@ void polca_parallel::GetExpected(
 }
 
 std::array<double, 2> polca_parallel::GetStatistics(
-    std::map<std::vector<int>, Frequency>* unique_freq, int n_data) {
+    std::map<std::vector<int>, Frequency>* unique_freq, std::size_t n_data) {
   Frequency frequency;
 
-  int n_unique = unique_freq->size();
+  std::size_t n_unique = unique_freq->size();
 
   // store statistics for each unique response
   std::vector<double> chi_squared_array(n_unique);
@@ -103,7 +103,7 @@ std::array<double, 2> polca_parallel::GetStatistics(
   double diff_squared;
 
   // extract and calculate statistics for each unique response
-  int index = 0;
+  std::size_t index = 0;
   for (auto iter = unique_freq->begin(); iter != unique_freq->end(); ++iter) {
     frequency = iter->second;
     expected = frequency.expected;

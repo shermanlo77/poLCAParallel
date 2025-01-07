@@ -19,6 +19,7 @@
 #define POLCAPARALLEL_SRC_EM_ALGORITHM_ARRAY_H_
 
 #include <memory>
+#include <mutex>
 #include <random>
 
 #include "em_algorithm.h"
@@ -69,19 +70,19 @@ class EmAlgorithmArray {
    */
   int* responses_;
   /** Number of data points */
-  int n_data_;
+  std::size_t n_data_;
   /** Number of features */
-  int n_feature_;
+  std::size_t n_feature_;
   /** Number of categories */
-  int n_category_;
+  std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  int* n_outcomes_;
+  std::size_t* n_outcomes_;
   /** Sum of n_outcomes_ */
-  int sum_outcomes_;
+  std::size_t sum_outcomes_;
   /** Number of clusters (classes in literature) to fit */
-  int n_cluster_;
+  std::size_t n_cluster_;
   /** Maximum number of iterations for EM algorithm */
-  int max_iter_;
+  unsigned int max_iter_;
   /** To provide to EmAlgorithm */
   double tolerance_;
   /**
@@ -122,7 +123,7 @@ class EmAlgorithmArray {
   double* best_initial_prob_ = nullptr;
 
   /** Number of initial values to try */
-  int n_rep_;
+  std::size_t n_rep_;
 
   /** The best log-likelihood found so far */
   double optimal_ln_l_ = -INFINITY;
@@ -131,7 +132,7 @@ class EmAlgorithmArray {
    * should be done with locking and unlocking results_lock_ when using multiple
    * threads.
    */
-  int n_iter_;
+  std::size_t n_iter_;
   /** True if the EM algorithm has to ever restart */
   bool has_restarted_ = false;
   /**
@@ -144,16 +145,16 @@ class EmAlgorithmArray {
    * be done with locking and unlocking n_rep_done_lock_ when using multiple
    * threads.
    */
-  int n_rep_done_ = 0;
+  std::size_t n_rep_done_ = 0;
   /**
    * Optional, maximum log-likelihood for each repetition. Set using
    * set_ln_l_array()
    */
   double* ln_l_array_ = nullptr;
   /** Index of which initial value has the best log-likelihood */
-  int best_rep_index_;
+  std::size_t best_rep_index_;
   /** Number of threads */
-  int n_thread_;
+  std::size_t n_thread_;
 
   /** For locking n_rep_done_ */
   std::unique_ptr<std::mutex> n_rep_done_lock_;
@@ -230,9 +231,11 @@ class EmAlgorithmArray {
    * using softmax
    */
   EmAlgorithmArray(double* features, int* responses, double* initial_prob,
-                   int n_data, int n_feature, int n_category, int* n_outcomes,
-                   int sum_outcomes, int n_cluster, int n_rep, int n_thread,
-                   int max_iter, double tolerance, double* posterior,
+                   std::size_t n_data, std::size_t n_feature,
+                   std::size_t n_category, std::size_t* n_outcomes,
+                   std::size_t sum_outcomes, std::size_t n_cluster,
+                   std::size_t n_rep, std::size_t n_thread,
+                   unsigned int max_iter, double tolerance, double* posterior,
                    double* prior, double* estimated_prob,
                    double* regress_coeff);
 
@@ -274,7 +277,7 @@ class EmAlgorithmArray {
    *
    * Only available after calling Fit()
    */
-  int get_best_rep_index();
+  std::size_t get_best_rep_index();
 
   /**
    * Get the best log-likelihood from all repetitions
@@ -289,7 +292,7 @@ class EmAlgorithmArray {
    *
    * Only available after calling Fit()
    */
-  int get_n_iter();
+  unsigned int get_n_iter();
 
   /**
    * Return true if at least one repetition had to restart, eg due to a singular
@@ -301,7 +304,8 @@ class EmAlgorithmArray {
 
  protected:
   /** Set the rng of a EmAlgorithm object given the rep_index it is working on*/
-  virtual void SetFitterRng(polca_parallel::EmAlgorithm* fitter, int rep_index);
+  virtual void SetFitterRng(polca_parallel::EmAlgorithm* fitter,
+                            std::size_t rep_index);
 
   /**
    * Retrieve ownership of an rng back from a fitter

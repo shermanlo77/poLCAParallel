@@ -92,17 +92,17 @@ class StandardError {
    */
   double* posterior_;
   /** Number of data points */
-  int n_data_;
+  std::size_t n_data_;
   /** Number of features */
-  int n_feature_;
+  std::size_t n_feature_;
   /** Number of categories */
-  int n_category_;
+  std::size_t n_category_;
   /** Vector of number of outcomes for each category */
-  int* n_outcomes_;
+  std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  int sum_outcomes_;
+  std::size_t sum_outcomes_;
   /** Number of clusters to fit */
-  int n_cluster_;
+  std::size_t n_cluster_;
   /**
    * Vector containing the standard error for the prior probabilities for each
    * cluster
@@ -122,9 +122,9 @@ class StandardError {
   /** Covariance matrix of the regression coefficient */
   double* regress_coeff_error_;
   /** The size of the information matrix*/
-  int info_size_;
+  std::size_t info_size_;
   /** The width of the Jacobian matrix*/
-  int jacobian_width_;
+  std::size_t jacobian_width_;
   /** For smoothing the probabilities in prior, posterior and probs */
   std::unique_ptr<polca_parallel::Smoother> smoother_;
 
@@ -183,8 +183,9 @@ class StandardError {
    * @param regress_coeff_error Not used
    */
   StandardError(double* features, int* responses, double* probs, double* prior,
-                double* posterior, int n_data, int n_feature, int n_category,
-                int* n_outcomes, int sum_outcomes, int n_cluster,
+                double* posterior, std::size_t n_data, std::size_t n_feature,
+                std::size_t n_category, std::size_t* n_outcomes,
+                std::size_t sum_outcomes, std::size_t n_cluster,
                 double* prior_error, double* prob_error,
                 double* regress_coeff_error);
 
@@ -257,8 +258,8 @@ class StandardError {
    * @param cluster_index 0, 1, 2, ..., n_cluster
    * @param score pointer to save the results
    */
-  void CalcScoreProbsCol(int outcome_index, int category_index,
-                         int cluster_index, double* score);
+  void CalcScoreProbsCol(std::size_t outcome_index, std::size_t category_index,
+                         std::size_t cluster_index, double* score);
 
   /**
    * Calculate the Jacobian matrix
@@ -312,7 +313,8 @@ class StandardError {
    * *jacobian_ptr is modified so that it points to the start of the next block
    * matrix after calling this method
    */
-  void CalcJacobianBlock(double* probs, int n_prob, double** jacobian_ptr);
+  void CalcJacobianBlock(double* probs, std::size_t n_prob,
+                         double** jacobian_ptr);
 };
 
 }  // namespace polca_parallel

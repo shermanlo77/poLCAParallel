@@ -91,9 +91,10 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    * regression coefficient, modified after calling Calc()
    */
   StandardErrorRegress(double* features, int* responses, double* probs,
-                       double* prior, double* posterior, int n_data,
-                       int n_feature, int n_category, int* n_outcomes,
-                       int sum_outcomes, int n_cluster, double* prior_error,
+                       double* prior, double* posterior, std::size_t n_data,
+                       std::size_t n_feature, std::size_t n_category,
+                       std::size_t* n_outcomes, std::size_t sum_outcomes,
+                       std::size_t n_cluster, double* prior_error,
                        double* prob_error, double* regress_coeff_error);
 
  protected:

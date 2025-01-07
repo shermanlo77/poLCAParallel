@@ -87,19 +87,19 @@ class EmAlgorithm {
    */
   double* initial_prob_;
   /** Number of data points */
-  int n_data_;
+  std::size_t n_data_;
   /** Number of features */
-  int n_feature_;
+  std::size_t n_feature_;
   /** Number of categories */
-  int n_category_;
+  std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  int* n_outcomes_;
+  std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  int sum_outcomes_;
+  std::size_t sum_outcomes_;
   /** Number of clusters to fit */
-  int n_cluster_;
+  std::size_t n_cluster_;
   /** Maximum number of iterations for EM algorithm */
-  int max_iter_;
+  unsigned int max_iter_;
   /** Tolerance for difference in log-likelihood, used for stopping condition */
   double tolerance_;
   /**
@@ -162,7 +162,7 @@ class EmAlgorithm {
    */
   std::vector<double> ln_l_array_;
   /** Number of iterations done right now */
-  int n_iter_ = 0;
+  unsigned int n_iter_ = 0;
   /**
    * Indicate if it needed to use new initial values during a fit, which can
    * happen if a matrix is singular for example
@@ -236,8 +236,9 @@ class EmAlgorithm {
    * @param regress_coeff Not used and ignored
    */
   EmAlgorithm(double* features, int* responses, double* initial_prob,
-              int n_data, int n_feature, int n_category, int* n_outcomes,
-              int sum_outcomes, int n_cluster, int max_iter, double tolerance,
+              std::size_t n_data, std::size_t n_feature, std::size_t n_category,
+              std::size_t* n_outcomes, std::size_t sum_outcomes,
+              std::size_t n_cluster, unsigned int max_iter, double tolerance,
               double* posterior, double* prior, double* estimated_prob,
               double* regress_coeff);
 
@@ -289,7 +290,7 @@ class EmAlgorithm {
   double get_ln_l();
 
   /** Get the number of iterations of EM done */
-  int get_n_iter();
+  unsigned int get_n_iter();
 
   /**
    * Indicate if it needed to use new initial values during a fit, it can happen
@@ -343,7 +344,7 @@ class EmAlgorithm {
    * @param cluster_index
    * @return double prior
    */
-  virtual double GetPrior(int data_index, int cluster_index);
+  virtual double GetPrior(std::size_t data_index, std::size_t cluster_index);
 
   /**
    * Do E step
@@ -371,7 +372,7 @@ class EmAlgorithm {
    *   <li>dim 1: for each category</li>
    * </ul>
    */
-  void PosteriorUnnormalize(int data_index, int cluster_index,
+  void PosteriorUnnormalize(std::size_t data_index, std::size_t cluster_index,
                             double** estimated_prob);
 
   /**
@@ -418,7 +419,7 @@ class EmAlgorithm {
    *
    * @param cluster_index which cluster to consider
    */
-  virtual void WeightedSumProb(int cluster_index);
+  virtual void WeightedSumProb(std::size_t cluster_index);
 
   /**
    * Normalise the weighted sum following WeightedSumProb()
@@ -431,7 +432,7 @@ class EmAlgorithm {
    *
    * @param cluster_index which cluster to consider
    */
-  virtual void NormalWeightedSumProb(int cluster_index);
+  virtual void NormalWeightedSumProb(std::size_t cluster_index);
 
   /**
    * Normalise the weighted sum following WeightedSumProb() given the normaliser
@@ -444,7 +445,7 @@ class EmAlgorithm {
    * @param normaliser the scale to divide the weighted sum by, should be the
    * sum of posteriors
    */
-  void NormalWeightedSumProb(int cluster_index, double normaliser);
+  void NormalWeightedSumProb(std::size_t cluster_index, double normaliser);
 };
 
 /**
@@ -479,8 +480,9 @@ class EmAlgorithm {
  * @param prior the prior for this data point and cluster
  * @return the unnormalised posterior for this data point and cluster
  */
-double PosteriorUnnormalize(int* responses_i, int n_category, int* n_outcomes,
-                            double** estimated_prob, double prior);
+double PosteriorUnnormalize(int* responses_i, std::size_t n_category,
+                            std::size_t* n_outcomes, double** estimated_prob,
+                            double prior);
 
 /**
  * Generate random response probabilities
@@ -503,8 +505,9 @@ double PosteriorUnnormalize(int* responses_i, int n_category, int* n_outcomes,
  */
 void GenerateNewProb(std::mt19937_64* rng,
                      std::uniform_real_distribution<double>* uniform,
-                     int* n_outcomes, int sum_outcomes, int n_category,
-                     int n_cluster, double* prob);
+                     std::size_t* n_outcomes, std::size_t sum_outcomes,
+                     std::size_t n_category, std::size_t n_cluster,
+                     double* prob);
 
 }  // namespace polca_parallel
 

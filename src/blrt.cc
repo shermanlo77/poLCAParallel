@@ -26,11 +26,13 @@
 #include <vector>
 
 polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
-                           int n_cluster_null, double* prior_alt,
-                           double* prob_alt, int n_cluster_alt, int n_data,
-                           int n_category, int* n_outcomes, int sum_outcomes,
-                           int n_bootstrap, int n_rep, int n_thread,
-                           int max_iter, double tolerance, double* ratio_array)
+                           std::size_t n_cluster_null, double* prior_alt,
+                           double* prob_alt, std::size_t n_cluster_alt,
+                           std::size_t n_data, std::size_t n_category,
+                           std::size_t* n_outcomes, std::size_t sum_outcomes,
+                           std::size_t n_bootstrap, std::size_t n_rep,
+                           std::size_t n_thread, unsigned int max_iter,
+                           double tolerance, double* ratio_array)
     : prior_null_(prior_null),
       prob_null_(prob_null),
       n_cluster_null_(n_cluster_null),
@@ -62,20 +64,20 @@ void polca_parallel::Blrt::SetSeed(std::seed_seq* seed) {
 
 void polca_parallel::Blrt::Run() {
   std::vector<std::thread> thread_array(this->n_thread_ - 1);
-  for (int i = 0; i < this->n_thread_ - 1; ++i) {
-    thread_array[i] = std::thread(&Blrt::RunThread, this);
+  for (std::size_t i = 0; i < this->n_thread_ - 1; ++i) {
+    thread_array.at(i) = std::thread(&Blrt::RunThread, this);
   }
   // main thread run
   this->RunThread();
   // join threads
-  for (int i = 0; i < this->n_thread_ - 1; ++i) {
-    thread_array[i].join();
+  for (std::size_t i = 0; i < this->n_thread_ - 1; ++i) {
+    thread_array.at(i).join();
   }
 }
 
 void polca_parallel::Blrt::RunThread() {
   bool is_working = true;
-  int i_bootstrap;
+  std::size_t i_bootstrap;
 
   // to store the bootstrap samples
   std::unique_ptr<int[]> bootstrap_data =
@@ -117,9 +119,8 @@ void polca_parallel::Blrt::RunThread() {
     // shall be unlocked in both if and else branches
     this->n_bootstrap_done_lock_->lock();
     if (this->n_bootstrap_done_ < this->n_bootstrap_) {
-      i_bootstrap = this->n_bootstrap_done_;
       // increment for the next worker to work on
-      ++this->n_bootstrap_done_;
+      i_bootstrap = this->n_bootstrap_done_++;
       this->n_bootstrap_done_lock_->unlock();
 
       // instantiate a rng
@@ -129,7 +130,7 @@ void polca_parallel::Blrt::RunThread() {
       std::uniform_real_distribution<double> uniform(0.0, 1.0);
 
       // generate new initial values
-      for (int i_rep = 1; i_rep < this->n_rep_; ++i_rep) {
+      for (std::size_t i_rep = 1; i_rep < this->n_rep_; ++i_rep) {
         polca_parallel::GenerateNewProb(
             rng.get(), &uniform, this->n_outcomes_, this->sum_outcomes_,
             this->n_category_, this->n_cluster_null_,
@@ -183,35 +184,36 @@ void polca_parallel::Blrt::RunThread() {
   }
 }
 
-void polca_parallel::Blrt::Bootstrap(double* prior, double* prob, int n_cluster,
+void polca_parallel::Blrt::Bootstrap(double* prior, double* prob,
+                                     std::size_t n_cluster,
                                      std::mt19937_64* rng, int* response) {
-  int i_cluster;
+  std::size_t i_cluster;
   double* prob_i_cluster;  // pointer relative to prob
   double p_sum;            // used to sum up probabilities for each outcome
   double rand_uniform;
-  int i_outcome;
+  std::size_t i_outcome;
 
-  std::uniform_int_distribution<int> prior_dist(0, n_cluster - 1);
+  std::uniform_int_distribution<std::size_t> prior_dist(0, n_cluster - 1);
   std::uniform_real_distribution<double> uniform_dist(0, 1);
 
-  for (int i_data = 0; i_data < this->n_data_; ++i_data) {
+  for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
     i_cluster = prior_dist(*rng);  // select a random cluster
     // point to the corresponding probabilites for this random cluster
     prob_i_cluster = prob + i_cluster * this->sum_outcomes_;
 
-    for (int i_category = 0; i_category < this->n_category_; ++i_category) {
+    for (std::size_t i_category = 0; i_category < this->n_category_;
+         ++i_category) {
       p_sum = 0.0;
       rand_uniform = uniform_dist(*rng);
 
       // use rand_uniform to randomly sample an outcome according to the
       // probabilities in prob_i_cluster[0], prob_i_cluster[1], ...
       // i_outcome is the randomly selected outcome
-      i_outcome = -1;
+      i_outcome = 0;
       while (rand_uniform > p_sum) {
-        ++i_outcome;
-        p_sum += prob_i_cluster[i_outcome];
+        p_sum += prob_i_cluster[i_outcome++];
       }
-      *response = i_outcome + 1;  // response is one-based index
+      *response = i_outcome;  // response is one-based index
 
       // increment for the next category
       prob_i_cluster += this->n_outcomes_[i_category];

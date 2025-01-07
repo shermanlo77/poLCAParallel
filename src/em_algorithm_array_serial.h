@@ -48,10 +48,11 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
    * @param n_thread omitted EmAlgorithmArraySerial
    */
   EmAlgorithmArraySerial(double* features, int* responses, double* initial_prob,
-                         int n_data, int n_feature, int n_category,
-                         int* n_outcomes, int sum_outcomes, int n_cluster,
-                         int n_rep, int max_iter, double tolerance,
-                         double* posterior, double* prior,
+                         std::size_t n_data, std::size_t n_feature,
+                         std::size_t n_category, std::size_t* n_outcomes,
+                         std::size_t sum_outcomes, std::size_t n_cluster,
+                         std::size_t n_rep, unsigned int max_iter,
+                         double tolerance, double* posterior, double* prior,
                          double* estimated_prob, double* regress_coeff);
 
   /**
@@ -95,7 +96,7 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
    * ignored.
    */
   void SetFitterRng(polca_parallel::EmAlgorithm* fitter,
-                    int rep_index) override;
+                    std::size_t rep_index) override;
 
   /**
    * Transfer ownership of an EmAlgorithm's rng back to this object's rng_

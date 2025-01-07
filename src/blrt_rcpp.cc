@@ -15,6 +15,8 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+#include <vector>
+
 #include "RcppArmadillo.h"
 #include "blrt.h"
 
@@ -73,18 +75,22 @@
  * @return Rcpp::NumericVector array of bootstrap log likelihood ratios
  */
 // [[Rcpp::export]]
-Rcpp::NumericVector BlrtRcpp(Rcpp::NumericVector prior_null,
-                             Rcpp::NumericVector prob_null, int n_cluster_null,
-                             Rcpp::NumericVector prior_alt,
-                             Rcpp::NumericVector prob_alt, int n_cluster_alt,
-                             int n_data, int n_category,
-                             Rcpp::IntegerVector n_outcomes, int n_bootstrap,
-                             int n_rep, int n_thread, int max_iter,
-                             double tolerance, Rcpp::IntegerVector seed) {
-  int sum_outcomes = 0;  // calculate sum of number of outcomes
+Rcpp::NumericVector BlrtRcpp(
+    Rcpp::NumericVector prior_null, Rcpp::NumericVector prob_null,
+    std::size_t n_cluster_null, Rcpp::NumericVector prior_alt,
+    Rcpp::NumericVector prob_alt, std::size_t n_cluster_alt, std::size_t n_data,
+    std::size_t n_category, Rcpp::IntegerVector n_outcomes,
+    std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
+    unsigned int max_iter, double tolerance, Rcpp::IntegerVector seed) {
+  std::size_t sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
-  for (int i = 0; i < n_category; ++i) {
-    sum_outcomes += n_outcomes_array[i];
+
+  std::vector<std::size_t> n_outcomes_size_t(n_category);
+  std::size_t n_outcomes_i;
+  for (std::size_t i = 0; i < n_category; ++i) {
+    n_outcomes_i = static_cast<std::size_t>(n_outcomes_array[i]);
+    n_outcomes_size_t.at(i) = n_outcomes_i;
+    sum_outcomes += n_outcomes_i;
   }
 
   // allocate memory for storing log likelihood ratios
@@ -92,9 +98,9 @@ Rcpp::NumericVector BlrtRcpp(Rcpp::NumericVector prior_null,
 
   polca_parallel::Blrt blrt(
       prior_null.begin(), prob_null.begin(), n_cluster_null, prior_alt.begin(),
-      prob_alt.begin(), n_cluster_alt, n_data, n_category, n_outcomes.begin(),
-      sum_outcomes, n_bootstrap, n_rep, n_thread, max_iter, tolerance,
-      ratio_array.begin());
+      prob_alt.begin(), n_cluster_alt, n_data, n_category,
+      n_outcomes_size_t.data(), sum_outcomes, n_bootstrap, n_rep, n_thread,
+      max_iter, tolerance, ratio_array.begin());
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   blrt.SetSeed(&seed_seq);

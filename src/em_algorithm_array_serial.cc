@@ -22,10 +22,11 @@
 #include <utility>
 
 polca_parallel::EmAlgorithmArraySerial::EmAlgorithmArraySerial(
-    double* features, int* responses, double* initial_prob, int n_data,
-    int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
-    int n_cluster, int n_rep, int max_iter, double tolerance, double* posterior,
-    double* prior, double* estimated_prob, double* regress_coeff)
+    double* features, int* responses, double* initial_prob, std::size_t n_data,
+    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
+    std::size_t sum_outcomes, std::size_t n_cluster, std::size_t n_rep,
+    unsigned int max_iter, double tolerance, double* posterior, double* prior,
+    double* estimated_prob, double* regress_coeff)
     : polca_parallel::EmAlgorithmArray(
           features, responses, initial_prob, n_data, n_feature, n_category,
           n_outcomes, sum_outcomes, n_cluster, n_rep, 1, max_iter, tolerance,
@@ -55,7 +56,7 @@ polca_parallel::EmAlgorithmArraySerial::MoveRng() {
 }
 
 void polca_parallel::EmAlgorithmArraySerial::SetFitterRng(
-    polca_parallel::EmAlgorithm* fitter, int rep_index) {
+    polca_parallel::EmAlgorithm* fitter, std::size_t rep_index) {
   if (this->rng_) {
     fitter->set_rng(&this->rng_);
   }

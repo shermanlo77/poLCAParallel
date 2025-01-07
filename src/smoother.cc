@@ -20,9 +20,11 @@
 #include "RcppArmadillo.h"
 
 polca_parallel::Smoother::Smoother(int* responses, double* probs, double* prior,
-                                   double* posterior, int n_data,
-                                   int n_category, int* n_outcomes,
-                                   int sum_outcomes, int n_cluster)
+                                   double* posterior, std::size_t n_data,
+                                   std::size_t n_category,
+                                   std::size_t* n_outcomes,
+                                   std::size_t sum_outcomes,
+                                   std::size_t n_cluster)
     : responses_(responses),
       probs_(probs, probs + sum_outcomes * n_cluster),
       prior_(prior, prior + n_cluster * n_data),
@@ -43,8 +45,8 @@ void polca_parallel::Smoother::Smooth() {
 
   // smooth outcome probabilities
   double* probs = this->probs_.data();
-  for (int i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
-    for (int* n_outcome = this->n_outcomes_;
+  for (std::size_t i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
+    for (std::size_t* n_outcome = this->n_outcomes_;
          n_outcome < this->n_outcomes_ + this->n_category_; ++n_outcome) {
       this->Smooth(probs, *n_outcome, n_data[i_cluster], 1.0,
                    static_cast<double>(*n_outcome));
@@ -64,8 +66,9 @@ double* polca_parallel::Smoother::get_posterior() {
   return this->posterior_.data();
 }
 
-void polca_parallel::Smoother::Smooth(double* probs, int length, double n_data,
-                                      double num_add, double deno_add) {
+void polca_parallel::Smoother::Smooth(double* probs, std::size_t length,
+                                      double n_data, double num_add,
+                                      double deno_add) {
   arma::Col<double> probs_arma(probs, length, false, true);
   probs_arma = (n_data * probs_arma + num_add) / (n_data + deno_add);
 }

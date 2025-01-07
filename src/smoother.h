@@ -76,15 +76,15 @@ class Smoother {
    */
   std::vector<double> posterior_;
   /** Number of data points */
-  int n_data_;
+  std::size_t n_data_;
   /** Number of categories */
-  int n_category_;
+  std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  int* n_outcomes_;
+  std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  int sum_outcomes_;
+  std::size_t sum_outcomes_;
   /** Number of clusters to fit */
-  int n_cluster_;
+  std::size_t n_cluster_;
 
  public:
   /**
@@ -126,8 +126,8 @@ class Smoother {
    * @param n_cluster Number of clusters
    */
   Smoother(int* responses, double* probs, double* prior, double* posterior,
-           int n_data, int n_category, int* n_outcomes, int sum_outcomes,
-           int n_cluster);
+           std::size_t n_data, std::size_t n_category, std::size_t* n_outcomes,
+           std::size_t sum_outcomes, std::size_t n_cluster);
 
   /**
    * Smooth the probabilities probs_, prior_ and posterior_
@@ -158,7 +158,7 @@ class Smoother {
    * @param num_add see equation
    * @param demo_add see equation
    */
-  void Smooth(double* probs, int length, double n_data, double num_add,
+  void Smooth(double* probs, std::size_t length, double n_data, double num_add,
               double demo_add);
 };
 

@@ -23,10 +23,11 @@
 #include <vector>
 
 polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
-    double* features, int* responses, double* initial_prob, int n_data,
-    int n_feature, int n_category, int* n_outcomes, int sum_outcomes,
-    int n_cluster, int max_iter, double tolerance, double* posterior,
-    double* prior, double* estimated_prob, double* regress_coeff)
+    double* features, int* responses, double* initial_prob, std::size_t n_data,
+    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
+    std::size_t sum_outcomes, std::size_t n_cluster, unsigned int max_iter,
+    double tolerance, double* posterior, double* prior, double* estimated_prob,
+    double* regress_coeff)
     : polca_parallel::EmAlgorithm(
           features, responses, initial_prob, n_data, n_feature, n_category,
           n_outcomes, sum_outcomes, n_cluster, max_iter, tolerance, posterior,
@@ -73,8 +74,8 @@ void polca_parallel::EmAlgorithmRegress::FinalPrior() {
   // do nothing, prior_ already in required format
 }
 
-double polca_parallel::EmAlgorithmRegress::GetPrior(int data_index,
-                                                    int cluster_index) {
+double polca_parallel::EmAlgorithmRegress::GetPrior(std::size_t data_index,
+                                                    std::size_t cluster_index) {
   return this->prior_[this->n_data_ * cluster_index + data_index];
 }
 
@@ -117,7 +118,7 @@ bool polca_parallel::EmAlgorithmRegress::MStep() {
 }
 
 void polca_parallel::EmAlgorithmRegress::NormalWeightedSumProb(
-    int cluster_index) {
+    std::size_t cluster_index) {
   // override as the normaliser cannot be calculated using prior
   // using sum of posterior instead
   arma::Col<double> posterior(this->posterior_ + cluster_index * this->n_data_,
@@ -134,13 +135,13 @@ void polca_parallel::EmAlgorithmRegress::init_regress_coeff() {
 
 void polca_parallel::EmAlgorithmRegress::CalcGrad() {
   double* gradient = this->gradient_.data();
-  for (int m = 1; m < this->n_cluster_; ++m) {
+  for (std::size_t m = 1; m < this->n_cluster_; ++m) {
     arma::Col<double> posterior_m(this->posterior_ + m * this->n_data_,
                                   this->n_data_, false);
     arma::Col<double> prior_m(this->prior_ + m * this->n_data_, this->n_data_,
                               false);
     arma::Col<double> post_minus_prior = posterior_m - prior_m;
-    for (int p = 0; p < this->n_feature_; ++p) {
+    for (std::size_t p = 0; p < this->n_feature_; ++p) {
       arma::Col<double> x_p(this->features_ + p * this->n_data_, this->n_data_,
                             false);
       *gradient = arma::dot(x_p, post_minus_prior);
@@ -150,16 +151,17 @@ void polca_parallel::EmAlgorithmRegress::CalcGrad() {
 }
 
 void polca_parallel::EmAlgorithmRegress::CalcHess() {
-  for (int cluster_j = 0; cluster_j < this->n_cluster_ - 1; ++cluster_j) {
-    for (int cluster_i = cluster_j; cluster_i < this->n_cluster_ - 1;
+  for (std::size_t cluster_j = 0; cluster_j < this->n_cluster_ - 1;
+       ++cluster_j) {
+    for (std::size_t cluster_i = cluster_j; cluster_i < this->n_cluster_ - 1;
          ++cluster_i) {
       this->CalcHessSubBlock(cluster_i, cluster_j);
     }
   }
 }
 
-void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(int cluster_index_0,
-                                                          int cluster_index_1) {
+void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
+    std::size_t cluster_index_0, std::size_t cluster_index_1) {
   // when retriving the prior and posterior, use cluster_index + 1 because
   // the hessian does not consider the 0th cluster as the regression
   // coefficient for the 0th cluster is set to zero
@@ -191,8 +193,8 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(int cluster_index_0,
   double hess_element;
   // iterate through features i, j, working out the elements of the hessian
   // symmetric matrix, so loop over diagonal and lower triangle
-  for (int j = 0; j < this->n_feature_; ++j) {
-    for (int i = j; i < this->n_feature_; ++i) {
+  for (std::size_t j = 0; j < this->n_feature_; ++j) {
+    for (std::size_t i = j; i < this->n_feature_; ++i) {
       hess_element = CalcHessElement(i, j, &prior_post_inter);
       *this->HessianAt(cluster_index_0, cluster_index_1, i, j) = hess_element;
 
@@ -214,7 +216,7 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(int cluster_index_0,
 }
 
 double polca_parallel::EmAlgorithmRegress::CalcHessElement(
-    int feature_index_0, int feature_index_1,
+    std::size_t feature_index_0, std::size_t feature_index_1,
     arma::Col<double>* prior_post_inter) {
   arma::Col<double> feature0(this->features_ + feature_index_0 * this->n_data_,
                              this->n_data_, false);
@@ -223,10 +225,9 @@ double polca_parallel::EmAlgorithmRegress::CalcHessElement(
   return arma::sum(feature0 % feature1 % *prior_post_inter);
 }
 
-double* polca_parallel::EmAlgorithmRegress::HessianAt(int cluster_index_0,
-                                                      int cluster_index_1,
-                                                      int feature_index_0,
-                                                      int feature_index_1) {
+double* polca_parallel::EmAlgorithmRegress::HessianAt(
+    std::size_t cluster_index_0, std::size_t cluster_index_1,
+    std::size_t feature_index_0, std::size_t feature_index_1) {
   return this->hessian_.data() +
          cluster_index_1 * this->n_parameters_ * this->n_feature_ +
          feature_index_1 * this->n_parameters_ +

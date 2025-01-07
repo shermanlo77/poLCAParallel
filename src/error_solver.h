@@ -40,22 +40,22 @@ namespace polca_parallel {
 class ErrorSolver {
  protected:
   /** Number of data points, ie height of the score matrix */
-  int n_data_;
+  std::size_t n_data_;
   /** Number of features */
-  int n_feature_;
+  std::size_t n_feature_;
   /** Sum of n_outcomes */
-  int sum_outcomes_;
+  std::size_t sum_outcomes_;
   /** Number of clusters fitted */
-  int n_cluster_;
+  std::size_t n_cluster_;
   /**
    * The size of the information matrix
    *
    * This is the same as the width of the score matrix and the height of the
    * Jacobian matrix
    */
-  int info_size_;
+  std::size_t info_size_;
   /** The width of the Jacobian matrix */
-  int jacobian_width_;
+  std::size_t jacobian_width_;
   /**
    * Vector containing the standard error for the prior probabilities for each
    * cluster
@@ -104,9 +104,11 @@ class ErrorSolver {
    * regression coefficient, modified after calling Solve(). May not be used if
    * used in a non-regression setting.
    */
-  ErrorSolver(int n_data, int n_feature, int sum_outcomes, int n_cluster,
-              int info_size, int jacobian_width, double* prior_error,
-              double* prob_error, double* regress_coeff_error);
+  ErrorSolver(std::size_t n_data, std::size_t n_feature,
+              std::size_t sum_outcomes, std::size_t n_cluster,
+              std::size_t info_size, std::size_t jacobian_width,
+              double* prior_error, double* prob_error,
+              double* regress_coeff_error);
   /**
    * Solves equations to work out the standard error and saves it
    *
@@ -156,9 +158,11 @@ class ErrorSolver {
  */
 class InfoEigenSolver : public polca_parallel::ErrorSolver {
  public:
-  InfoEigenSolver(int n_data, int n_feature, int sum_outcomes, int n_cluster,
-                  int info_size, int jacobian_width, double* prior_error,
-                  double* prob_error, double* regress_coeff_error);
+  InfoEigenSolver(std::size_t n_data, std::size_t n_feature,
+                  std::size_t sum_outcomes, std::size_t n_cluster,
+                  std::size_t info_size, std::size_t jacobian_width,
+                  double* prior_error, double* prob_error,
+                  double* regress_coeff_error);
 
   void Solve(double* score, double* jacobian) override;
 
@@ -213,8 +217,9 @@ class InfoEigenSolver : public polca_parallel::ErrorSolver {
  */
 class InfoEigenRegressSolver : public polca_parallel::InfoEigenSolver {
  public:
-  InfoEigenRegressSolver(int n_data, int n_feature, int sum_outcomes,
-                         int n_cluster, int info_size, int jacobian_width,
+  InfoEigenRegressSolver(std::size_t n_data, std::size_t n_feature,
+                         std::size_t sum_outcomes, std::size_t n_cluster,
+                         std::size_t info_size, std::size_t jacobian_width,
                          double* prior_error, double* prob_error,
                          double* regress_coeff_error);
 
@@ -255,9 +260,11 @@ class InfoEigenRegressSolver : public polca_parallel::InfoEigenSolver {
  */
 class ScoreSvdSolver : public polca_parallel::ErrorSolver {
  public:
-  ScoreSvdSolver(int n_data, int n_feature, int sum_outcomes, int n_cluster,
-                 int info_size, int jacobian_width, double* prior_error,
-                 double* prob_error, double* regress_coeff_error);
+  ScoreSvdSolver(std::size_t n_data, std::size_t n_feature,
+                 std::size_t sum_outcomes, std::size_t n_cluster,
+                 std::size_t info_size, std::size_t jacobian_width,
+                 double* prior_error, double* prob_error,
+                 double* regress_coeff_error);
 
   void Solve(double* score, double* jacobian) override;
 
@@ -309,8 +316,9 @@ class ScoreSvdSolver : public polca_parallel::ErrorSolver {
  */
 class ScoreSvdRegressSolver : public polca_parallel::ScoreSvdSolver {
  public:
-  ScoreSvdRegressSolver(int n_data, int n_feature, int sum_outcomes,
-                        int n_cluster, int info_size, int jacobian_width,
+  ScoreSvdRegressSolver(std::size_t n_data, std::size_t n_feature,
+                        std::size_t sum_outcomes, std::size_t n_cluster,
+                        std::size_t info_size, std::size_t jacobian_width,
                         double* prior_error, double* prob_error,
                         double* regress_coeff_error);
 

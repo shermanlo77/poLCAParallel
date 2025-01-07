@@ -44,10 +44,11 @@ class EmAlgorithmNan : public polca_parallel::EmAlgorithm {
    * @copydoc EmAlgorithm::EmAlgorithm
    */
   EmAlgorithmNan(double* features, int* responses, double* initial_prob,
-                 int n_data, int n_feature, int n_category, int* n_outcomes,
-                 int sum_outcomes, int n_cluster, int max_iter,
-                 double tolerance, double* posterior, double* prior,
-                 double* estimated_prob, double* regress_coeff);
+                 std::size_t n_data, std::size_t n_feature,
+                 std::size_t n_category, std::size_t* n_outcomes,
+                 std::size_t sum_outcomes, std::size_t n_cluster,
+                 unsigned int max_iter, double tolerance, double* posterior,
+                 double* prior, double* estimated_prob, double* regress_coeff);
 
  protected:
   /**
@@ -55,14 +56,14 @@ class EmAlgorithmNan : public polca_parallel::EmAlgorithm {
    *
    * @copydoc EmAlgorithm::WeightedSumProb
    */
-  void WeightedSumProb(int cluster_index) override;
+  void WeightedSumProb(std::size_t cluster_index) override;
 
   /**
    * Overridden to estimate probabilities using posterior_sum
    *
    * @copydoc EmAlgorithm::NormalWeightedSumProb
    */
-  void NormalWeightedSumProb(int cluster_index) override;
+  void NormalWeightedSumProb(std::size_t cluster_index) override;
 };
 
 class EmAlgorithmNanRegress : public polca_parallel::EmAlgorithmRegress {
@@ -71,11 +72,12 @@ class EmAlgorithmNanRegress : public polca_parallel::EmAlgorithmRegress {
 
  public:
   EmAlgorithmNanRegress(double* features, int* responses, double* initial_prob,
-                        int n_data, int n_feature, int n_category,
-                        int* n_outcomes, int sum_outcomes, int n_cluster,
-                        int max_iter, double tolerance, double* posterior,
-                        double* prior, double* estimated_prob,
-                        double* regress_coeff);
+                        std::size_t n_data, std::size_t n_feature,
+                        std::size_t n_category, std::size_t* n_outcomes,
+                        std::size_t sum_outcomes, std::size_t n_cluster,
+                        unsigned int max_iter, double tolerance,
+                        double* posterior, double* prior,
+                        double* estimated_prob, double* regress_coeff);
 
  protected:
   /**
@@ -83,14 +85,14 @@ class EmAlgorithmNanRegress : public polca_parallel::EmAlgorithmRegress {
    *
    * @copydoc EmAlgorithm::WeightedSumProb
    */
-  void WeightedSumProb(int cluster_index) override;
+  void WeightedSumProb(std::size_t cluster_index) override;
 
   /**
    * Overridden to estimate probabilities using posterior_sum
    *
    * @copydoc EmAlgorithm::NormalWeightedSumProb
    */
-  void NormalWeightedSumProb(int cluster_index) override;
+  void NormalWeightedSumProb(std::size_t cluster_index) override;
 };
 
 /**
@@ -130,8 +132,9 @@ class EmAlgorithmNanRegress : public polca_parallel::EmAlgorithmRegress {
  * @param posterior_sum Modified to store the cumulative posterior sum for each
  * category
  */
-void NanWeightedSumProb(int cluster_index, int* responses, int n_data,
-                        int n_category, int* n_outcomes, int sum_outcomes,
+void NanWeightedSumProb(std::size_t cluster_index, int* responses,
+                        std::size_t n_data, std::size_t n_category,
+                        std::size_t* n_outcomes, std::size_t sum_outcomes,
                         double* posterior, double* estimated_prob,
                         std::vector<double>* posterior_sum);
 
@@ -156,8 +159,8 @@ void NanWeightedSumProb(int cluster_index, int* responses, int n_data,
  *   <li>dim 2: for each cluster</li>
  * </ul>
  */
-void NanNormalWeightedSumProb(int cluster_index, int n_category,
-                              int* n_outcomes, int sum_outcomes,
+void NanNormalWeightedSumProb(std::size_t cluster_index, std::size_t n_category,
+                              std::size_t* n_outcomes, std::size_t sum_outcomes,
                               std::vector<double>* posterior_sum,
                               double* estimated_prob);
 

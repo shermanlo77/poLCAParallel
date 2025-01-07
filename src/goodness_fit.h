@@ -29,7 +29,7 @@ namespace polca_parallel {
  * For storing the observed and expected frequency, used for chi-squared test
  */
 struct Frequency {
-  int observed;
+  std::size_t observed;
   double expected;
 };
 
@@ -58,7 +58,8 @@ struct Frequency {
  *   times those unique responses were observed in the dataset</li>
  * </ul>
  */
-void GetUniqueObserved(int* responses, int n_data, int n_category,
+void GetUniqueObserved(int* responses, std::size_t n_data,
+                       std::size_t n_category,
                        std::map<std::vector<int>, Frequency>* unique_freq);
 
 /**
@@ -89,8 +90,9 @@ void GetUniqueObserved(int* responses, int n_data, int n_category,
  *   <li>value: Frequency, the expected attributed shall be modified</li>
  * </ul>
  */
-void GetExpected(double* prior, double* outcome_prob, int n_data, int n_obs,
-                 int n_category, int* n_outcomes, int n_cluster,
+void GetExpected(double* prior, double* outcome_prob, std::size_t n_data,
+                 std::size_t n_obs, std::size_t n_category,
+                 std::size_t* n_outcomes, std::size_t n_cluster,
                  std::map<std::vector<int>, Frequency>* unique_freq);
 
 /**
@@ -105,7 +107,7 @@ void GetExpected(double* prior, double* outcome_prob, int n_data, int n_obs,
  * statistics
  */
 std::array<double, 2> GetStatistics(
-    std::map<std::vector<int>, Frequency>* unique_freq, int n_data);
+    std::map<std::vector<int>, Frequency>* unique_freq, std::size_t n_data);
 
 }  // namespace polca_parallel
 

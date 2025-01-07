@@ -55,7 +55,7 @@ namespace polca_parallel {
 class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
  private:
   /** Number of parameters to estimate for the softmax */
-  int n_parameters_;
+  std::size_t n_parameters_;
   /** vector, length n_parameters_, gradient of the log likelihood */
   std::vector<double> gradient_;
   /** matrix, n_parameters_ x n_parameters, hessian of the log likelihood */
@@ -132,10 +132,12 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * linked to the prior using softmax
    */
   EmAlgorithmRegress(double* features, int* responses, double* initial_prob,
-                     int n_data, int n_feature, int n_category, int* n_outcomes,
-                     int sum_outcomes, int n_cluster, int max_iter,
-                     double tolerance, double* posterior, double* prior,
-                     double* estimated_prob, double* regress_coeff);
+                     std::size_t n_data, std::size_t n_feature,
+                     std::size_t n_category, std::size_t* n_outcomes,
+                     std::size_t sum_outcomes, std::size_t n_cluster,
+                     unsigned int max_iter, double tolerance, double* posterior,
+                     double* prior, double* estimated_prob,
+                     double* regress_coeff);
 
  protected:
   void NewRun(double* initial_prob) override;
@@ -153,7 +155,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
 
   void FinalPrior() override;
 
-  double GetPrior(int data_index, int cluster_index) override;
+  double GetPrior(std::size_t data_index, std::size_t cluster_index) override;
 
   bool IsInvalidLikelihood(double ln_l_difference) override;
 
@@ -169,7 +171,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    */
   bool MStep() override;
 
-  void NormalWeightedSumProb(int cluster_index) override;
+  void NormalWeightedSumProb(std::size_t cluster_index) override;
 
  private:
   /** Initalise regress_coeff_ to all zero */
@@ -201,7 +203,8 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * @param cluster_index_1 column index of which block to work on
    * can take values of 0, 1, 2, ..., n_cluster-2
    */
-  void CalcHessSubBlock(int cluster_index_0, int cluster_index_1);
+  void CalcHessSubBlock(std::size_t cluster_index_0,
+                        std::size_t cluster_index_1);
 
   /**
    * Calculate element of a block from the Hessian
@@ -214,7 +217,8 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * For different clusters, pi_u pi_v - r_u r_v
    * @return double value of an element of the Hessian
    */
-  double CalcHessElement(int feature_index_0, int feature_index_1,
+  double CalcHessElement(std::size_t feature_index_0,
+                         std::size_t feature_index_1,
                          arma::Col<double>* prior_post_inter);
 
   /**
@@ -231,8 +235,8 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * @param feature_index_1 column index within block matrix
    * @return double* pointer to an element of the Hessian
    */
-  double* HessianAt(int cluster_index_0, int cluster_index_1,
-                    int feature_index_0, int feature_index_1);
+  double* HessianAt(std::size_t cluster_index_0, std::size_t cluster_index_1,
+                    std::size_t feature_index_0, std::size_t feature_index_1);
 };
 
 }  // namespace polca_parallel

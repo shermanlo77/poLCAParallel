@@ -26,9 +26,10 @@
 
 polca_parallel::StandardError::StandardError(
     double* features, int* responses, double* probs, double* prior,
-    double* posterior, int n_data, int n_feature, int n_category,
-    int* n_outcomes, int sum_outcomes, int n_cluster, double* prior_error,
-    double* prob_error, double* regress_coeff_error)
+    double* posterior, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, double* prior_error, double* prob_error,
+    double* regress_coeff_error)
     : features_(features),
       responses_(responses),
       probs_(probs),
@@ -89,7 +90,7 @@ void polca_parallel::StandardError::CalcScore(double* score) {
 }
 
 void polca_parallel::StandardError::CalcScorePrior(double** score) {
-  int size = this->n_data_ * (this->n_cluster_ - 1);
+  std::size_t size = this->n_data_ * (this->n_cluster_ - 1);
   arma::Col<double> score_prior_arma(*score, size, false, true);
   arma::Col<double> prior_arma(this->prior_ + this->n_data_, size, false);
   arma::Col<double> posterior_arma(this->posterior_ + this->n_data_, size,
@@ -101,11 +102,11 @@ void polca_parallel::StandardError::CalcScorePrior(double** score) {
 void polca_parallel::StandardError::CalcScoreProbs(double** score) {
   // call CalcScoreProbsCol() for every cluster, category and outcome except
   // for the zeroth outcome
-  for (int cluster_index = 0; cluster_index < this->n_cluster_;
+  for (std::size_t cluster_index = 0; cluster_index < this->n_cluster_;
        ++cluster_index) {
-    for (int category_index = 0; category_index < this->n_category_;
+    for (std::size_t category_index = 0; category_index < this->n_category_;
          ++category_index) {
-      for (int outcome_index = 1;
+      for (std::size_t outcome_index = 1;
            outcome_index < this->n_outcomes_[category_index]; ++outcome_index) {
         this->CalcScoreProbsCol(outcome_index, category_index, cluster_index,
                                 *score);
@@ -115,29 +116,28 @@ void polca_parallel::StandardError::CalcScoreProbs(double** score) {
   }
 }
 
-void polca_parallel::StandardError::CalcScoreProbsCol(int outcome_index,
-                                                      int category_index,
-                                                      int cluster_index,
-                                                      double* score_start) {
+void polca_parallel::StandardError::CalcScoreProbsCol(
+    std::size_t outcome_index, std::size_t category_index,
+    std::size_t cluster_index, double* score_start) {
   // start posterior for the given cluster
   double* posterior = this->posterior_ + cluster_index * this->n_data_;
   // start the response for the given category
   int* response = this->responses_ + category_index * this->n_data_;
   // start the prob for the given cluster, category and outcome triplet
   double* prob = this->probs_ + cluster_index * this->sum_outcomes_;
-  for (int i = 0; i < category_index; ++i) {
+  for (std::size_t i = 0; i < category_index; ++i) {
     prob += this->n_outcomes_[i];
   }
   prob += outcome_index;
 
   // boolean if the response is the same as the outcome
   // remember response is one index, not zero index
-  int is_outcome;
+  bool is_outcome;
   // iterate for each data point
   for (double* score = score_start; score < score_start + this->n_data_;
        ++score) {
     if (*response > 0) {
-      is_outcome = outcome_index == (*response - 1);
+      is_outcome = outcome_index == static_cast<std::size_t>(*response - 1);
       *score = *posterior * (static_cast<double>(is_outcome) - *prob);
     } else {
       *score = 0.0;
@@ -158,7 +158,7 @@ void polca_parallel::StandardError::CalcJacobian(double* jacobian) {
 void polca_parallel::StandardError::CalcJacobianPrior(double** jacobian_ptr) {
   // copy over the prior, they will be the same for all data points
   std::vector<double> prior(this->n_cluster_);
-  for (int cluster_index = 0; cluster_index < this->n_cluster_;
+  for (std::size_t cluster_index = 0; cluster_index < this->n_cluster_;
        ++cluster_index) {
     prior[cluster_index] = this->prior_[cluster_index * this->n_data_];
   }
@@ -167,11 +167,11 @@ void polca_parallel::StandardError::CalcJacobianPrior(double** jacobian_ptr) {
 
 void polca_parallel::StandardError::CalcJacobianProbs(double** jacobian_ptr) {
   // block matrix for probs, one for each cluster and category pair
-  int n_outcome;
+  std::size_t n_outcome;
   double* probs = this->probs_;
-  for (int cluster_index = 0; cluster_index < this->n_cluster_;
+  for (std::size_t cluster_index = 0; cluster_index < this->n_cluster_;
        ++cluster_index) {
-    for (int category_index = 0; category_index < this->n_category_;
+    for (std::size_t category_index = 0; category_index < this->n_category_;
          ++category_index) {
       n_outcome = this->n_outcomes_[category_index];
       this->CalcJacobianBlock(probs, n_outcome, jacobian_ptr);
@@ -180,16 +180,17 @@ void polca_parallel::StandardError::CalcJacobianProbs(double** jacobian_ptr) {
   }
 }
 
-void polca_parallel::StandardError::CalcJacobianBlock(double* probs, int n_prob,
+void polca_parallel::StandardError::CalcJacobianBlock(double* probs,
+                                                      std::size_t n_prob,
                                                       double** jacobian_ptr) {
   // dev notes: possible to do outer product of probs and then add to the off
   // diagonal, but note this method will commonly be used to create small
   // block matrices (ie n_prob typically be 2 or 3, the n_outcomes)
   double* jacobian = *jacobian_ptr;
   // for each col
-  for (int j = 0; j < n_prob; ++j) {
+  for (std::size_t j = 0; j < n_prob; ++j) {
     // for each row
-    for (int i = 1; i < n_prob; ++i) {
+    for (std::size_t i = 1; i < n_prob; ++i) {
       *jacobian = -probs[i] * probs[j];
       if (i == j) {
         *jacobian += probs[i];
