@@ -90,9 +90,8 @@ void polca_parallel::EmAlgorithmArray::Fit() {
 }
 
 void polca_parallel::EmAlgorithmArray::SetSeed(std::seed_seq& seed) {
-  this->seed_array_ = std::make_unique<unsigned[]>(this->n_rep_);
-  unsigned* seed_array = this->seed_array_.get();
-  seed.generate(seed_array, seed_array + this->n_rep_);
+  this->seed_array_ = std::make_unique<std::vector<unsigned>>(this->n_rep_);
+  seed.generate(seed_array_->begin(), seed_array_->end());
 }
 
 void polca_parallel::EmAlgorithmArray::set_best_initial_prob(
@@ -123,7 +122,7 @@ bool polca_parallel::EmAlgorithmArray::get_has_restarted() {
 void polca_parallel::EmAlgorithmArray::SetFitterRng(
     polca_parallel::EmAlgorithm& fitter, std::size_t rep_index) {
   if (this->seed_array_) {
-    fitter.set_seed(this->seed_array_[rep_index]);
+    fitter.set_seed(this->seed_array_->at(rep_index));
   }
 }
 

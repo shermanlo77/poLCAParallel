@@ -33,15 +33,14 @@ polca_parallel::EmAlgorithmArraySerial::EmAlgorithmArraySerial(
           posterior, prior, estimated_prob, regress_coeff) {}
 
 void polca_parallel::EmAlgorithmArraySerial::SetSeed(std::seed_seq& seed) {
-  this->seed_array_ = std::make_unique<unsigned[]>(1);
-  unsigned* seed_array = this->seed_array_.get();
-  seed.generate(seed_array, seed_array + 1);
-  this->rng_ = std::make_unique<std::mt19937_64>(seed_array[0]);
+  this->seed_array_ = std::make_unique<std::vector<unsigned>>(1);
+  seed.generate(this->seed_array_->begin(), this->seed_array_->end());
+  this->rng_ = std::make_unique<std::mt19937_64>(this->seed_array_->at(0));
 }
 
 void polca_parallel::EmAlgorithmArraySerial::SetSeed(unsigned seed) {
-  this->seed_array_ = std::make_unique<unsigned[]>(1);
-  this->seed_array_.get()[0] = seed;
+  this->seed_array_ = std::make_unique<std::vector<unsigned>>(1);
+  this->seed_array_->at(0) = seed;
   this->rng_ = std::make_unique<std::mt19937_64>(seed);
 }
 

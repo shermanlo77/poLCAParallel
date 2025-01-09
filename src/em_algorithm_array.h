@@ -166,7 +166,7 @@ class EmAlgorithmArray {
    * An array of seeds, for each repetition, used to seed each repetition, only
    * used if a run fails and needs to generate new initial values
    */
-  std::unique_ptr<unsigned[]> seed_array_;
+  std::unique_ptr<std::vector<unsigned>> seed_array_;
 
  public:
   /**
