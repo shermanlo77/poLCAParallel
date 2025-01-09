@@ -61,7 +61,7 @@ void polca_parallel::InfoEigenSolver::Solve(double* score, double* jacobian) {
   // required as info is usually ill-conditioned
   // use std::numeric_limits<double>::epsilon() to reproduce pinv()
   double tol = static_cast<double>(this->info_size_) *
-               eigval[this->info_size_ - 1] *
+               eigval(this->info_size_ - 1) *
                std::numeric_limits<double>::epsilon();
   // take the sqrt inverse for large eigenvalues
   for (double* eigval_i = eigval.begin(); eigval_i < eigval.end(); ++eigval_i) {
