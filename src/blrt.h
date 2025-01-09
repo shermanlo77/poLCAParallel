@@ -107,7 +107,7 @@ class Blrt {
   double* ratio_array_;
 
   /** For locking n_bootstrap_done_ */
-  std::unique_ptr<std::mutex> n_bootstrap_done_lock_;
+  std::mutex n_bootstrap_done_lock_;
 
   /** Array of seeds, for each bootstrap sample*/
   std::unique_ptr<unsigned[]> seed_array_;

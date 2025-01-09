@@ -49,7 +49,7 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
       max_iter_(max_iter),
       tolerance_(tolerance),
       ratio_array_(ratio_array),
-      n_bootstrap_done_lock_(std::make_unique<std::mutex>()) {
+      n_bootstrap_done_lock_() {
   // default to random seeds
   std::seed_seq seed(
       {std::chrono::system_clock::now().time_since_epoch().count()});
@@ -117,11 +117,11 @@ void polca_parallel::Blrt::RunThread() {
   while (is_working) {
     // lock to retrive n_bootstrap_done_
     // shall be unlocked in both if and else branches
-    this->n_bootstrap_done_lock_->lock();
+    this->n_bootstrap_done_lock_.lock();
     if (this->n_bootstrap_done_ < this->n_bootstrap_) {
       // increment for the next worker to work on
       i_bootstrap = this->n_bootstrap_done_++;
-      this->n_bootstrap_done_lock_->unlock();
+      this->n_bootstrap_done_lock_.unlock();
 
       // instantiate a rng
       std::unique_ptr<std::mt19937_64> rng =
@@ -178,7 +178,7 @@ void polca_parallel::Blrt::RunThread() {
 
     } else {
       // all bootstrap samples done, stop working
-      this->n_bootstrap_done_lock_->unlock();
+      this->n_bootstrap_done_lock_.unlock();
       is_working = false;
     }
   }

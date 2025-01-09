@@ -71,8 +71,8 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
       n_rep_(n_rep),
       initial_prob_(initial_prob),
       n_thread_(std::min(n_thread, n_rep)),
-      n_rep_done_lock_(std::make_unique<std::mutex>()),
-      results_lock_(std::make_unique<std::mutex>()) {}
+      n_rep_done_lock_(),
+      results_lock_() {}
 
 template <typename EmAlgorithmType>
 void polca_parallel::EmAlgorithmArray::Fit() {
@@ -166,12 +166,12 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
     // lock is outside the if statement so that this->n_rep_done_ can be read
     // without modification from other threads
     // shall be unlocked in both if and else branches
-    this->n_rep_done_lock_->lock();
+    this->n_rep_done_lock_.lock();
     if (this->n_rep_done_ < this->n_rep_) {
       // increment for the next worker to work on
       rep_index = this->n_rep_done_++;
 
-      this->n_rep_done_lock_->unlock();
+      this->n_rep_done_lock_.unlock();
 
       // set initial probability for this repetition
       fitter->NewRun(this->initial_prob_ +
@@ -191,7 +191,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
       this->MoveRngBackFromFitter(*fitter);
 
       // copy results if log likelihood improved
-      this->results_lock_->lock();
+      this->results_lock_.lock();
       this->has_restarted_ |= fitter->get_has_restarted();
       if (ln_l > this->optimal_ln_l_) {
         this->best_rep_index_ = rep_index;
@@ -212,11 +212,11 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
               sum_outcomes * n_cluster * sizeof(*this->best_initial_prob_));
         }
       }
-      this->results_lock_->unlock();
+      this->results_lock_.unlock();
 
     } else {
       // all initial values used, stop working
-      this->n_rep_done_lock_->unlock();
+      this->n_rep_done_lock_.unlock();
       is_working = false;
     }
   }

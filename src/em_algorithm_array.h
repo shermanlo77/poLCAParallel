@@ -157,9 +157,9 @@ class EmAlgorithmArray {
   std::size_t n_thread_;
 
   /** For locking n_rep_done_ */
-  std::unique_ptr<std::mutex> n_rep_done_lock_;
+  std::mutex n_rep_done_lock_;
   /** For locking optimal_ln_l_, best_rep_index_, n_iter_ and has_restarted_ */
-  std::unique_ptr<std::mutex> results_lock_;
+  std::mutex results_lock_;
 
  protected:
   /**
