@@ -89,10 +89,10 @@ void polca_parallel::EmAlgorithmArray::Fit() {
   }
 }
 
-void polca_parallel::EmAlgorithmArray::SetSeed(std::seed_seq* seed) {
+void polca_parallel::EmAlgorithmArray::SetSeed(std::seed_seq& seed) {
   this->seed_array_ = std::make_unique<unsigned[]>(this->n_rep_);
   unsigned* seed_array = this->seed_array_.get();
-  seed->generate(seed_array, seed_array + this->n_rep_);
+  seed.generate(seed_array, seed_array + this->n_rep_);
 }
 
 void polca_parallel::EmAlgorithmArray::set_best_initial_prob(
@@ -121,14 +121,14 @@ bool polca_parallel::EmAlgorithmArray::get_has_restarted() {
 }
 
 void polca_parallel::EmAlgorithmArray::SetFitterRng(
-    polca_parallel::EmAlgorithm* fitter, std::size_t rep_index) {
+    polca_parallel::EmAlgorithm& fitter, std::size_t rep_index) {
   if (this->seed_array_) {
-    fitter->set_seed(this->seed_array_[rep_index]);
+    fitter.set_seed(this->seed_array_[rep_index]);
   }
 }
 
 void polca_parallel::EmAlgorithmArray::MoveRngBackFromFitter(
-    polca_parallel::EmAlgorithm* fitter) {
+    polca_parallel::EmAlgorithm& fitter) {
   // do nothing, no rng handelled here
 }
 
@@ -179,7 +179,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
                      rep_index * sum_outcomes * n_cluster);
 
       // each repetition uses their own rng
-      this->SetFitterRng(fitter.get(), rep_index);
+      this->SetFitterRng(*fitter, rep_index);
 
       fitter->Fit();
       ln_l = fitter->get_ln_l();
@@ -189,7 +189,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
 
       // if ownership of rng transferred (if any) to fitter, get it back if
       // needed
-      this->MoveRngBackFromFitter(fitter.get());
+      this->MoveRngBackFromFitter(*fitter);
 
       // copy results if log likelihood improved
       this->results_lock_->lock();

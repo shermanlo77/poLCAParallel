@@ -136,7 +136,7 @@ void NanWeightedSumProb(std::size_t cluster_index, int* responses,
                         std::size_t n_data, std::size_t n_category,
                         std::size_t* n_outcomes, std::size_t sum_outcomes,
                         double* posterior, double* estimated_prob,
-                        std::vector<double>* posterior_sum);
+                        std::vector<double>& posterior_sum);
 
 /**
  * Static version of NormalWeightedSumProb and used to override
@@ -161,7 +161,7 @@ void NanWeightedSumProb(std::size_t cluster_index, int* responses,
  */
 void NanNormalWeightedSumProb(std::size_t cluster_index, std::size_t n_category,
                               std::size_t* n_outcomes, std::size_t sum_outcomes,
-                              std::vector<double>* posterior_sum,
+                              std::vector<double>& posterior_sum,
                               double* estimated_prob);
 
 }  // namespace polca_parallel

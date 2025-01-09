@@ -167,7 +167,7 @@ class Blrt {
        double* ratio_array);
 
   /** Set the rng seed for each bootstrap sample */
-  void SetSeed(std::seed_seq* seed);
+  void SetSeed(std::seed_seq& seed);
 
   /** Do the bootstrap likelihood ratio test, output results to ratio_array_ */
   void Run();
@@ -201,7 +201,7 @@ class Blrt {
    * </ul>
    */
   void Bootstrap(double* prior, double* prob, std::size_t n_cluster,
-                 std::mt19937_64* rng, int* response);
+                 std::mt19937_64& rng, int* response);
 };
 
 }  // namespace polca_parallel

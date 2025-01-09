@@ -75,7 +75,7 @@ void polca_parallel::EmAlgorithm::Fit() {
     } else {
       // reach this condition if the first run has a problem
       // reset all required parameters
-      this->Reset(&uniform);
+      this->Reset(uniform);
     }
 
     // make a copy initial probabilities if requested
@@ -167,8 +167,8 @@ void polca_parallel::EmAlgorithm::set_seed(unsigned seed) {
 }
 
 void polca_parallel::EmAlgorithm::set_rng(
-    std::unique_ptr<std::mt19937_64>* rng) {
-  this->rng_ = std::move(*rng);
+    std::unique_ptr<std::mt19937_64> rng) {
+  this->rng_ = std::move(rng);
 }
 
 std::unique_ptr<std::mt19937_64> polca_parallel::EmAlgorithm::move_rng() {
@@ -176,10 +176,10 @@ std::unique_ptr<std::mt19937_64> polca_parallel::EmAlgorithm::move_rng() {
 }
 
 void polca_parallel::EmAlgorithm::Reset(
-    std::uniform_real_distribution<double>* uniform) {
+    std::uniform_real_distribution<double>& uniform) {
   // generate random number for estimated_prob_
   this->has_restarted_ = true;
-  polca_parallel::GenerateNewProb(this->rng_.get(), uniform, this->n_outcomes_,
+  polca_parallel::GenerateNewProb(*this->rng_, uniform, this->n_outcomes_,
                                   this->sum_outcomes_, this->n_category_,
                                   this->n_cluster_, this->estimated_prob_);
 }
@@ -373,11 +373,11 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
 }
 
 void polca_parallel::GenerateNewProb(
-    std::mt19937_64* rng, std::uniform_real_distribution<double>* uniform,
+    std::mt19937_64& rng, std::uniform_real_distribution<double>& uniform,
     std::size_t* n_outcomes, std::size_t sum_outcomes, std::size_t n_category,
     std::size_t n_cluster, double* prob) {
   for (double* ptr = prob; ptr < prob + n_cluster * sum_outcomes; ++ptr) {
-    *ptr = (*uniform)(*rng);
+    *ptr = uniform(rng);
   }
   // normalise to probabilities
   std::size_t n_outcome;

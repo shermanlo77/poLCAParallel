@@ -70,11 +70,11 @@ Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
   std::unique_ptr<std::map<std::vector<int>, polca_parallel::Frequency>>
       unique_freq = std::make_unique<
           std::map<std::vector<int>, polca_parallel::Frequency>>();
-  GetUniqueObserved(responses.begin(), n_data, n_category, unique_freq.get());
+  GetUniqueObserved(responses.begin(), n_data, n_category, *unique_freq);
   GetExpected(prior.begin(), outcome_prob.begin(), n_data, n_obs, n_category,
-              n_outcomes_size_t.data(), n_cluster, unique_freq.get());
+              n_outcomes_size_t.data(), n_cluster, *unique_freq);
   // get log likelihood ratio and chi squared statistics
-  std::array<double, 2> stats = GetStatistics(unique_freq.get(), n_data);
+  std::array<double, 2> stats = GetStatistics(*unique_freq, n_data);
 
   // transfer results from std::map unique_freq to a NumericMatrix
   // unique_freq_table

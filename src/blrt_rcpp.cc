@@ -103,7 +103,7 @@ Rcpp::NumericVector BlrtRcpp(
       max_iter, tolerance, ratio_array.begin());
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
-  blrt.SetSeed(&seed_seq);
+  blrt.SetSeed(seed_seq);
   blrt.Run();
 
   return ratio_array;

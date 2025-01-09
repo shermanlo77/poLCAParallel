@@ -149,7 +149,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * regress_coeff_ all to zero
    * @param uniform required to generate random probabilities
    */
-  void Reset(std::uniform_real_distribution<double>* uniform) override;
+  void Reset(std::uniform_real_distribution<double>& uniform) override;
 
   void InitPrior() override;
 
@@ -219,7 +219,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    */
   double CalcHessElement(std::size_t feature_index_0,
                          std::size_t feature_index_1,
-                         arma::Col<double>* prior_post_inter);
+                         arma::Col<double>& prior_post_inter);
 
   /**
    * Get pointer of Hessian at specificed indexes

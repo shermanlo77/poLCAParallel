@@ -307,7 +307,7 @@ class EmAlgorithm {
    * Use this method if you want to use your own rng instead of the default
    * rng
    */
-  void set_rng(std::unique_ptr<std::mt19937_64>* rng);
+  void set_rng(std::unique_ptr<std::mt19937_64> rng);
 
   /**
    * Transfer ownership of rng from this object
@@ -324,7 +324,7 @@ class EmAlgorithm {
    * Reset the parameters estimated_prob_ with random starting values
    * @param uniform required to generate random probabilities
    */
-  virtual void Reset(std::uniform_real_distribution<double>* uniform);
+  virtual void Reset(std::uniform_real_distribution<double>& uniform);
 
   /**
    * Initialise prior probabilities
@@ -503,8 +503,8 @@ double PosteriorUnnormalize(int* responses_i, std::size_t n_category,
  *   <li>dim 2: for each cluster</li>
  * </ul>
  */
-void GenerateNewProb(std::mt19937_64* rng,
-                     std::uniform_real_distribution<double>* uniform,
+void GenerateNewProb(std::mt19937_64& rng,
+                     std::uniform_real_distribution<double>& uniform,
                      std::size_t* n_outcomes, std::size_t sum_outcomes,
                      std::size_t n_category, std::size_t n_cluster,
                      double* prob);

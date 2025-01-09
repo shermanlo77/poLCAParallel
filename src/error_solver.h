@@ -178,8 +178,8 @@ class InfoEigenSolver : public polca_parallel::ErrorSolver {
    * @param eigven eigenvectors of the information matrix
    * @param jacobian the jacobian matrix
    */
-  virtual void ExtractErrorGivenEigen(arma::Col<double>* eigval_inv,
-                                      arma::Mat<double>* eigvec,
+  virtual void ExtractErrorGivenEigen(arma::Col<double>& eigval_inv,
+                                      arma::Mat<double>& eigvec,
                                       double* jacobian);
 };
 
@@ -224,8 +224,8 @@ class InfoEigenRegressSolver : public polca_parallel::InfoEigenSolver {
                          double* regress_coeff_error);
 
  protected:
-  void ExtractErrorGivenEigen(arma::Col<double>* eigval_inv,
-                              arma::Mat<double>* eigvec,
+  void ExtractErrorGivenEigen(arma::Col<double>& eigval_inv,
+                              arma::Mat<double>& eigvec,
                               double* jacobian) override;
 };
 
@@ -280,8 +280,8 @@ class ScoreSvdSolver : public polca_parallel::ErrorSolver {
    * @param v_mat eigenvectors of the information matrix
    * @param jacobian the jacobian matrix
    */
-  virtual void ExtractErrorGivenEigen(arma::Col<double>* singular_inv,
-                                      arma::Mat<double>* v_mat,
+  virtual void ExtractErrorGivenEigen(arma::Col<double>& singular_inv,
+                                      arma::Mat<double>& v_mat,
                                       double* jacobian);
 };
 
@@ -323,8 +323,8 @@ class ScoreSvdRegressSolver : public polca_parallel::ScoreSvdSolver {
                         double* regress_coeff_error);
 
  protected:
-  void ExtractErrorGivenEigen(arma::Col<double>* singular_inv,
-                              arma::Mat<double>* v_mat_t,
+  void ExtractErrorGivenEigen(arma::Col<double>& singular_inv,
+                              arma::Mat<double>& v_mat_t,
                               double* jacobian) override;
 };
 

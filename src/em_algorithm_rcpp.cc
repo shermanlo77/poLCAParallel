@@ -110,7 +110,7 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
       estimated_prob.begin(), regress_coeff.begin());
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
-  fitter.SetSeed(&seed_seq);
+  fitter.SetSeed(seed_seq);
   fitter.set_best_initial_prob(best_initial_prob.begin());
   fitter.set_ln_l_array(ln_l_array.begin());
 

@@ -71,18 +71,18 @@ void polca_parallel::InfoEigenSolver::Solve(double* score, double* jacobian) {
       *eigval_i = 1 / *eigval_i;
     }
   }
-  this->ExtractErrorGivenEigen(&eigval, &eigvec, jacobian);
+  this->ExtractErrorGivenEigen(eigval, eigvec, jacobian);
 }
 
 void polca_parallel::InfoEigenSolver::ExtractErrorGivenEigen(
-    arma::Col<double>* eigval_inv, arma::Mat<double>* eigvec,
+    arma::Col<double>& eigval_inv, arma::Mat<double>& eigvec,
     double* jacobian) {
   // extract errors for the prior and outcome probs
   arma::Mat<double> jac_arma(jacobian, this->info_size_, this->jacobian_width_,
                              false);
   // do root columns sum of squares, faster than full matrix multiplication
   arma::Row<double> std_err = arma::vecnorm(
-      arma::diagmat(arma::sqrt(*eigval_inv)) * eigvec->t() * jac_arma, 2, 0);
+      arma::diagmat(arma::sqrt(eigval_inv)) * eigvec.t() * jac_arma, 2, 0);
 
   std::memcpy(this->prior_error_, std_err.memptr(),
               this->n_cluster_ * sizeof(*this->prior_error_));
@@ -100,7 +100,7 @@ polca_parallel::InfoEigenRegressSolver::InfoEigenRegressSolver(
           prior_error, prob_error, regress_coeff_error) {}
 
 void polca_parallel::InfoEigenRegressSolver::ExtractErrorGivenEigen(
-    arma::Col<double>* eigval_inv, arma::Mat<double>* eigvec,
+    arma::Col<double>& eigval_inv, arma::Mat<double>& eigvec,
     double* jacobian) {
   // extract errors for the prior and outcome probs
   this->InfoEigenSolver::ExtractErrorGivenEigen(eigval_inv, eigvec, jacobian);
@@ -117,8 +117,8 @@ void polca_parallel::InfoEigenRegressSolver::ExtractErrorGivenEigen(
   // no need to do full pinv(info) multiplication
   //
   // making a copy is faster than submat() * diagmat() * submat().t()
-  arma::Mat<double> sub = eigvec->submat(0, 0, size - 1, this->info_size_ - 1);
-  regress_coeff_error = sub * arma::diagmat(*eigval_inv) * sub.t();
+  arma::Mat<double> sub = eigvec.submat(0, 0, size - 1, this->info_size_ - 1);
+  regress_coeff_error = sub * arma::diagmat(eigval_inv) * sub.t();
 }
 
 polca_parallel::ScoreSvdSolver::ScoreSvdSolver(
@@ -157,18 +157,18 @@ void polca_parallel::ScoreSvdSolver::Solve(double* score, double* jacobian) {
     }
   }
 
-  this->ExtractErrorGivenEigen(&singular_values, &v_mat, jacobian);
+  this->ExtractErrorGivenEigen(singular_values, v_mat, jacobian);
 }
 
 void polca_parallel::ScoreSvdSolver::ExtractErrorGivenEigen(
-    arma::Col<double>* singular_inv, arma::Mat<double>* v_mat,
+    arma::Col<double>& singular_inv, arma::Mat<double>& v_mat,
     double* jacobian) {
   // extract errors for the prior and outcome probs
   arma::Mat<double> jac_arma(jacobian, this->info_size_, this->jacobian_width_,
                              false);
   // do root columns sum of squares, faster than full matrix multiplication
   arma::Row<double> std_err =
-      arma::vecnorm(arma::diagmat(*singular_inv) * v_mat->t() * jac_arma, 2, 0);
+      arma::vecnorm(arma::diagmat(singular_inv) * v_mat.t() * jac_arma, 2, 0);
 
   std::memcpy(this->prior_error_, std_err.memptr(),
               this->n_cluster_ * sizeof(*this->prior_error_));
@@ -186,7 +186,7 @@ polca_parallel::ScoreSvdRegressSolver::ScoreSvdRegressSolver(
                                      prob_error, regress_coeff_error) {}
 
 void polca_parallel::ScoreSvdRegressSolver::ExtractErrorGivenEigen(
-    arma::Col<double>* singular_inv, arma::Mat<double>* v_mat,
+    arma::Col<double>& singular_inv, arma::Mat<double>& v_mat,
     double* jacobian) {
   // extract errors for the prior and outcome probs
   this->ScoreSvdSolver::ExtractErrorGivenEigen(singular_inv, v_mat, jacobian);
@@ -204,7 +204,7 @@ void polca_parallel::ScoreSvdRegressSolver::ExtractErrorGivenEigen(
   // no need to do full pinv(info) multiplication
   //
   // making a copy is faster than submat().t() * diagmat() * submat()
-  arma::Mat<double> sub = v_mat->submat(0, 0, size - 1, this->info_size_ - 1);
+  arma::Mat<double> sub = v_mat.submat(0, 0, size - 1, this->info_size_ - 1);
   regress_coeff_error =
-      sub * arma::diagmat(*singular_inv % *singular_inv) * sub.t();
+      sub * arma::diagmat(singular_inv % singular_inv) * sub.t();
 }

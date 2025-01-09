@@ -41,14 +41,14 @@ void polca_parallel::EmAlgorithmNan::WeightedSumProb(
   polca_parallel::NanWeightedSumProb(
       cluster_index, this->responses_, this->n_data_, this->n_category_,
       this->n_outcomes_, this->sum_outcomes_, this->posterior_,
-      this->estimated_prob_, &(this->posterior_sum_));
+      this->estimated_prob_, this->posterior_sum_);
 }
 
 void polca_parallel::EmAlgorithmNan::NormalWeightedSumProb(
     std::size_t cluster_index) {
   polca_parallel::NanNormalWeightedSumProb(
       cluster_index, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-      &(this->posterior_sum_), this->estimated_prob_);
+      this->posterior_sum_, this->estimated_prob_);
 }
 
 polca_parallel::EmAlgorithmNanRegress::EmAlgorithmNanRegress(
@@ -68,22 +68,22 @@ void polca_parallel::EmAlgorithmNanRegress::WeightedSumProb(
   polca_parallel::NanWeightedSumProb(
       cluster_index, this->responses_, this->n_data_, this->n_category_,
       this->n_outcomes_, this->sum_outcomes_, this->posterior_,
-      this->estimated_prob_, &(this->posterior_sum_));
+      this->estimated_prob_, this->posterior_sum_);
 }
 
 void polca_parallel::EmAlgorithmNanRegress::NormalWeightedSumProb(
     std::size_t cluster_index) {
   polca_parallel::NanNormalWeightedSumProb(
       cluster_index, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-      &(this->posterior_sum_), this->estimated_prob_);
+      this->posterior_sum_, this->estimated_prob_);
 }
 
 void polca_parallel::NanWeightedSumProb(
     std::size_t cluster_index, int* responses, std::size_t n_data,
     std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
     double* posterior, double* estimated_prob,
-    std::vector<double>* posterior_sum) {
-  std::fill(posterior_sum->begin(), posterior_sum->end(), 0.0);
+    std::vector<double>& posterior_sum) {
+  std::fill(posterior_sum.begin(), posterior_sum.end(), 0.0);
 
   int y;
   double posterior_i;
@@ -98,7 +98,7 @@ void polca_parallel::NanWeightedSumProb(
       if (y > 0) {
         posterior_i = posterior[cluster_index * n_data + i_data];
         estimated_prob_i[y - 1] += posterior_i;
-        posterior_sum->at(i_category) += posterior_i;
+        posterior_sum.at(i_category) += posterior_i;
       }
       // point to next category
       estimated_prob_i += n_outcomes[i_category];
@@ -108,7 +108,7 @@ void polca_parallel::NanWeightedSumProb(
 
 void polca_parallel::NanNormalWeightedSumProb(
     std::size_t cluster_index, std::size_t n_category, std::size_t* n_outcomes,
-    std::size_t sum_outcomes, std::vector<double>* posterior_sum,
+    std::size_t sum_outcomes, std::vector<double>& posterior_sum,
     double* estimated_prob) {
   double* estimated_prob_ptr = estimated_prob + cluster_index * sum_outcomes;
   std::size_t n_outcome;
@@ -116,7 +116,7 @@ void polca_parallel::NanNormalWeightedSumProb(
     n_outcome = n_outcomes[i_category];
     arma::Col<double> estimated_prob(estimated_prob_ptr, n_outcome, false,
                                      true);
-    estimated_prob /= posterior_sum->at(i_category);
+    estimated_prob /= posterior_sum.at(i_category);
     estimated_prob_ptr += n_outcome;
   }
 }

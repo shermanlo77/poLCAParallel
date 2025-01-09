@@ -60,7 +60,7 @@ struct Frequency {
  */
 void GetUniqueObserved(int* responses, std::size_t n_data,
                        std::size_t n_category,
-                       std::map<std::vector<int>, Frequency>* unique_freq);
+                       std::map<std::vector<int>, Frequency>& unique_freq);
 
 /**
  * Update a map of observed responses to contain expected frequencies
@@ -93,7 +93,7 @@ void GetUniqueObserved(int* responses, std::size_t n_data,
 void GetExpected(double* prior, double* outcome_prob, std::size_t n_data,
                  std::size_t n_obs, std::size_t n_category,
                  std::size_t* n_outcomes, std::size_t n_cluster,
-                 std::map<std::vector<int>, Frequency>* unique_freq);
+                 std::map<std::vector<int>, Frequency>& unique_freq);
 
 /**
  * Get chi-squared and log-likelihood ratio statistics
@@ -107,7 +107,7 @@ void GetExpected(double* prior, double* outcome_prob, std::size_t n_data,
  * statistics
  */
 std::array<double, 2> GetStatistics(
-    std::map<std::vector<int>, Frequency>* unique_freq, std::size_t n_data);
+    std::map<std::vector<int>, Frequency>& unique_freq, std::size_t n_data);
 
 }  // namespace polca_parallel
 

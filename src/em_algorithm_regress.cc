@@ -44,7 +44,7 @@ void polca_parallel::EmAlgorithmRegress::NewRun(double* initial_prob) {
 }
 
 void polca_parallel::EmAlgorithmRegress::Reset(
-    std::uniform_real_distribution<double>* uniform) {
+    std::uniform_real_distribution<double>& uniform) {
   this->polca_parallel::EmAlgorithm::Reset(uniform);
   this->init_regress_coeff();
 }
@@ -195,7 +195,7 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
   // symmetric matrix, so loop over diagonal and lower triangle
   for (std::size_t j = 0; j < this->n_feature_; ++j) {
     for (std::size_t i = j; i < this->n_feature_; ++i) {
-      hess_element = CalcHessElement(i, j, &prior_post_inter);
+      hess_element = CalcHessElement(i, j, prior_post_inter);
       *this->HessianAt(cluster_index_0, cluster_index_1, i, j) = hess_element;
 
       // hessian and each block is symmetric
@@ -217,12 +217,12 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
 
 double polca_parallel::EmAlgorithmRegress::CalcHessElement(
     std::size_t feature_index_0, std::size_t feature_index_1,
-    arma::Col<double>* prior_post_inter) {
+    arma::Col<double>& prior_post_inter) {
   arma::Col<double> feature0(this->features_ + feature_index_0 * this->n_data_,
                              this->n_data_, false);
   arma::Col<double> feature1(this->features_ + feature_index_1 * this->n_data_,
                              this->n_data_, false);
-  return arma::sum(feature0 % feature1 % *prior_post_inter);
+  return arma::sum(feature0 % feature1 % prior_post_inter);
 }
 
 double* polca_parallel::EmAlgorithmRegress::HessianAt(

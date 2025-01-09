@@ -53,13 +53,13 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
   // default to random seeds
   std::seed_seq seed(
       {std::chrono::system_clock::now().time_since_epoch().count()});
-  this->SetSeed(&seed);
+  this->SetSeed(seed);
 }
 
-void polca_parallel::Blrt::SetSeed(std::seed_seq* seed) {
+void polca_parallel::Blrt::SetSeed(std::seed_seq& seed) {
   this->seed_array_ = std::make_unique<unsigned[]>(this->n_bootstrap_);
   unsigned* seed_array = this->seed_array_.get();
-  seed->generate(seed_array, seed_array + this->n_bootstrap_);
+  seed.generate(seed_array, seed_array + this->n_bootstrap_);
 }
 
 void polca_parallel::Blrt::Run() {
@@ -132,13 +132,13 @@ void polca_parallel::Blrt::RunThread() {
       // generate new initial values
       for (std::size_t i_rep = 1; i_rep < this->n_rep_; ++i_rep) {
         polca_parallel::GenerateNewProb(
-            rng.get(), &uniform, this->n_outcomes_, this->sum_outcomes_,
+            *rng, uniform, this->n_outcomes_, this->sum_outcomes_,
             this->n_category_, this->n_cluster_null_,
             init_prob_null.data() +
                 i_rep * this->sum_outcomes_ * this->n_cluster_null_);
 
         polca_parallel::GenerateNewProb(
-            rng.get(), &uniform, this->n_outcomes_, this->sum_outcomes_,
+            *rng, uniform, this->n_outcomes_, this->sum_outcomes_,
             this->n_category_, this->n_cluster_alt_,
             init_prob_alt.data() +
                 i_rep * this->sum_outcomes_ * this->n_cluster_alt_);
@@ -146,7 +146,7 @@ void polca_parallel::Blrt::RunThread() {
 
       // bootstrap data using null model
       this->Bootstrap(this->prior_null_, this->prob_null_,
-                      this->n_cluster_null_, rng.get(), bootstrap_data.get());
+                      this->n_cluster_null_, *rng, bootstrap_data.get());
 
       // null model fit
       polca_parallel::EmAlgorithmArraySerial null_model(
@@ -186,7 +186,7 @@ void polca_parallel::Blrt::RunThread() {
 
 void polca_parallel::Blrt::Bootstrap(double* prior, double* prob,
                                      std::size_t n_cluster,
-                                     std::mt19937_64* rng, int* response) {
+                                     std::mt19937_64& rng, int* response) {
   std::size_t i_cluster;
   double* prob_i_cluster;  // pointer relative to prob
   double p_sum;            // used to sum up probabilities for each outcome
@@ -197,14 +197,14 @@ void polca_parallel::Blrt::Bootstrap(double* prior, double* prob,
   std::uniform_real_distribution<double> uniform_dist(0, 1);
 
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
-    i_cluster = prior_dist(*rng);  // select a random cluster
+    i_cluster = prior_dist(rng);  // select a random cluster
     // point to the corresponding probabilites for this random cluster
     prob_i_cluster = prob + i_cluster * this->sum_outcomes_;
 
     for (std::size_t i_category = 0; i_category < this->n_category_;
          ++i_category) {
       p_sum = 0.0;
-      rand_uniform = uniform_dist(*rng);
+      rand_uniform = uniform_dist(rng);
 
       // use rand_uniform to randomly sample an outcome according to the
       // probabilities in prob_i_cluster[0], prob_i_cluster[1], ...
