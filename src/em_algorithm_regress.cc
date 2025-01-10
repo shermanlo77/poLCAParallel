@@ -62,12 +62,12 @@ void polca_parallel::EmAlgorithmRegress::InitPrior() {
 
   // for the 0th cluster, eta = 0, prior for 0th cluster propto 1
   std::fill(this->prior_, this->prior_ + this->n_data_, 1.0);
-  prior_except_0 = exp(features * regress_coeff);
+  prior_except_0 = arma::exp(features * regress_coeff);
 
   // normalise so that prior_ are probabilities
   arma::Mat<double> prior(this->prior_, this->n_data_, this->n_cluster_, false,
                           true);
-  prior.each_col() /= sum(prior, 1);
+  prior.each_col() /= arma::sum(prior, 1);
 }
 
 void polca_parallel::EmAlgorithmRegress::FinalPrior() {
