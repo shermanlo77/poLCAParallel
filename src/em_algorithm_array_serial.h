@@ -83,7 +83,7 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
   /**
    * Transfer ownership of the rng from this object as a return value
    */
-  std::unique_ptr<std::mt19937_64> MoveRng();
+  [[nodiscard]] std::unique_ptr<std::mt19937_64> MoveRng();
 
  protected:
   /**

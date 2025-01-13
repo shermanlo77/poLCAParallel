@@ -98,7 +98,8 @@ class StandardErrorRegress : public polca_parallel::StandardError {
                        double* prob_error, double* regress_coeff_error);
 
  protected:
-  std::unique_ptr<polca_parallel::ErrorSolver> InitErrorSolver() override;
+  [[nodiscard]] std::unique_ptr<polca_parallel::ErrorSolver> InitErrorSolver()
+      override;
   void CalcScorePrior(double** score_start) override;
   void CalcJacobianPrior(double** jacobian_ptr) override;
 };

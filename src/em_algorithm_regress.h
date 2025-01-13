@@ -155,9 +155,10 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
 
   void FinalPrior() override;
 
-  double GetPrior(std::size_t data_index, std::size_t cluster_index) override;
+  [[nodiscard]] double GetPrior(std::size_t data_index,
+                                std::size_t cluster_index) override;
 
-  bool IsInvalidLikelihood(double ln_l_difference) override;
+  [[nodiscard]] bool IsInvalidLikelihood(double ln_l_difference) override;
 
   /**
    * Do M step
@@ -217,9 +218,9 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * For different clusters, pi_u pi_v - r_u r_v
    * @return double value of an element of the Hessian
    */
-  double CalcHessElement(std::size_t feature_index_0,
-                         std::size_t feature_index_1,
-                         arma::Col<double>& prior_post_inter);
+  [[nodiscard]] double CalcHessElement(std::size_t feature_index_0,
+                                       std::size_t feature_index_1,
+                                       arma::Col<double>& prior_post_inter);
 
   /**
    * Get pointer of Hessian at specificed indexes
@@ -235,8 +236,10 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * @param feature_index_1 column index within block matrix
    * @return double* pointer to an element of the Hessian
    */
-  double* HessianAt(std::size_t cluster_index_0, std::size_t cluster_index_1,
-                    std::size_t feature_index_0, std::size_t feature_index_1);
+  [[nodiscard]] double* HessianAt(std::size_t cluster_index_0,
+                                  std::size_t cluster_index_1,
+                                  std::size_t feature_index_0,
+                                  std::size_t feature_index_1);
 };
 
 }  // namespace polca_parallel

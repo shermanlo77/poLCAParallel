@@ -138,13 +138,13 @@ class Smoother {
   void Smooth();
 
   /** Get the pointer to the array of smoothed probs */
-  double* get_probs();
+  [[nodiscard]] double* get_probs();
 
   /** Get the pointer to the array of prior probs */
-  double* get_prior();
+  [[nodiscard]] double* get_prior();
 
   /** Get the pointer to the array of posterior probs */
-  double* get_posterior();
+  [[nodiscard]] double* get_posterior();
 
  private:
   /**

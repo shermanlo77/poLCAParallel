@@ -287,16 +287,16 @@ class EmAlgorithm {
   void set_best_initial_prob(double* best_initial_prob);
 
   /** Get the log-likelihood */
-  double get_ln_l();
+  [[nodiscard]] double get_ln_l();
 
   /** Get the number of iterations of EM done */
-  unsigned int get_n_iter();
+  [[nodiscard]] unsigned int get_n_iter();
 
   /**
    * Indicate if it needed to use new initial values during a fit, it can happen
    * if a matrix is singular for example
    */
-  bool get_has_restarted();
+  [[nodiscard]] bool get_has_restarted();
 
   /** Set rng using a seed, for generating new random initial values */
   void set_seed(unsigned seed);
@@ -315,7 +315,7 @@ class EmAlgorithm {
    * Use this method if you want to ensure the rng you pass in set_rng() lives
    * when this object goes out of scope
    * */
-  std::unique_ptr<std::mt19937_64> move_rng();
+  [[nodiscard]] std::unique_ptr<std::mt19937_64> move_rng();
 
  protected:
   /**
@@ -344,7 +344,8 @@ class EmAlgorithm {
    * @param cluster_index
    * @return double prior
    */
-  virtual double GetPrior(std::size_t data_index, std::size_t cluster_index);
+  [[nodiscard]] virtual double GetPrior(std::size_t data_index,
+                                        std::size_t cluster_index);
 
   /**
    * Do E step
@@ -383,7 +384,7 @@ class EmAlgorithm {
    * @return true if the likelihood is invalid
    * @return false if the likelihood is okay
    */
-  virtual bool IsInvalidLikelihood(double ln_l_difference);
+  [[nodiscard]] virtual bool IsInvalidLikelihood(double ln_l_difference);
 
   /**
    * Do M step
@@ -480,9 +481,11 @@ class EmAlgorithm {
  * @param prior the prior for this data point and cluster
  * @return the unnormalised posterior for this data point and cluster
  */
-double PosteriorUnnormalize(int* responses_i, std::size_t n_category,
-                            std::size_t* n_outcomes, double** estimated_prob,
-                            double prior);
+[[nodiscard]] double PosteriorUnnormalize(int* responses_i,
+                                          std::size_t n_category,
+                                          std::size_t* n_outcomes,
+                                          double** estimated_prob,
+                                          double prior);
 
 /**
  * Generate random response probabilities
