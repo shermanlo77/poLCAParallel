@@ -18,18 +18,12 @@
 #ifndef POLCAPARALLEL_SRC_EM_ALGORITHM_H_
 #define POLCAPARALLEL_SRC_EM_ALGORITHM_H_
 
+#include <limits>
 #include <memory>
 #include <random>
 #include <vector>
 
 namespace polca_parallel {
-
-/**
- * When multiplying probabilities together in PosteriorUnnormalize(), use the
- * sum of logs instead when the resulting probability is less than this
- * threshold
- **/
-extern const int kUnderflowThreshold;
 
 /**
  * For fitting poLCA using the EM algorithm for a given initial value
@@ -58,6 +52,14 @@ extern const int kUnderflowThreshold;
  * </ul>
  */
 class EmAlgorithm {
+ public:
+  /**
+   * When multiplying probabilities together in PosteriorUnnormalize(), use the
+   * sum of logs instead when the resulting probability is less than this
+   * threshold
+   **/
+  static constexpr int kUnderflowThreshold = std::numeric_limits<double>::min();
+
  protected:
   /**
    * Design matrix of features, matrix with dimensions

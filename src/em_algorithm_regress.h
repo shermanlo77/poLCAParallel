@@ -54,6 +54,14 @@ namespace polca_parallel {
  */
 class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
  private:
+  /**
+   * If the log likelihood decreases by less than this, flag the log likelihood
+   * as invalid to stop the EM algorithm. Negative value means the log
+   * likelihood increases
+   */
+  static constexpr double kMinLogLikelihoodDifference = -1e-7;
+
+ private:
   /** Number of parameters to estimate for the softmax */
   std::size_t n_parameters_;
   /** vector, length n_parameters_, gradient of the log likelihood */

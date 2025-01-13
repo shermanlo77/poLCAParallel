@@ -86,7 +86,8 @@ bool polca_parallel::EmAlgorithmRegress::IsInvalidLikelihood(
   if (this->polca_parallel::EmAlgorithm::IsInvalidLikelihood(ln_l_difference)) {
     return true;
   } else {
-    return ln_l_difference < -1e-7;
+    return ln_l_difference <
+           polca_parallel::EmAlgorithmRegress::kMinLogLikelihoodDifference;
   }
 }
 

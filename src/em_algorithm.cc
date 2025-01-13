@@ -21,16 +21,12 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
-#include <limits>
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
 
 #include "RcppArmadillo.h"
-
-const int polca_parallel::kUnderflowThreshold =
-    std::numeric_limits<double>::min();
 
 polca_parallel::EmAlgorithm::EmAlgorithm(
     double* features, int* responses, double* initial_prob, std::size_t n_data,
@@ -342,7 +338,7 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
     *estimated_prob += n_outcomes[j];
 
     // check for underflow
-    if (likelihood < polca_parallel::kUnderflowThreshold) {
+    if (likelihood < polca_parallel::EmAlgorithm::kUnderflowThreshold) {
       use_sum_log = true;
       break;
     }
