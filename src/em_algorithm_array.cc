@@ -70,9 +70,7 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
       regress_coeff_(regress_coeff),
       n_rep_(n_rep),
       initial_prob_(initial_prob),
-      n_thread_(std::min(n_thread, n_rep)),
-      n_rep_done_lock_(),
-      results_lock_() {}
+      n_thread_(std::min(n_thread, n_rep)) {}
 
 template <typename EmAlgorithmType>
 void polca_parallel::EmAlgorithmArray::Fit() {

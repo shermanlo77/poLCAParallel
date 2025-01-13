@@ -49,7 +49,6 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
       max_iter_(max_iter),
       tolerance_(tolerance),
       ratio_array_(ratio_array),
-      n_bootstrap_done_lock_(),
       seed_array_(n_bootstrap) {
   // default to random seeds
   std::seed_seq seed(
