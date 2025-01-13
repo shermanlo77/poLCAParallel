@@ -195,19 +195,16 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
         this->best_rep_index_ = rep_index;
         this->optimal_ln_l_ = ln_l;
         this->n_iter_ = fitter->get_n_iter();
-        std::memcpy(this->posterior_, posterior.data(),
-                    n_data * n_cluster * sizeof(*this->posterior_));
-        std::memcpy(this->prior_, prior.data(),
-                    n_data * n_cluster * sizeof(*this->prior_));
-        std::memcpy(this->estimated_prob_, estimated_prob.data(),
-                    sum_outcomes * n_cluster * sizeof(*this->estimated_prob_));
-        std::memcpy(
-            this->regress_coeff_, regress_coeff.data(),
-            n_feature * (n_cluster - 1) * sizeof(*this->regress_coeff_));
+
+        std::copy(posterior.begin(), posterior.end(), this->posterior_);
+        std::copy(prior.begin(), prior.end(), this->prior_);
+        std::copy(estimated_prob.begin(), estimated_prob.end(),
+                  this->estimated_prob_);
+        std::copy(regress_coeff.begin(), regress_coeff.end(),
+                  this->regress_coeff_);
         if (this->best_initial_prob_) {
-          std::memcpy(
-              this->best_initial_prob_, best_initial_prob.data(),
-              sum_outcomes * n_cluster * sizeof(*this->best_initial_prob_));
+          std::copy(best_initial_prob.begin(), best_initial_prob.end(),
+                    this->best_initial_prob_);
         }
       }
       this->results_lock_.unlock();

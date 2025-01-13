@@ -18,6 +18,7 @@
 
 #include "goodness_fit.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstring>
@@ -36,8 +37,7 @@ void polca_parallel::GetUniqueObserved(
   bool fullyobserved;  // only considered fully observed responses
   for (std::size_t i = 0; i < n_data; ++i) {
     fullyobserved = true;
-    std::memcpy(response_i.data(), responses,
-                response_i.size() * sizeof(*responses));
+    std::copy(responses, responses + n_category, response_i.begin());
 
     for (std::size_t j = 0; j < response_i.size(); ++j) {
       if (response_i.at(j) == 0) {

@@ -17,6 +17,7 @@
 
 #include "blrt.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <memory>
@@ -89,12 +90,12 @@ void polca_parallel::Blrt::RunThread() {
 
   // use the fitted values as the initial values when fitting onto the bootstrap
   // samples
-  std::memcpy(init_prob_null.data(), this->prob_null_,
-              this->sum_outcomes_ * this->n_cluster_null_ *
-                  sizeof(init_prob_null.front()));
-  std::memcpy(init_prob_alt.data(), this->prob_alt_,
-              this->sum_outcomes_ * this->n_cluster_alt_ *
-                  sizeof(init_prob_alt.front()));
+  std::copy(this->prob_null_,
+            this->prob_null_ + this->sum_outcomes_ * this->n_cluster_null_,
+            init_prob_null.begin());
+  std::copy(this->prob_alt_,
+            this->prob_alt_ + this->sum_outcomes_ * this->n_cluster_alt_,
+            init_prob_alt.begin());
 
   // allocate memory for all required arrays, a lot of them aren't used after
   // fitting
