@@ -21,6 +21,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <vector>
 
 #include "em_algorithm.h"
 #include "em_algorithm_array_serial.h"
@@ -110,7 +111,7 @@ class Blrt {
   std::mutex n_bootstrap_done_lock_;
 
   /** Array of seeds, for each bootstrap sample*/
-  std::unique_ptr<unsigned[]> seed_array_;
+  std::vector<unsigned> seed_array_;
 
  public:
   /**

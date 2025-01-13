@@ -49,7 +49,8 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
       max_iter_(max_iter),
       tolerance_(tolerance),
       ratio_array_(ratio_array),
-      n_bootstrap_done_lock_() {
+      n_bootstrap_done_lock_(),
+      seed_array_(n_bootstrap) {
   // default to random seeds
   std::seed_seq seed(
       {std::chrono::system_clock::now().time_since_epoch().count()});
@@ -57,9 +58,7 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
 }
 
 void polca_parallel::Blrt::SetSeed(std::seed_seq& seed) {
-  this->seed_array_ = std::make_unique<unsigned[]>(this->n_bootstrap_);
-  unsigned* seed_array = this->seed_array_.get();
-  seed.generate(seed_array, seed_array + this->n_bootstrap_);
+  seed.generate(this->seed_array_.begin(), this->seed_array_.end());
 }
 
 void polca_parallel::Blrt::Run() {
@@ -125,7 +124,7 @@ void polca_parallel::Blrt::RunThread() {
 
       // instantiate a rng
       std::unique_ptr<std::mt19937_64> rng =
-          std::make_unique<std::mt19937_64>(this->seed_array_[i_bootstrap]);
+          std::make_unique<std::mt19937_64>(this->seed_array_.at(i_bootstrap));
 
       std::uniform_real_distribution<double> uniform(0.0, 1.0);
 
