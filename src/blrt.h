@@ -64,7 +64,7 @@ class Blrt {
    */
   double* prob_null_;
   /** Number of clusters fitted onto the null model */
-  std::size_t n_cluster_null_;
+  const std::size_t n_cluster_null_;
   /**
    * Vector of probabilities, one for each cluster. Probability a data point
    * belongs to each cluster in the alt model.
@@ -81,26 +81,26 @@ class Blrt {
    */
   double* prob_alt_;
   /** Number of clusters fitted onto the alt model */
-  std::size_t n_cluster_alt_;
+  const std::size_t n_cluster_alt_;
 
   /** Number of data points */
-  std::size_t n_data_;
+  const std::size_t n_data_;
   /** Number of categories */
-  std::size_t n_category_;
+  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  std::size_t sum_outcomes_;
+  const std::size_t sum_outcomes_;
   /** Number of bootstrap samples to run */
-  std::size_t n_bootstrap_;
+  const std::size_t n_bootstrap_;
   /** Number of initial values to try */
-  std::size_t n_rep_;
+  const std::size_t n_rep_;
   /** Number of threads */
-  std::size_t n_thread_;
+  const std::size_t n_thread_;
   /** Maximum number of iterations for EM algorithm */
-  unsigned int max_iter_;
+  const unsigned int max_iter_;
   /** To provide to EmAlgorithm */
-  double tolerance_;
+  const double tolerance_;
 
   /** What bootstrap sample is being worked on */
   std::size_t n_bootstrap_done_ = 0;

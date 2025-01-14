@@ -40,22 +40,22 @@ namespace polca_parallel {
 class ErrorSolver {
  protected:
   /** Number of data points, ie height of the score matrix */
-  std::size_t n_data_;
+  const std::size_t n_data_;
   /** Number of features */
-  std::size_t n_feature_;
+  const std::size_t n_feature_;
   /** Sum of n_outcomes */
-  std::size_t sum_outcomes_;
+  const std::size_t sum_outcomes_;
   /** Number of clusters fitted */
-  std::size_t n_cluster_;
+  const std::size_t n_cluster_;
   /**
    * The size of the information matrix
    *
    * This is the same as the width of the score matrix and the height of the
    * Jacobian matrix
    */
-  std::size_t info_size_;
+  const std::size_t info_size_;
   /** The width of the Jacobian matrix */
-  std::size_t jacobian_width_;
+  const std::size_t jacobian_width_;
   /**
    * Vector containing the standard error for the prior probabilities for each
    * cluster

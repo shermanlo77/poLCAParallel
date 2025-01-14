@@ -89,21 +89,21 @@ class EmAlgorithm {
    */
   double* initial_prob_;
   /** Number of data points */
-  std::size_t n_data_;
+  const std::size_t n_data_;
   /** Number of features */
-  std::size_t n_feature_;
+  const std::size_t n_feature_;
   /** Number of categories */
-  std::size_t n_category_;
+  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  std::size_t sum_outcomes_;
+  const std::size_t sum_outcomes_;
   /** Number of clusters to fit */
-  std::size_t n_cluster_;
+  const std::size_t n_cluster_;
   /** Maximum number of iterations for EM algorithm */
-  unsigned int max_iter_;
+  const unsigned int max_iter_;
   /** Tolerance for difference in log-likelihood, used for stopping condition */
-  double tolerance_;
+  const double tolerance_;
   /**
    * Design matrix of posterior probabilities (also called responsibility). It's
    * the probability a data point is in cluster m given responses. The matrix

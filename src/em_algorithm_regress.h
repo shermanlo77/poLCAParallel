@@ -63,7 +63,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
 
  private:
   /** Number of parameters to estimate for the softmax */
-  std::size_t n_parameters_;
+  const std::size_t n_parameters_;
   /** vector, length n_parameters_, gradient of the log likelihood */
   std::vector<double> gradient_;
   /** matrix, n_parameters_ x n_parameters, hessian of the log likelihood */

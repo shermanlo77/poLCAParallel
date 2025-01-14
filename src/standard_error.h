@@ -92,17 +92,17 @@ class StandardError {
    */
   double* posterior_;
   /** Number of data points */
-  std::size_t n_data_;
+  const std::size_t n_data_;
   /** Number of features */
-  std::size_t n_feature_;
+  const std::size_t n_feature_;
   /** Number of categories */
-  std::size_t n_category_;
+  const std::size_t n_category_;
   /** Vector of number of outcomes for each category */
   std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  std::size_t sum_outcomes_;
+  const std::size_t sum_outcomes_;
   /** Number of clusters to fit */
-  std::size_t n_cluster_;
+  const std::size_t n_cluster_;
   /**
    * Vector containing the standard error for the prior probabilities for each
    * cluster

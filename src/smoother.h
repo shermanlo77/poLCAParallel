@@ -76,15 +76,15 @@ class Smoother {
    */
   std::vector<double> posterior_;
   /** Number of data points */
-  std::size_t n_data_;
+  const std::size_t n_data_;
   /** Number of categories */
-  std::size_t n_category_;
+  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   std::size_t* n_outcomes_;
   /** Sum of n_outcomes */
-  std::size_t sum_outcomes_;
+  const std::size_t sum_outcomes_;
   /** Number of clusters to fit */
-  std::size_t n_cluster_;
+  const std::size_t n_cluster_;
 
  public:
   /**

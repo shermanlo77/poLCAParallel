@@ -70,21 +70,21 @@ class EmAlgorithmArray {
    */
   int* responses_;
   /** Number of data points */
-  std::size_t n_data_;
+  const std::size_t n_data_;
   /** Number of features */
-  std::size_t n_feature_;
+  const std::size_t n_feature_;
   /** Number of categories */
-  std::size_t n_category_;
+  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   std::size_t* n_outcomes_;
   /** Sum of n_outcomes_ */
-  std::size_t sum_outcomes_;
+  const std::size_t sum_outcomes_;
   /** Number of clusters (classes in literature) to fit */
-  std::size_t n_cluster_;
+  const std::size_t n_cluster_;
   /** Maximum number of iterations for EM algorithm */
-  unsigned int max_iter_;
+  const unsigned int max_iter_;
   /** To provide to EmAlgorithm */
-  double tolerance_;
+  const double tolerance_;
   /**
    * To store the posterior result from the best repetition. Accessing and
    * writing should be done with locking and unlocking results_lock_ when using
@@ -123,7 +123,7 @@ class EmAlgorithmArray {
   double* best_initial_prob_ = nullptr;
 
   /** Number of initial values to try */
-  std::size_t n_rep_;
+  const std::size_t n_rep_;
 
   /** The best log-likelihood found so far */
   double optimal_ln_l_ = -INFINITY;
@@ -154,7 +154,7 @@ class EmAlgorithmArray {
   /** Index of which initial value has the best log-likelihood */
   std::size_t best_rep_index_;
   /** Number of threads */
-  std::size_t n_thread_;
+  const std::size_t n_thread_;
 
   /** For locking n_rep_done_ */
   std::mutex n_rep_done_lock_;
