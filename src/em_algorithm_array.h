@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <random>
 
 #include "em_algorithm.h"
@@ -120,7 +121,7 @@ class EmAlgorithmArray {
    * results_lock_ when using multiple threads. It shall be the same format as
    * the member variable with the same name in EmAlgorithm.
    */
-  double* best_initial_prob_ = nullptr;
+  std::optional<double*> best_initial_prob_;
 
   /** Number of initial values to try */
   const std::size_t n_rep_;
@@ -150,7 +151,7 @@ class EmAlgorithmArray {
    * Optional, maximum log-likelihood for each repetition. Set using
    * set_ln_l_array()
    */
-  double* ln_l_array_ = nullptr;
+  std::optional<double*> ln_l_array_;
   /** Index of which initial value has the best log-likelihood */
   std::size_t best_rep_index_;
   /** Number of threads */

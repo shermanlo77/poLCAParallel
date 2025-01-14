@@ -150,7 +150,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
           this->n_category_, this->n_outcomes_, sum_outcomes, n_cluster,
           this->max_iter_, this->tolerance_, posterior.data(), prior.data(),
           estimated_prob.data(), regress_coeff.data());
-  if (this->best_initial_prob_) {
+  if (this->best_initial_prob_.has_value()) {
     fitter->set_best_initial_prob(best_initial_prob.data());
   }
 
@@ -180,8 +180,8 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
 
       fitter->Fit();
       ln_l = fitter->get_ln_l();
-      if (this->ln_l_array_) {
-        this->ln_l_array_[rep_index] = ln_l;
+      if (this->ln_l_array_.has_value()) {
+        this->ln_l_array_.value()[rep_index] = ln_l;
       }
 
       // if ownership of rng transferred (if any) to fitter, get it back if
@@ -202,9 +202,9 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
                   this->estimated_prob_);
         std::copy(regress_coeff.begin(), regress_coeff.end(),
                   this->regress_coeff_);
-        if (this->best_initial_prob_) {
+        if (this->best_initial_prob_.has_value()) {
           std::copy(best_initial_prob.begin(), best_initial_prob.end(),
-                    this->best_initial_prob_);
+                    this->best_initial_prob_.value());
         }
       }
       this->results_lock_.unlock();

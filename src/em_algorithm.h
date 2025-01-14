@@ -20,6 +20,7 @@
 
 #include <limits>
 #include <memory>
+#include <optional>
 #include <random>
 #include <vector>
 
@@ -154,7 +155,7 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  double* best_initial_prob_ = nullptr;
+  std::optional<double*> best_initial_prob_;
 
   /** Log likelihood, updated at each iteration of EM */
   double ln_l_ = -INFINITY;

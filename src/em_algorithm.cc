@@ -76,10 +76,10 @@ void polca_parallel::EmAlgorithm::Fit() {
     }
 
     // make a copy initial probabilities if requested
-    if (this->best_initial_prob_) {
+    if (this->best_initial_prob_.has_value()) {
       std::copy(this->estimated_prob_,
                 this->estimated_prob_ + this->n_cluster_ * this->sum_outcomes_,
-                this->best_initial_prob_);
+                this->best_initial_prob_.value());
     }
 
     ln_l_before = -INFINITY;
