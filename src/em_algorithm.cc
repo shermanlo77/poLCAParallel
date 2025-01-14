@@ -29,14 +29,13 @@
 #include "RcppArmadillo.h"
 
 polca_parallel::EmAlgorithm::EmAlgorithm(
-    double* features, int* responses, double* initial_prob, std::size_t n_data,
-    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
-    std::size_t sum_outcomes, std::size_t n_cluster, unsigned int max_iter,
-    double tolerance, double* posterior, double* prior, double* estimated_prob,
+    double* features, int* responses, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff)
     : features_(features),
       responses_(responses),
-      initial_prob_(initial_prob),
       n_data_(n_data),
       n_feature_(n_feature),
       n_category_(n_category),

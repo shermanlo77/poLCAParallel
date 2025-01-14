@@ -43,12 +43,12 @@ class EmAlgorithmNan : public polca_parallel::EmAlgorithm {
    *
    * @copydoc EmAlgorithm::EmAlgorithm
    */
-  EmAlgorithmNan(double* features, int* responses, double* initial_prob,
-                 std::size_t n_data, std::size_t n_feature,
-                 std::size_t n_category, std::size_t* n_outcomes,
-                 std::size_t sum_outcomes, std::size_t n_cluster,
-                 unsigned int max_iter, double tolerance, double* posterior,
-                 double* prior, double* estimated_prob, double* regress_coeff);
+  EmAlgorithmNan(double* features, int* responses, std::size_t n_data,
+                 std::size_t n_feature, std::size_t n_category,
+                 std::size_t* n_outcomes, std::size_t sum_outcomes,
+                 std::size_t n_cluster, unsigned int max_iter, double tolerance,
+                 double* posterior, double* prior, double* estimated_prob,
+                 double* regress_coeff);
 
  protected:
   /**
@@ -71,12 +71,11 @@ class EmAlgorithmNanRegress : public polca_parallel::EmAlgorithmRegress {
   std::vector<double> posterior_sum_;
 
  public:
-  EmAlgorithmNanRegress(double* features, int* responses, double* initial_prob,
-                        std::size_t n_data, std::size_t n_feature,
-                        std::size_t n_category, std::size_t* n_outcomes,
-                        std::size_t sum_outcomes, std::size_t n_cluster,
-                        unsigned int max_iter, double tolerance,
-                        double* posterior, double* prior,
+  EmAlgorithmNanRegress(double* features, int* responses, std::size_t n_data,
+                        std::size_t n_feature, std::size_t n_category,
+                        std::size_t* n_outcomes, std::size_t sum_outcomes,
+                        std::size_t n_cluster, unsigned int max_iter,
+                        double tolerance, double* posterior, double* prior,
                         double* estimated_prob, double* regress_coeff);
 
  protected:

@@ -25,15 +25,15 @@
 #include "em_algorithm_regress.h"
 
 polca_parallel::EmAlgorithmNan::EmAlgorithmNan(
-    double* features, int* responses, double* initial_prob, std::size_t n_data,
-    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
-    std::size_t sum_outcomes, std::size_t n_cluster, unsigned int max_iter,
-    double tolerance, double* posterior, double* prior, double* estimated_prob,
+    double* features, int* responses, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff)
-    : polca_parallel::EmAlgorithm(
-          features, responses, initial_prob, n_data, n_feature, n_category,
-          n_outcomes, sum_outcomes, n_cluster, max_iter, tolerance, posterior,
-          prior, estimated_prob, regress_coeff),
+    : polca_parallel::EmAlgorithm(features, responses, n_data, n_feature,
+                                  n_category, n_outcomes, sum_outcomes,
+                                  n_cluster, max_iter, tolerance, posterior,
+                                  prior, estimated_prob, regress_coeff),
       posterior_sum_(n_category) {}
 
 void polca_parallel::EmAlgorithmNan::WeightedSumProb(
@@ -52,15 +52,15 @@ void polca_parallel::EmAlgorithmNan::NormalWeightedSumProb(
 }
 
 polca_parallel::EmAlgorithmNanRegress::EmAlgorithmNanRegress(
-    double* features, int* responses, double* initial_prob, std::size_t n_data,
-    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
-    std::size_t sum_outcomes, std::size_t n_cluster, unsigned int max_iter,
-    double tolerance, double* posterior, double* prior, double* estimated_prob,
+    double* features, int* responses, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff)
     : polca_parallel::EmAlgorithmRegress(
-          features, responses, initial_prob, n_data, n_feature, n_category,
-          n_outcomes, sum_outcomes, n_cluster, max_iter, tolerance, posterior,
-          prior, estimated_prob, regress_coeff),
+          features, responses, n_data, n_feature, n_category, n_outcomes,
+          sum_outcomes, n_cluster, max_iter, tolerance, posterior, prior,
+          estimated_prob, regress_coeff),
       posterior_sum_(n_category) {}
 
 void polca_parallel::EmAlgorithmNanRegress::WeightedSumProb(

@@ -146,7 +146,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
   // transfer pointer to data and where to store results
   std::unique_ptr<polca_parallel::EmAlgorithm> fitter =
       std::make_unique<EmAlgorithmType>(
-          this->features_, this->responses_, nullptr, n_data, n_feature,
+          this->features_, this->responses_, n_data, n_feature,
           this->n_category_, this->n_outcomes_, sum_outcomes, n_cluster,
           this->max_iter_, this->tolerance_, posterior.data(), prior.data(),
           estimated_prob.data(), regress_coeff.data());

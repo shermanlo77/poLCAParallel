@@ -23,15 +23,15 @@
 #include <vector>
 
 polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
-    double* features, int* responses, double* initial_prob, std::size_t n_data,
-    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
-    std::size_t sum_outcomes, std::size_t n_cluster, unsigned int max_iter,
-    double tolerance, double* posterior, double* prior, double* estimated_prob,
+    double* features, int* responses, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff)
-    : polca_parallel::EmAlgorithm(
-          features, responses, initial_prob, n_data, n_feature, n_category,
-          n_outcomes, sum_outcomes, n_cluster, max_iter, tolerance, posterior,
-          prior, estimated_prob, regress_coeff),
+    : polca_parallel::EmAlgorithm(features, responses, n_data, n_feature,
+                                  n_category, n_outcomes, sum_outcomes,
+                                  n_cluster, max_iter, tolerance, posterior,
+                                  prior, estimated_prob, regress_coeff),
       n_parameters_(n_feature * (n_cluster - 1)),
       gradient_(this->n_parameters_),
       hessian_(this->n_parameters_ * this->n_parameters_) {
