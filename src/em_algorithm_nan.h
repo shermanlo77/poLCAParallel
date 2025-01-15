@@ -64,6 +64,9 @@ class EmAlgorithmNan : public polca_parallel::EmAlgorithm {
    * @copydoc EmAlgorithm::NormalWeightedSumProb
    */
   void NormalWeightedSumProb(std::size_t cluster_index) override;
+
+  [[nodiscard]] double PosteriorUnnormalize(int* responses_i, double prior,
+                                            double** estimated_prob) override;
 };
 
 class EmAlgorithmNanRegress : public polca_parallel::EmAlgorithmRegress {
@@ -92,6 +95,9 @@ class EmAlgorithmNanRegress : public polca_parallel::EmAlgorithmRegress {
    * @copydoc EmAlgorithm::NormalWeightedSumProb
    */
   void NormalWeightedSumProb(std::size_t cluster_index) override;
+
+  [[nodiscard]] double PosteriorUnnormalize(int* responses_i, double prior,
+                                            double** estimated_prob) override;
 };
 
 /**

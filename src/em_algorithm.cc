@@ -204,12 +204,17 @@ double polca_parallel::EmAlgorithm::GetPrior(std::size_t data_index,
 
 void polca_parallel::EmAlgorithm::EStep() {
   double* estimated_prob;  // for pointing to elements in estimated_prob_
+  int* responses_i;
+  double prior;
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
     estimated_prob = this->estimated_prob_;
     for (std::size_t i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
       // access to posterior_ in this manner should result in cache misses
       // however PosteriorUnnormalize() is designed for cache efficiency
-      this->PosteriorUnnormalize(i_data, i_cluster, &estimated_prob);
+      responses_i = this->responses_ + (i_data * this->n_category_);
+      prior = this->GetPrior(i_data, i_cluster);
+      this->posterior_[i_cluster * this->n_data_ + i_data] =
+          this->PosteriorUnnormalize(responses_i, prior, &estimated_prob);
     }
   }
 
@@ -222,14 +227,10 @@ void polca_parallel::EmAlgorithm::EStep() {
   ln_l_array = arma::log(ln_l_array);    // log likelihood
 }
 
-void polca_parallel::EmAlgorithm::PosteriorUnnormalize(
-    std::size_t data_index, std::size_t cluster_index,
-    double** estimated_prob) {
-  int* responses_i = this->responses_ + (data_index * this->n_category_);
-  double prior = this->GetPrior(data_index, cluster_index);
-  double posterior = polca_parallel::PosteriorUnnormalize(
+double polca_parallel::EmAlgorithm::PosteriorUnnormalize(
+    int* responses_i, double prior, double** estimated_prob) {
+  return polca_parallel::PosteriorUnnormalize(
       responses_i, this->n_category_, this->n_outcomes_, estimated_prob, prior);
-  this->posterior_[cluster_index * this->n_data_ + data_index] = posterior;
 }
 
 bool polca_parallel::EmAlgorithm::IsInvalidLikelihood(double ln_l_difference) {
@@ -307,6 +308,15 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(
   estimated_prob /= normaliser;
 }
 
+template double polca_parallel::PosteriorUnnormalize<false>(
+    int* responses_i, std::size_t n_category, std::size_t* n_outcomes,
+    double** estimated_prob, double prior);
+
+template double polca_parallel::PosteriorUnnormalize<true>(
+    int* responses_i, std::size_t n_category, std::size_t* n_outcomes,
+    double** estimated_prob, double prior);
+
+template <bool is_check_zero>
 double polca_parallel::PosteriorUnnormalize(int* responses_i,
                                             std::size_t n_category,
                                             std::size_t* n_outcomes,
@@ -328,8 +338,13 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
   // calculate conditioned on cluster m likelihood
   for (std::size_t j = 0; j < n_category; ++j) {
     y = responses_i[j];  // cache hit by accesing adjacent memory
-    if (y > 0) {
-      // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
+    // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
+
+    if constexpr (is_check_zero) {
+      if (y > 0) {
+        likelihood *= (*estimated_prob)[y - 1];
+      }
+    } else {
       likelihood *= (*estimated_prob)[y - 1];
     }
 
@@ -352,9 +367,13 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
     // calculate conditioned on cluster m likelihood
     for (std::size_t j = 0; j < n_category; ++j) {
       y = responses_i[j];  // cache hit by accesing adjacent memory
-      if (y > 0) {
-        // cache hit in estimated_prob by accessing memory n_outcomes + y -1
-        // away
+      // cache hit in estimated_prob by accessing memory n_outcomes + y -1
+      // away
+      if constexpr (is_check_zero) {
+        if (y > 0) {
+          log_likelihood += std::log((*estimated_prob)[y - 1]);
+        }
+      } else {
         log_likelihood += std::log((*estimated_prob)[y - 1]);
       }
       // increment to point to the next category

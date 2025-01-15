@@ -371,8 +371,9 @@ class EmAlgorithm {
    *   <li>dim 1: for each category</li>
    * </ul>
    */
-  void PosteriorUnnormalize(std::size_t data_index, std::size_t cluster_index,
-                            double** estimated_prob);
+  [[nodiscard]] virtual double PosteriorUnnormalize(int* responses_i,
+                                                    double prior,
+                                                    double** estimated_prob);
 
   /**
    * Check if the likelihood is invalid
@@ -466,6 +467,8 @@ class EmAlgorithm {
  * probabilities is done instead if an underflow is detected. It should be
  * noted the sum of logs is slower.
  *
+ * @param is_check_zero to check if the responses are zero or not, for
+ * performance reason, use false when the responses do not contain zero values
  * @param responses_i the responses for a given data point, length n_catgeory
  * @param n_catgeory number of categories
  * @param n_outcomes number of outcomes for each category
@@ -479,6 +482,7 @@ class EmAlgorithm {
  * @param prior the prior for this data point and cluster
  * @return the unnormalised posterior for this data point and cluster
  */
+template <bool is_check_zero = false>
 [[nodiscard]] double PosteriorUnnormalize(int* responses_i,
                                           std::size_t n_category,
                                           std::size_t* n_outcomes,
