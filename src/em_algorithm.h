@@ -467,7 +467,7 @@ class EmAlgorithm {
  * probabilities is done instead if an underflow is detected. It should be
  * noted the sum of logs is slower.
  *
- * @param is_check_zero to check if the responses are zero or not, for
+ * @tparam is_check_zero to check if the responses are zero or not, for
  * performance reason, use false when the responses do not contain zero values
  * @param responses_i the responses for a given data point, length n_catgeory
  * @param n_catgeory number of categories

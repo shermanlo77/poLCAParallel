@@ -24,19 +24,26 @@
 #include "em_algorithm.h"
 #include "em_algorithm_regress.h"
 
-polca_parallel::EmAlgorithmNan::EmAlgorithmNan(
+template class polca_parallel::EmAlgorithmNanTemplate<
+    polca_parallel::EmAlgorithm>;
+
+template class polca_parallel::EmAlgorithmNanTemplate<
+    polca_parallel::EmAlgorithmRegress>;
+
+template <typename T>
+polca_parallel::EmAlgorithmNanTemplate<T>::EmAlgorithmNanTemplate(
     double* features, int* responses, std::size_t n_data, std::size_t n_feature,
     std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
     std::size_t n_cluster, unsigned int max_iter, double tolerance,
     double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff)
-    : polca_parallel::EmAlgorithm(features, responses, n_data, n_feature,
-                                  n_category, n_outcomes, sum_outcomes,
-                                  n_cluster, max_iter, tolerance, posterior,
-                                  prior, estimated_prob, regress_coeff),
+    : T(features, responses, n_data, n_feature, n_category, n_outcomes,
+        sum_outcomes, n_cluster, max_iter, tolerance, posterior, prior,
+        estimated_prob, regress_coeff),
       posterior_sum_(n_category) {}
 
-void polca_parallel::EmAlgorithmNan::WeightedSumProb(
+template <typename T>
+void polca_parallel::EmAlgorithmNanTemplate<T>::WeightedSumProb(
     std::size_t cluster_index) {
   polca_parallel::NanWeightedSumProb(
       cluster_index, this->responses_, this->n_data_, this->n_category_,
@@ -44,18 +51,31 @@ void polca_parallel::EmAlgorithmNan::WeightedSumProb(
       this->estimated_prob_, this->posterior_sum_);
 }
 
-void polca_parallel::EmAlgorithmNan::NormalWeightedSumProb(
+template <typename T>
+void polca_parallel::EmAlgorithmNanTemplate<T>::NormalWeightedSumProb(
     std::size_t cluster_index) {
   polca_parallel::NanNormalWeightedSumProb(
       cluster_index, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
       this->posterior_sum_, this->estimated_prob_);
 }
 
-double polca_parallel::EmAlgorithmNan::PosteriorUnnormalize(
+template <typename T>
+double polca_parallel::EmAlgorithmNanTemplate<T>::PosteriorUnnormalize(
     int* responses_i, double prior, double** estimated_prob) {
   return polca_parallel::PosteriorUnnormalize<true>(
       responses_i, this->n_category_, this->n_outcomes_, estimated_prob, prior);
 }
+
+polca_parallel::EmAlgorithmNan::EmAlgorithmNan(
+    double* features, int* responses, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    double* posterior, double* prior, double* estimated_prob,
+    double* regress_coeff)
+    : EmAlgorithmNanTemplate<EmAlgorithm>(
+          features, responses, n_data, n_feature, n_category, n_outcomes,
+          sum_outcomes, n_cluster, max_iter, tolerance, posterior, prior,
+          estimated_prob, regress_coeff) {}
 
 polca_parallel::EmAlgorithmNanRegress::EmAlgorithmNanRegress(
     double* features, int* responses, std::size_t n_data, std::size_t n_feature,
@@ -63,32 +83,10 @@ polca_parallel::EmAlgorithmNanRegress::EmAlgorithmNanRegress(
     std::size_t n_cluster, unsigned int max_iter, double tolerance,
     double* posterior, double* prior, double* estimated_prob,
     double* regress_coeff)
-    : polca_parallel::EmAlgorithmRegress(
+    : EmAlgorithmNanTemplate<EmAlgorithmRegress>(
           features, responses, n_data, n_feature, n_category, n_outcomes,
           sum_outcomes, n_cluster, max_iter, tolerance, posterior, prior,
-          estimated_prob, regress_coeff),
-      posterior_sum_(n_category) {}
-
-void polca_parallel::EmAlgorithmNanRegress::WeightedSumProb(
-    std::size_t cluster_index) {
-  polca_parallel::NanWeightedSumProb(
-      cluster_index, this->responses_, this->n_data_, this->n_category_,
-      this->n_outcomes_, this->sum_outcomes_, this->posterior_,
-      this->estimated_prob_, this->posterior_sum_);
-}
-
-void polca_parallel::EmAlgorithmNanRegress::NormalWeightedSumProb(
-    std::size_t cluster_index) {
-  polca_parallel::NanNormalWeightedSumProb(
-      cluster_index, this->n_category_, this->n_outcomes_, this->sum_outcomes_,
-      this->posterior_sum_, this->estimated_prob_);
-}
-
-double polca_parallel::EmAlgorithmNanRegress::PosteriorUnnormalize(
-    int* responses_i, double prior, double** estimated_prob) {
-  return polca_parallel::PosteriorUnnormalize<true>(
-      responses_i, this->n_category_, this->n_outcomes_, estimated_prob, prior);
-}
+          estimated_prob, regress_coeff) {}
 
 void polca_parallel::NanWeightedSumProb(
     std::size_t cluster_index, int* responses, std::size_t n_data,
