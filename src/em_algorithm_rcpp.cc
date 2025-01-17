@@ -16,6 +16,7 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <random>
+#include <span>
 #include <vector>
 
 #include "RcppArmadillo.h"
@@ -106,13 +107,18 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
   polca_parallel::EmAlgorithmArray fitter(
       features.begin(), responses.begin(), initial_prob.begin(), n_data,
       n_feature, n_category, n_outcomes_size_t.data(), sum_outcomes, n_cluster,
-      n_rep, n_thread, max_iter, tolerance, posterior.begin(), prior.begin(),
-      estimated_prob.begin(), regress_coeff.begin());
+      n_rep, n_thread, max_iter, tolerance,
+      std::span<double>(posterior.begin(), posterior.size()),
+      std::span<double>(prior.begin(), prior.size()),
+      std::span<double>(estimated_prob.begin(), estimated_prob.size()),
+      std::span<double>(regress_coeff.begin(), regress_coeff.size()));
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   fitter.SetSeed(seed_seq);
-  fitter.set_best_initial_prob(best_initial_prob.begin());
-  fitter.set_ln_l_array(ln_l_array.begin());
+  fitter.set_best_initial_prob(
+      std::span<double>(best_initial_prob.begin(), best_initial_prob.size()));
+  fitter.set_ln_l_array(
+      std::span<double>(ln_l_array.begin(), ln_l_array.size()));
 
   bool is_regress = n_feature > 1;
   if (is_regress) {

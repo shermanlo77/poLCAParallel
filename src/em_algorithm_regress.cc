@@ -20,14 +20,15 @@
 #include <algorithm>
 #include <random>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
     double* features, int* responses, std::size_t n_data, std::size_t n_feature,
     std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
     std::size_t n_cluster, unsigned int max_iter, double tolerance,
-    double* posterior, double* prior, double* estimated_prob,
-    double* regress_coeff)
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : polca_parallel::EmAlgorithm(features, responses, n_data, n_feature,
                                   n_category, n_outcomes, sum_outcomes,
                                   n_cluster, max_iter, tolerance, posterior,
@@ -35,6 +36,8 @@ polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
       n_parameters_(n_feature * (n_cluster - 1)),
       gradient_(this->n_parameters_),
       hessian_(this->n_parameters_ * this->n_parameters_) {
+  this->regress_coeff_ = std::move(arma::Mat<double>(
+      regress_coeff.data(), n_feature, n_cluster - 1, false, true));
   this->init_regress_coeff();
 }
 
@@ -55,19 +58,14 @@ void polca_parallel::EmAlgorithmRegress::InitPrior() {
   // restrict regress_coeff for the 0th cluster to be 0
   arma::Mat<double> features(this->features_, this->n_data_, this->n_feature_,
                              false);
-  arma::Mat<double> regress_coeff(this->regress_coeff_, this->n_feature_,
-                                  this->n_cluster_ - 1, false);
-  arma::Mat<double> prior_except_0(this->prior_ + this->n_data_, this->n_data_,
-                                   this->n_cluster_ - 1, false, true);
 
   // for the 0th cluster, eta = 0, prior for 0th cluster propto 1
-  std::fill(this->prior_, this->prior_ + this->n_data_, 1.0);
-  prior_except_0 = arma::exp(features * regress_coeff);
+  this->prior_.col(0).fill(1.0);
+  this->prior_.submat(0, 1, this->n_data_ - 1, this->n_cluster_ - 1) =
+      arma::exp(features * this->regress_coeff_);
 
   // normalise so that prior_ are probabilities
-  arma::Mat<double> prior(this->prior_, this->n_data_, this->n_cluster_, false,
-                          true);
-  prior.each_col() /= arma::sum(prior, 1);
+  this->prior_.each_col() /= arma::sum(this->prior_, 1);
 }
 
 void polca_parallel::EmAlgorithmRegress::FinalPrior() {
@@ -76,7 +74,7 @@ void polca_parallel::EmAlgorithmRegress::FinalPrior() {
 
 double polca_parallel::EmAlgorithmRegress::GetPrior(std::size_t data_index,
                                                     std::size_t cluster_index) {
-  return this->prior_[this->n_data_ * cluster_index + data_index];
+  return this->prior_[data_index + this->n_data_ * cluster_index];
 }
 
 bool polca_parallel::EmAlgorithmRegress::IsInvalidLikelihood(
@@ -99,15 +97,15 @@ bool polca_parallel::EmAlgorithmRegress::MStep() {
   this->CalcHess();
 
   // single Newton step
-  arma::Col<double> regress_coeff(this->regress_coeff_, this->n_parameters_,
-                                  false, true);
   arma::Col<double> gradient(this->gradient_.data(), this->n_parameters_,
                              false);
   arma::Mat<double> hessian(this->hessian_.data(), this->n_parameters_,
                             this->n_parameters_, false);
   try {
-    regress_coeff -=
-        arma::solve(hessian, gradient, arma::solve_opts::likely_sympd);
+    auto result = arma::Col<double>(
+        arma::solve(hessian, gradient, arma::solve_opts::likely_sympd));
+    this->regress_coeff_ -=
+        arma::reshape(result, arma::size(this->regress_coeff_));
   } catch (const std::runtime_error&) {
     return true;
   }
@@ -122,25 +120,20 @@ void polca_parallel::EmAlgorithmRegress::NormalWeightedSumProb(
     std::size_t cluster_index) {
   // override as the normaliser cannot be calculated using prior
   // using sum of posterior instead
-  arma::Col<double> posterior(this->posterior_ + cluster_index * this->n_data_,
-                              this->n_data_, false);
-  double normaliser = arma::sum(posterior);
+  double normaliser = arma::sum(this->posterior_.unsafe_col(cluster_index));
   this->polca_parallel::EmAlgorithm::NormalWeightedSumProb(cluster_index,
                                                            normaliser);
 }
 
 void polca_parallel::EmAlgorithmRegress::init_regress_coeff() {
-  std::fill(this->regress_coeff_, this->regress_coeff_ + this->n_parameters_,
-            0.0);
+  this->regress_coeff_.fill(0.0);
 }
 
 void polca_parallel::EmAlgorithmRegress::CalcGrad() {
   double* gradient = this->gradient_.data();
   for (std::size_t m = 1; m < this->n_cluster_; ++m) {
-    arma::Col<double> posterior_m(this->posterior_ + m * this->n_data_,
-                                  this->n_data_, false);
-    arma::Col<double> prior_m(this->prior_ + m * this->n_data_, this->n_data_,
-                              false);
+    auto posterior_m = this->posterior_.unsafe_col(m);
+    auto prior_m = this->prior_.unsafe_col(m);
     arma::Col<double> post_minus_prior = posterior_m - prior_m;
     for (std::size_t p = 0; p < this->n_feature_; ++p) {
       arma::Col<double> x_p(this->features_ + p * this->n_data_, this->n_data_,
@@ -166,19 +159,19 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
   // when retriving the prior and posterior, use cluster_index + 1 because
   // the hessian does not consider the 0th cluster as the regression
   // coefficient for the 0th cluster is set to zero
-  arma::Col<double> posterior0(
-      this->posterior_ + (cluster_index_0 + 1) * this->n_data_, this->n_data_,
-      false);
-  arma::Col<double> prior0(this->prior_ + (cluster_index_0 + 1) * this->n_data_,
-                           this->n_data_, false);
+
+  auto posterior0 = this->posterior_.unsafe_col(cluster_index_0 + 1);
+  auto prior0 = this->prior_.unsafe_col(cluster_index_0 + 1);
 
   // for the same cluster, copy over results as they will be modified
   bool is_same_cluster = cluster_index_0 == cluster_index_1;
+
   arma::Col<double> posterior1(
-      this->posterior_ + (cluster_index_1 + 1) * this->n_data_, this->n_data_,
-      is_same_cluster);
-  arma::Col<double> prior1(this->prior_ + (cluster_index_1 + 1) * this->n_data_,
-                           this->n_data_, is_same_cluster);
+      this->posterior_.begin() + (cluster_index_1 + 1) * this->n_data_,
+      this->n_data_, is_same_cluster);
+  arma::Col<double> prior1(
+      this->prior_.begin() + (cluster_index_1 + 1) * this->n_data_,
+      this->n_data_, is_same_cluster);
 
   // Suppose r = posterior, pi = prior, u, v = cluster indexs
   // prior_post_inter is the following:

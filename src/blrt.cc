@@ -23,6 +23,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <span>
 #include <thread>
 #include <vector>
 
@@ -130,17 +131,23 @@ void polca_parallel::Blrt::RunThread() {
 
       // generate new initial values
       for (std::size_t i_rep = 1; i_rep < this->n_rep_; ++i_rep) {
-        polca_parallel::GenerateNewProb(
-            *rng, uniform, this->n_outcomes_, this->sum_outcomes_,
-            this->n_category_, this->n_cluster_null_,
+        arma::Mat<double> init_prob_null_i(
             init_prob_null.data() +
-                i_rep * this->sum_outcomes_ * this->n_cluster_null_);
+                i_rep * this->sum_outcomes_ * this->n_cluster_null_,
+            this->sum_outcomes_, this->n_cluster_null_, false, true);
+
+        arma::Mat<double> init_prob_alt_i(
+            init_prob_alt.data() +
+                i_rep * this->sum_outcomes_ * this->n_cluster_alt_,
+            this->sum_outcomes_, this->n_cluster_alt_, false, true);
 
         polca_parallel::GenerateNewProb(
             *rng, uniform, this->n_outcomes_, this->sum_outcomes_,
-            this->n_category_, this->n_cluster_alt_,
-            init_prob_alt.data() +
-                i_rep * this->sum_outcomes_ * this->n_cluster_alt_);
+            this->n_category_, this->n_cluster_null_, init_prob_null_i);
+
+        polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
+                                        this->sum_outcomes_, this->n_category_,
+                                        this->n_cluster_alt_, init_prob_alt_i);
       }
 
       // bootstrap data using null model
@@ -152,9 +159,14 @@ void polca_parallel::Blrt::RunThread() {
           features.data(), bootstrap_data.get(), init_prob_null.data(),
           this->n_data_, 1, this->n_category_, this->n_outcomes_,
           this->sum_outcomes_, this->n_cluster_null_, this->n_rep_,
-          this->max_iter_, this->tolerance_, fitted_posterior_null.data(),
-          fitted_prior_null.data(), fitted_prob_null.data(),
-          fitted_regress_coeff_null.data());
+          this->max_iter_, this->tolerance_,
+          std::span<double>(fitted_posterior_null.begin(),
+                            fitted_posterior_null.size()),
+          std::span<double>(fitted_prior_null.begin(),
+                            fitted_prior_null.size()),
+          std::span<double>(fitted_prob_null.begin(), fitted_prob_null.size()),
+          std::span<double>(fitted_regress_coeff_null.begin(),
+                            fitted_regress_coeff_null.size()));
       null_model.SetRng(&rng);
       null_model.Fit<polca_parallel::EmAlgorithm>();
       rng = null_model.MoveRng();
@@ -164,9 +176,13 @@ void polca_parallel::Blrt::RunThread() {
           features.data(), bootstrap_data.get(), init_prob_alt.data(),
           this->n_data_, 1, this->n_category_, this->n_outcomes_,
           this->sum_outcomes_, this->n_cluster_alt_, this->n_rep_,
-          this->max_iter_, this->tolerance_, fitted_posterior_alt.data(),
-          fitted_prior_alt.data(), fitted_prob_alt.data(),
-          fitted_regress_coeff_alt.data());
+          this->max_iter_, this->tolerance_,
+          std::span<double>(fitted_posterior_alt.begin(),
+                            fitted_posterior_alt.size()),
+          std::span<double>(fitted_prior_alt.begin(), fitted_prior_alt.size()),
+          std::span<double>(fitted_prob_alt.begin(), fitted_prob_alt.size()),
+          std::span<double>(fitted_regress_coeff_alt.begin(),
+                            fitted_regress_coeff_alt.size()));
       alt_model.SetRng(&rng);
       alt_model.Fit<polca_parallel::EmAlgorithm>();
       rng = alt_model.MoveRng();

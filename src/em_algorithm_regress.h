@@ -139,8 +139,9 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
                      std::size_t n_feature, std::size_t n_category,
                      std::size_t* n_outcomes, std::size_t sum_outcomes,
                      std::size_t n_cluster, unsigned int max_iter,
-                     double tolerance, double* posterior, double* prior,
-                     double* estimated_prob, double* regress_coeff);
+                     double tolerance, std::span<double> posterior,
+                     std::span<double> prior, std::span<double> estimated_prob,
+                     std::span<double> regress_coeff);
 
  protected:
   void NewRun(double* initial_prob) override;

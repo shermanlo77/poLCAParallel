@@ -92,28 +92,28 @@ class EmAlgorithmArray {
    * multiple threads. It shall be the same format as the member variable with
    * the same name in EmAlgorithm.
    */
-  double* posterior_;
+  std::span<double> posterior_;
   /**
    * To store the prior result from the best repetition. Accessing and writing
    * should be done with locking and unlocking results_lock_ when using multiple
    * threads. It shall be the same format as the member variable with the same
    * name in EmAlgorithm.
    */
-  double* prior_;
+  std::span<double> prior_;
   /**
    * To store the estimated probabilities from the best repetition. Accessing
    * and writing should be done with locking and unlocking results_lock_ when
    * using multiple threads. It shall be the same format as the member variable
    * with the same name in EmAlgorithm.
    */
-  double* estimated_prob_;
+  std::span<double> estimated_prob_;
   /**
    * To store the regression coefficients from the best repetition. Accessing
    * and writing should be done with locking and unlocking results_lock_ when
    * using multiple threads. It shall be the same format as the member variable
    * with the same name in EmAlgorithm.
    */
-  double* regress_coeff_;
+  std::span<double> regress_coeff_;
 
   /**
    * Optional, to store initial prob to obtain max likelihood or from the best
@@ -121,7 +121,7 @@ class EmAlgorithmArray {
    * results_lock_ when using multiple threads. It shall be the same format as
    * the member variable with the same name in EmAlgorithm.
    */
-  std::optional<double*> best_initial_prob_;
+  std::optional<std::span<double>> best_initial_prob_;
 
   /** Number of initial values to try */
   const std::size_t n_rep_;
@@ -151,7 +151,7 @@ class EmAlgorithmArray {
    * Optional, maximum log-likelihood for each repetition. Set using
    * set_ln_l_array()
    */
-  std::optional<double*> ln_l_array_;
+  std::optional<std::span<double>> ln_l_array_;
   /** Index of which initial value has the best log-likelihood */
   std::size_t best_rep_index_;
   /** Number of threads */
@@ -236,9 +236,10 @@ class EmAlgorithmArray {
                    std::size_t n_category, std::size_t* n_outcomes,
                    std::size_t sum_outcomes, std::size_t n_cluster,
                    std::size_t n_rep, std::size_t n_thread,
-                   unsigned int max_iter, double tolerance, double* posterior,
-                   double* prior, double* estimated_prob,
-                   double* regress_coeff);
+                   unsigned int max_iter, double tolerance,
+                   std::span<double> posterior, std::span<double> prior,
+                   std::span<double> estimated_prob,
+                   std::span<double> regress_coeff);
 
   /**
    * Fit (in parallel) using the EM algorithm
@@ -268,10 +269,10 @@ class EmAlgorithmArray {
    * @param best_initial_prob best_initial_prob to provide to EmAlgorithm
    * objects
    */
-  void set_best_initial_prob(double* best_initial_prob);
+  void set_best_initial_prob(std::span<double> best_initial_prob);
 
   /** Set where to store the log-likelihood for each iteration */
-  void set_ln_l_array(double* ln_l_array);
+  void set_ln_l_array(std::span<double> ln_l_array);
 
   /**
    * Get the index of the repetition with the highest log-likelihood

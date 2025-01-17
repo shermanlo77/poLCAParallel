@@ -20,6 +20,7 @@
 
 #include <vector>
 
+#include "RcppArmadillo.h"
 #include "em_algorithm.h"
 #include "em_algorithm_regress.h"
 
@@ -51,8 +52,10 @@ class EmAlgorithmNanTemplate : public T {
                          std::size_t n_feature, std::size_t n_category,
                          std::size_t* n_outcomes, std::size_t sum_outcomes,
                          std::size_t n_cluster, unsigned int max_iter,
-                         double tolerance, double* posterior, double* prior,
-                         double* estimated_prob, double* regress_coeff);
+                         double tolerance, std::span<double> posterior,
+                         std::span<double> prior,
+                         std::span<double> estimated_prob,
+                         std::span<double> regress_coeff);
 
  protected:
   /**
@@ -69,8 +72,9 @@ class EmAlgorithmNanTemplate : public T {
    */
   void NormalWeightedSumProb(std::size_t cluster_index) override;
 
-  [[nodiscard]] double PosteriorUnnormalize(int* responses_i, double prior,
-                                            double** estimated_prob) override;
+  [[nodiscard]] double PosteriorUnnormalize(
+      int* responses_i, double prior,
+      arma::Col<double>& estimated_prob) override;
 };
 
 /**
@@ -91,8 +95,9 @@ class EmAlgorithmNan : public EmAlgorithmNanTemplate<EmAlgorithm> {
                  std::size_t n_feature, std::size_t n_category,
                  std::size_t* n_outcomes, std::size_t sum_outcomes,
                  std::size_t n_cluster, unsigned int max_iter, double tolerance,
-                 double* posterior, double* prior, double* estimated_prob,
-                 double* regress_coeff);
+                 std::span<double> posterior, std::span<double> prior,
+                 std::span<double> estimated_prob,
+                 std::span<double> regress_coeff);
 };
 
 /**
@@ -114,8 +119,10 @@ class EmAlgorithmNanRegress
                         std::size_t n_feature, std::size_t n_category,
                         std::size_t* n_outcomes, std::size_t sum_outcomes,
                         std::size_t n_cluster, unsigned int max_iter,
-                        double tolerance, double* posterior, double* prior,
-                        double* estimated_prob, double* regress_coeff);
+                        double tolerance, std::span<double> posterior,
+                        std::span<double> prior,
+                        std::span<double> estimated_prob,
+                        std::span<double> regress_coeff);
 };
 
 /**
@@ -160,7 +167,8 @@ class EmAlgorithmNanRegress
 void NanWeightedSumProb(std::size_t cluster_index, int* responses,
                         std::size_t n_data, std::size_t n_category,
                         std::size_t* n_outcomes, std::size_t sum_outcomes,
-                        double* posterior, double* estimated_prob,
+                        arma::Mat<double>& posterior,
+                        arma::Mat<double>& estimated_prob,
                         std::vector<double>& posterior_sum);
 
 /**
@@ -189,7 +197,7 @@ void NanWeightedSumProb(std::size_t cluster_index, int* responses,
 void NanNormalWeightedSumProb(std::size_t cluster_index, std::size_t n_category,
                               std::size_t* n_outcomes, std::size_t sum_outcomes,
                               std::vector<double>& posterior_sum,
-                              double* estimated_prob);
+                              arma::Mat<double>& estimated_prob);
 
 }  // namespace polca_parallel
 

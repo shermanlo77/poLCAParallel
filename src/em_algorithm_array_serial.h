@@ -52,8 +52,10 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
                          std::size_t n_category, std::size_t* n_outcomes,
                          std::size_t sum_outcomes, std::size_t n_cluster,
                          std::size_t n_rep, unsigned int max_iter,
-                         double tolerance, double* posterior, double* prior,
-                         double* estimated_prob, double* regress_coeff);
+                         double tolerance, std::span<double> posterior,
+                         std::span<double> prior,
+                         std::span<double> estimated_prob,
+                         std::span<double> regress_coeff);
 
   /**
    * Set the seed_array_ to contain only one seed and instantiate the rng_

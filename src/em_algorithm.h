@@ -22,7 +22,10 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <span>
 #include <vector>
+
+#include "RcppArmadillo.h"
 
 namespace polca_parallel {
 
@@ -117,7 +120,7 @@ class EmAlgorithm {
    *   <li>dim 1: for each cluster</li>
    * </ul>
    */
-  double* posterior_;
+  arma::Mat<double> posterior_;
   /**
    * Design matrix of prior probabilities. It's the probability a data point is
    * in cluster m NOT given responses after calculations. The matrix has the
@@ -130,23 +133,24 @@ class EmAlgorithm {
    * method GetPrior() to get the prior for a data point and cluster rather than
    * accessing the member variable direction
    */
-  double* prior_;
+  arma::Mat<double> prior_;
   /**
-   * Vector of estimated response probabilities, conditioned on cluster, for
+   * Matrix of estimated response probabilities, conditioned on cluster, for
    * each category. A flattened list in the following order
    * <ul>
-   *   <li>dim 0: for each outcome</li>
-   *   <li>dim 1: for each category</li>
-   *   <li>dim 2: for each cluster</li>
+   *   <li>
+   *     dim 0: for each outcome | category (inner), for each category (outer)
+   *   </li>
+   *   <li>dim 1: for each cluster</li>
    * </ul>
    */
-  double* estimated_prob_;
+  arma::Mat<double> estimated_prob_;
   /**
    * Vector length n_features_*(n_cluster-1), linear regression coefficient
    * in matrix form, to be multiplied to the features and linked to the
    * prior using softmax
    */
-  double* regress_coeff_;
+  arma::Mat<double> regress_coeff_;
   /**
    * Optional, vector of INITIAL response probabilities used to get the maximum
    * log-likelihood, this member variable is optional, set to NULL if not used.
@@ -158,7 +162,7 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  std::optional<double*> best_initial_prob_;
+  std::optional<std::span<double>> best_initial_prob_;
 
   /** Log likelihood, updated at each iteration of EM */
   double ln_l_ = -INFINITY;
@@ -166,7 +170,7 @@ class EmAlgorithm {
    * Vector, for each data point, the log-likelihood for each data point, the
    * total log-likelihood is the sum
    */
-  std::vector<double> ln_l_array_;
+  arma::Col<double> ln_l_array_;
   /** Number of iterations done right now */
   unsigned int n_iter_ = 0;
   /**
@@ -237,8 +241,9 @@ class EmAlgorithm {
               std::size_t n_feature, std::size_t n_category,
               std::size_t* n_outcomes, std::size_t sum_outcomes,
               std::size_t n_cluster, unsigned int max_iter, double tolerance,
-              double* posterior, double* prior, double* estimated_prob,
-              double* regress_coeff);
+              std::span<double> posterior, std::span<double> prior,
+              std::span<double> estimated_prob,
+              std::span<double> regress_coeff);
 
   /**
    * Fit data to model using EM algorithm
@@ -282,7 +287,7 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  void set_best_initial_prob(double* best_initial_prob);
+  void set_best_initial_prob(std::span<double> best_initial_prob);
 
   /** Get the log-likelihood */
   [[nodiscard]] double get_ln_l();
@@ -363,17 +368,16 @@ class EmAlgorithm {
    *
    * @param data_index data point index 0, 1, 2, ..., n_data - 1
    * @param cluster_index cluster index 0, 1, 2, ..., n_cluster - 1
-   * @param estimated_prob pointer to estimated probabilities for the
-   * corresponding cluster. This is modified to point to the probabilities for
-   * the next cluster. It points to a flattened list in the following order
+   * @param estimated_prob A column view of estimated_prob_. This is modified to
+   * point to the probabilities for the next cluster. It points to a flattened
+   * list in the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
    *   <li>dim 1: for each category</li>
    * </ul>
    */
-  [[nodiscard]] virtual double PosteriorUnnormalize(int* responses_i,
-                                                    double prior,
-                                                    double** estimated_prob);
+  [[nodiscard]] virtual double PosteriorUnnormalize(
+      int* responses_i, double prior, arma::Col<double>& estimated_prob);
 
   /**
    * Check if the likelihood is invalid
@@ -472,9 +476,9 @@ class EmAlgorithm {
  * @param responses_i the responses for a given data point, length n_catgeory
  * @param n_catgeory number of categories
  * @param n_outcomes number of outcomes for each category
- * @param estimated_prob pointer to estimated probabilities for the
- * corresponding cluster. This is modified to point to the probabilities for
- * the next cluster. It points to a flattened list in the following order
+ * @param estimated_prob A column view of estimated_prob_. This is modified to
+ * point to the probabilities for the next cluster. It points to a flattened
+ * list in the following order
  * <ul>
  *   <li>dim 0: for each outcome</li>
  *   <li>dim 1: for each category</li>
@@ -486,7 +490,7 @@ template <bool is_check_zero = false>
 [[nodiscard]] double PosteriorUnnormalize(int* responses_i,
                                           std::size_t n_category,
                                           std::size_t* n_outcomes,
-                                          double** estimated_prob,
+                                          arma::Col<double>& estimated_prob,
                                           double prior);
 
 /**
@@ -499,20 +503,18 @@ template <bool is_check_zero = false>
  * @param sum_outcomes sum of n_outcomes
  * @param n_category number of categories
  * @param n_cluster number of clusters
- * @param prob output, vector of random response probabilities, conditioned on
- * cluster, for each outcome, category and cluster, flattened list in the
- * following order
+ * @param prob output, matrix of random response probabilities, conditioned on
+ * cluster, for each outcome, category and cluster
  * <ul>
- *   <li>dim 0: for each outcome</li>
- *   <li>dim 1: for each category</li>
- *   <li>dim 2: for each cluster</li>
+ *   <li>dim 0: for each outcome (inner), for each category (outer)</li>
+ *   <li>dim 1: for each cluster</li>
  * </ul>
  */
 void GenerateNewProb(std::mt19937_64& rng,
                      std::uniform_real_distribution<double>& uniform,
                      std::size_t* n_outcomes, std::size_t sum_outcomes,
                      std::size_t n_category, std::size_t n_cluster,
-                     double* prob);
+                     arma::Mat<double>& prob);
 
 }  // namespace polca_parallel
 

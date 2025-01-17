@@ -22,6 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <span>
 #include <thread>
 #include <vector>
 
@@ -52,8 +53,8 @@ polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
     std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
     std::size_t sum_outcomes, std::size_t n_cluster, std::size_t n_rep,
     std::size_t n_thread, unsigned int max_iter, double tolerance,
-    double* posterior, double* prior, double* estimated_prob,
-    double* regress_coeff)
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : features_(features),
       responses_(responses),
       n_data_(n_data),
@@ -93,11 +94,12 @@ void polca_parallel::EmAlgorithmArray::SetSeed(std::seed_seq& seed) {
 }
 
 void polca_parallel::EmAlgorithmArray::set_best_initial_prob(
-    double* best_initial_prob) {
+    std::span<double> best_initial_prob) {
   this->best_initial_prob_ = best_initial_prob;
 }
 
-void polca_parallel::EmAlgorithmArray::set_ln_l_array(double* ln_l_array) {
+void polca_parallel::EmAlgorithmArray::set_ln_l_array(
+    std::span<double> ln_l_array) {
   this->ln_l_array_ = ln_l_array;
 }
 
@@ -148,10 +150,14 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
       std::make_unique<EmAlgorithmType>(
           this->features_, this->responses_, n_data, n_feature,
           this->n_category_, this->n_outcomes_, sum_outcomes, n_cluster,
-          this->max_iter_, this->tolerance_, posterior.data(), prior.data(),
-          estimated_prob.data(), regress_coeff.data());
-  if (this->best_initial_prob_.has_value()) {
-    fitter->set_best_initial_prob(best_initial_prob.data());
+          this->max_iter_, this->tolerance_,
+          std::span<double>(posterior.begin(), posterior.size()),
+          std::span<double>(prior.begin(), prior.size()),
+          std::span<double>(estimated_prob.begin(), estimated_prob.size()),
+          std::span<double>(regress_coeff.begin(), regress_coeff.size()));
+  if (this->best_initial_prob_) {
+    fitter->set_best_initial_prob(
+        std::span<double>(best_initial_prob.begin(), best_initial_prob.size()));
   }
 
   // which initial probability this thread is working on
@@ -180,7 +186,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
 
       fitter->Fit();
       ln_l = fitter->get_ln_l();
-      if (this->ln_l_array_.has_value()) {
+      if (this->ln_l_array_) {
         this->ln_l_array_.value()[rep_index] = ln_l;
       }
 
@@ -196,15 +202,15 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
         this->optimal_ln_l_ = ln_l;
         this->n_iter_ = fitter->get_n_iter();
 
-        std::copy(posterior.begin(), posterior.end(), this->posterior_);
-        std::copy(prior.begin(), prior.end(), this->prior_);
+        std::copy(posterior.begin(), posterior.end(), this->posterior_.begin());
+        std::copy(prior.begin(), prior.end(), this->prior_.begin());
         std::copy(estimated_prob.begin(), estimated_prob.end(),
-                  this->estimated_prob_);
+                  this->estimated_prob_.begin());
         std::copy(regress_coeff.begin(), regress_coeff.end(),
-                  this->regress_coeff_);
-        if (this->best_initial_prob_.has_value()) {
+                  this->regress_coeff_.begin());
+        if (this->best_initial_prob_) {
           std::copy(best_initial_prob.begin(), best_initial_prob.end(),
-                    this->best_initial_prob_.value());
+                    this->best_initial_prob_.value().begin());
         }
       }
       this->results_lock_.unlock();
