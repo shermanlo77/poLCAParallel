@@ -23,6 +23,7 @@
 #include "RcppArmadillo.h"
 #include "em_algorithm.h"
 #include "em_algorithm_regress.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -48,9 +49,9 @@ class EmAlgorithmNanTemplate : public T {
    *
    * @copydoc EmAlgorithm::EmAlgorithm
    */
-  EmAlgorithmNanTemplate(double* features, int* responses, std::size_t n_data,
-                         std::size_t n_feature, std::size_t n_category,
-                         std::size_t* n_outcomes, std::size_t sum_outcomes,
+  EmAlgorithmNanTemplate(std::span<double> features, std::span<int> responses,
+                         std::size_t n_data, std::size_t n_feature,
+                         std::size_t n_category, NOutcomes n_outcomes,
                          std::size_t n_cluster, unsigned int max_iter,
                          double tolerance, std::span<double> posterior,
                          std::span<double> prior,
@@ -73,7 +74,7 @@ class EmAlgorithmNanTemplate : public T {
   void NormalWeightedSumProb(std::size_t cluster_index) override;
 
   [[nodiscard]] double PosteriorUnnormalize(
-      int* responses_i, double prior,
+      std::span<int> responses_i, double prior,
       arma::Col<double>& estimated_prob) override;
 };
 
@@ -91,9 +92,9 @@ class EmAlgorithmNan : public EmAlgorithmNanTemplate<EmAlgorithm> {
    *
    * @copydoc EmAlgorithm::EmAlgorithm
    */
-  EmAlgorithmNan(double* features, int* responses, std::size_t n_data,
-                 std::size_t n_feature, std::size_t n_category,
-                 std::size_t* n_outcomes, std::size_t sum_outcomes,
+  EmAlgorithmNan(std::span<double> features, std::span<int> responses,
+                 std::size_t n_data, std::size_t n_feature,
+                 std::size_t n_category, NOutcomes n_outcomes,
                  std::size_t n_cluster, unsigned int max_iter, double tolerance,
                  std::span<double> posterior, std::span<double> prior,
                  std::span<double> estimated_prob,
@@ -115,9 +116,9 @@ class EmAlgorithmNanRegress
    *
    * @copydoc EmAlgorithm::EmAlgorithmRegress
    */
-  EmAlgorithmNanRegress(double* features, int* responses, std::size_t n_data,
-                        std::size_t n_feature, std::size_t n_category,
-                        std::size_t* n_outcomes, std::size_t sum_outcomes,
+  EmAlgorithmNanRegress(std::span<double> features, std::span<int> responses,
+                        std::size_t n_data, std::size_t n_feature,
+                        std::size_t n_category, NOutcomes n_outcomes,
                         std::size_t n_cluster, unsigned int max_iter,
                         double tolerance, std::span<double> posterior,
                         std::span<double> prior,
@@ -145,7 +146,6 @@ class EmAlgorithmNanRegress
  * @param n_data Number of data points
  * @param n_category Number of categories
  * @param n_outcomes Vector of number of outcomes for each category
- * @param sum_outcomes Sum of n_outcomes
  * @param posterior Design matrix of posterior probabilities (also called
  * responsibility). It's the probability a data point is in cluster m given
  * responses. The matrix has the following dimensions
@@ -164,9 +164,9 @@ class EmAlgorithmNanRegress
  * @param posterior_sum Modified to store the cumulative posterior sum for each
  * category
  */
-void NanWeightedSumProb(std::size_t cluster_index, int* responses,
+void NanWeightedSumProb(std::size_t cluster_index, std::span<int> responses,
                         std::size_t n_data, std::size_t n_category,
-                        std::size_t* n_outcomes, std::size_t sum_outcomes,
+                        std::span<std::size_t> n_outcomes,
                         arma::Mat<double>& posterior,
                         arma::Mat<double>& estimated_prob,
                         std::vector<double>& posterior_sum);
@@ -182,7 +182,6 @@ void NanWeightedSumProb(std::size_t cluster_index, int* responses,
  * @param cluster_index which cluster to consider
  * @param n_category Number of categories
  * @param n_outcomes Vector of number of outcomes for each category
- * @param sum_outcomes Sum of n_outcomes
  * @param posterior_sum Vector which stores the resulting cumulative posterior
  * sum for each category
  * @param estimated_prob Modified to contain the estimated response
@@ -195,7 +194,7 @@ void NanWeightedSumProb(std::size_t cluster_index, int* responses,
  * </ul>
  */
 void NanNormalWeightedSumProb(std::size_t cluster_index, std::size_t n_category,
-                              std::size_t* n_outcomes, std::size_t sum_outcomes,
+                              std::span<std::size_t> n_outcomes,
                               std::vector<double>& posterior_sum,
                               arma::Mat<double>& estimated_prob);
 

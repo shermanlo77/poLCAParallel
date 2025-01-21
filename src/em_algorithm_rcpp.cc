@@ -24,6 +24,7 @@
 #include "em_algorithm_array.h"
 #include "em_algorithm_nan.h"
 #include "poLCA.c"
+#include "util.h"
 
 /**
  * Function to be exported to R, fit using the EM algorithm
@@ -80,35 +81,30 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
                            Rcpp::IntegerMatrix responses,
                            Rcpp::NumericVector initial_prob, std::size_t n_data,
                            std::size_t n_feature, std::size_t n_category,
-                           Rcpp::IntegerVector n_outcomes,
+                           Rcpp::IntegerVector n_outcomes_int,
                            std::size_t n_cluster, std::size_t n_rep, bool na_rm,
                            std::size_t n_thread, unsigned int max_iter,
                            double tolerance, Rcpp::IntegerVector seed) {
-  std::size_t sum_outcomes = 0;  // calculate sum of number of outcomes
-  int* n_outcomes_array = n_outcomes.begin();
-
-  std::vector<std::size_t> n_outcomes_size_t(n_category);
-  std::size_t n_outcomes_i;
-  for (std::size_t i = 0; i < n_category; ++i) {
-    n_outcomes_i = static_cast<std::size_t>(n_outcomes_array[i]);
-    n_outcomes_size_t.at(i) = n_outcomes_i;
-    sum_outcomes += n_outcomes_i;
-  }
+  std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
+                                             n_outcomes_int.end());
+  polca_parallel::NOutcomes n_outcomes(n_outcomes_size_t.data(),
+                                       n_outcomes_size_t.size());
 
   // allocate matrices to pass pointers to C++ code
   Rcpp::NumericMatrix posterior(n_data, n_cluster);
   Rcpp::NumericMatrix prior(n_data, n_cluster);
-  Rcpp::NumericVector estimated_prob(sum_outcomes * n_cluster);
+  Rcpp::NumericVector estimated_prob(n_outcomes.sum() * n_cluster);
   Rcpp::NumericVector regress_coeff(n_feature * (n_cluster - 1));
   Rcpp::NumericVector ln_l_array(n_rep);
-  Rcpp::NumericVector best_initial_prob(sum_outcomes * n_cluster);
+  Rcpp::NumericVector best_initial_prob(n_outcomes.sum() * n_cluster);
 
   // fit using EM algorithm
   polca_parallel::EmAlgorithmArray fitter(
-      features.begin(), responses.begin(), initial_prob.begin(), n_data,
-      n_feature, n_category, n_outcomes_size_t.data(), sum_outcomes, n_cluster,
-      n_rep, n_thread, max_iter, tolerance,
-      std::span<double>(posterior.begin(), posterior.size()),
+      std::span<double>(features.begin(), features.size()),
+      std::span<int>(responses.begin(), responses.size()),
+      std::span<double>(initial_prob.begin(), initial_prob.size()), n_data,
+      n_feature, n_category, n_outcomes, n_cluster, n_rep, n_thread, max_iter,
+      tolerance, std::span<double>(posterior.begin(), posterior.size()),
       std::span<double>(prior.begin(), prior.size()),
       std::span<double>(estimated_prob.begin(), estimated_prob.size()),
       std::span<double>(regress_coeff.begin(), regress_coeff.size()));

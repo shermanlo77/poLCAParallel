@@ -19,6 +19,7 @@
 
 #include "RcppArmadillo.h"
 #include "blrt.h"
+#include "util.h"
 
 /**
  * Function to be exported to R, does bootstrap likelihood ratio test
@@ -99,8 +100,9 @@ Rcpp::NumericVector BlrtRcpp(
   polca_parallel::Blrt blrt(
       prior_null.begin(), prob_null.begin(), n_cluster_null, prior_alt.begin(),
       prob_alt.begin(), n_cluster_alt, n_data, n_category,
-      n_outcomes_size_t.data(), sum_outcomes, n_bootstrap, n_rep, n_thread,
-      max_iter, tolerance, ratio_array.begin());
+      polca_parallel::NOutcomes(n_outcomes_size_t.data(),
+                                n_outcomes_size_t.size()),
+      n_bootstrap, n_rep, n_thread, max_iter, tolerance, ratio_array.begin());
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   blrt.SetSeed(seed_seq);

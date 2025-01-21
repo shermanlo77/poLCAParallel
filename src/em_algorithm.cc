@@ -28,26 +28,27 @@
 #include <vector>
 
 #include "RcppArmadillo.h"
+#include "util.h"
 
 polca_parallel::EmAlgorithm::EmAlgorithm(
-    double* features, int* responses, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
-    std::size_t n_cluster, unsigned int max_iter, double tolerance,
-    std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
-    : features_(features),
+    std::span<double> features, std::span<int> responses, std::size_t n_data,
+    std::size_t n_feature, std::size_t n_category,
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
+    : features_(features.data(), n_data, n_feature, false, true),
       responses_(responses),
       n_data_(n_data),
       n_feature_(n_feature),
       n_category_(n_category),
       n_outcomes_(n_outcomes),
-      sum_outcomes_(sum_outcomes),
       n_cluster_(n_cluster),
       max_iter_(max_iter),
       tolerance_(tolerance),
       posterior_(posterior.data(), n_data, n_cluster, false, true),
       prior_(prior.data(), n_data, n_cluster, false, true),
-      estimated_prob_(estimated_prob.data(), sum_outcomes, n_cluster, false,
+      estimated_prob_(estimated_prob.data(), n_outcomes.sum(), n_cluster, false,
                       true),
       ln_l_array_(n_data) {
   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -66,8 +67,7 @@ void polca_parallel::EmAlgorithm::Fit() {
   while (!is_success) {
     if (is_first_run) {
       // copy initial prob to estimated prob
-      std::copy(this->initial_prob_,
-                this->initial_prob_ + this->n_cluster_ * this->sum_outcomes_,
+      std::copy(this->initial_prob_.begin(), this->initial_prob_.end(),
                 this->estimated_prob_.begin());
     } else {
       // reach this condition if the first run has a problem
@@ -134,7 +134,7 @@ void polca_parallel::EmAlgorithm::Fit() {
   this->FinalPrior();
 }
 
-void polca_parallel::EmAlgorithm::NewRun(double* initial_prob) {
+void polca_parallel::EmAlgorithm::NewRun(std::span<double> initial_prob) {
   this->initial_prob_ = initial_prob;
   this->ln_l_ = -INFINITY;
   this->n_iter_ = 0;
@@ -174,8 +174,8 @@ void polca_parallel::EmAlgorithm::Reset(
   // generate random number for estimated_prob_
   this->has_restarted_ = true;
   polca_parallel::GenerateNewProb(*this->rng_, uniform, this->n_outcomes_,
-                                  this->sum_outcomes_, this->n_category_,
-                                  this->n_cluster_, this->estimated_prob_);
+                                  this->n_category_, this->n_cluster_,
+                                  this->estimated_prob_);
 }
 
 void polca_parallel::EmAlgorithm::InitPrior() {
@@ -202,13 +202,13 @@ double polca_parallel::EmAlgorithm::GetPrior(std::size_t data_index,
 }
 
 void polca_parallel::EmAlgorithm::EStep() {
-  int* responses_i;
   double prior;
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
+    auto responses_i =
+        this->responses_.subspan(i_data * this->n_category_, this->n_category_);
     for (std::size_t i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
       // access to posterior_ in this manner should result in cache misses
       // however PosteriorUnnormalize() is designed for cache efficiency
-      responses_i = this->responses_ + (i_data * this->n_category_);
       prior = this->GetPrior(i_data, i_cluster);
       auto estimated_prob = this->estimated_prob_.unsafe_col(i_cluster);
       this->posterior_[i_cluster * this->n_data_ + i_data] =
@@ -222,7 +222,8 @@ void polca_parallel::EmAlgorithm::EStep() {
 }
 
 double polca_parallel::EmAlgorithm::PosteriorUnnormalize(
-    int* responses_i, double prior, arma::Col<double>& estimated_prob) {
+    std::span<int> responses_i, double prior,
+    arma::Col<double>& estimated_prob) {
   return polca_parallel::PosteriorUnnormalize(
       responses_i, this->n_category_, this->n_outcomes_, estimated_prob, prior);
 }
@@ -256,23 +257,20 @@ void polca_parallel::EmAlgorithm::EstimateProbability() {
 }
 
 void polca_parallel::EmAlgorithm::WeightedSumProb(std::size_t cluster_index) {
-  int y;
+  auto y = this->responses_.begin();
   // point to outcome probabilites for given cluster for the zeroth category
   arma::Col<double> estimated_prob_col =
       this->estimated_prob_.unsafe_col(cluster_index);
   arma::Col<double>::iterator estimated_prob_iter;
-  double posterior_i;
 
-  for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
+  for (double posterior_i : this->posterior_.unsafe_col(cluster_index)) {
     estimated_prob_iter = estimated_prob_col.begin();
-    posterior_i = this->posterior_[cluster_index * this->n_data_ + i_data];
-    for (std::size_t i_category = 0; i_category < this->n_category_;
-         ++i_category) {
+    for (std::size_t n_outcome_j : this->n_outcomes_) {
       // selective summing of posterior
-      y = this->responses_[i_data * this->n_category_ + i_category];
-      *std::next(estimated_prob_iter, y - 1) += posterior_i;
+      *std::next(estimated_prob_iter, *y - 1) += posterior_i;
       // point to next category
-      std::advance(estimated_prob_iter, this->n_outcomes_[i_category]);
+      std::advance(y, 1);
+      std::advance(estimated_prob_iter, n_outcome_j);
     }
   }
 }
@@ -298,17 +296,19 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(
 }
 
 template double polca_parallel::PosteriorUnnormalize<false>(
-    int* responses_i, std::size_t n_category, std::size_t* n_outcomes,
-    arma::Col<double>& estimated_prob, double prior);
+    std::span<int> responses_i, std::size_t n_category,
+    std::span<std::size_t> n_outcomes, arma::Col<double>& estimated_prob,
+    double prior);
 
 template double polca_parallel::PosteriorUnnormalize<true>(
-    int* responses_i, std::size_t n_category, std::size_t* n_outcomes,
-    arma::Col<double>& estimated_prob, double prior);
+    std::span<int> responses_i, std::size_t n_category,
+    std::span<std::size_t> n_outcomes, arma::Col<double>& estimated_prob,
+    double prior);
 
 template <bool is_check_zero>
-double polca_parallel::PosteriorUnnormalize(int* responses_i,
+double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
                                             std::size_t n_category,
-                                            std::size_t* n_outcomes,
+                                            std::span<std::size_t> n_outcomes,
                                             arma::Col<double>& estimated_prob,
                                             double prior) {
   // designed for cache efficiency here
@@ -316,7 +316,9 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
   // used for calculating the posterior probability up to a constant
   // P(cluster m | Y^{(i)})
   double posterior;
-  int y;  // for getting a response from responses_
+  // for getting a response from responses_
+  int y;
+  auto responses_i_it = responses_i.begin();
 
   bool use_sum_log = false;
 
@@ -327,8 +329,9 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
   auto estimated_prob_it = estimated_prob.begin();
 
   // calculate conditioned on cluster m likelihood
-  for (std::size_t j = 0; j < n_category; ++j) {
-    y = responses_i[j];  // cache hit by accesing adjacent memory
+  for (std::size_t n_outcome : n_outcomes) {
+    y = *responses_i_it;  // cache hit by accesing adjacent memory
+    std::advance(responses_i_it, 1);
     // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
 
     if constexpr (is_check_zero) {
@@ -340,7 +343,7 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
     }
 
     // increment to point to the next category
-    std::advance(estimated_prob_it, n_outcomes[j]);
+    std::advance(estimated_prob_it, n_outcome);
 
     // check for underflow
     if (likelihood < polca_parallel::EmAlgorithm::kUnderflowThreshold) {
@@ -356,9 +359,12 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
   } else {
     double log_likelihood = 0;
     auto estimated_prob_it_2 = estimated_prob.begin();
+    // for getting a response from responses_
+    auto responses_i_it_2 = responses_i.begin();
     // calculate conditioned on cluster m likelihood
-    for (std::size_t j = 0; j < n_category; ++j) {
-      y = responses_i[j];  // cache hit by accesing adjacent memory
+    for (std::size_t n_outcome : n_outcomes) {
+      y = *responses_i_it_2;  // cache hit by accesing adjacent memory
+      std::advance(responses_i_it_2, 1);
       // cache hit in estimated_prob by accessing memory n_outcomes + y -1
       // away
       if constexpr (is_check_zero) {
@@ -369,7 +375,7 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
         log_likelihood += std::log(*std::next(estimated_prob_it_2, y - 1));
       }
       // increment to point to the next category
-      std::advance(estimated_prob_it_2, n_outcomes[j]);
+      std::advance(estimated_prob_it_2, n_outcome);
     }
     posterior = log_likelihood + std::log(prior);
     posterior = std::exp(posterior);
@@ -380,20 +386,18 @@ double polca_parallel::PosteriorUnnormalize(int* responses_i,
 
 void polca_parallel::GenerateNewProb(
     std::mt19937_64& rng, std::uniform_real_distribution<double>& uniform,
-    std::size_t* n_outcomes, std::size_t sum_outcomes, std::size_t n_category,
-    std::size_t n_cluster, arma::Mat<double>& prob) {
+    std::span<size_t> n_outcomes, std::size_t n_category, std::size_t n_cluster,
+    arma::Mat<double>& prob) {
   for (auto& prob_i : prob) {
     prob_i = uniform(rng);
   }
   // normalise to probabilities
-  std::size_t n_outcome;
   for (std::size_t m = 0; m < n_cluster; ++m) {
     auto prob_col = prob.unsafe_col(m).begin();
-    for (std::size_t j = 0; j < n_category; ++j) {
-      n_outcome = n_outcomes[j];
-      arma::Col<double> prob_vector(prob_col, n_outcome, false, true);
+    for (std::size_t n_outcome_i : n_outcomes) {
+      arma::Col<double> prob_vector(prob_col, n_outcome_i, false, true);
       prob_vector /= arma::sum(prob_vector);
-      std::advance(prob_col, n_outcome);
+      std::advance(prob_col, n_outcome_i);
     }
   }
 }

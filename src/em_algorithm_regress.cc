@@ -23,16 +23,19 @@
 #include <utility>
 #include <vector>
 
+#include "util.h"
+
 polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
-    double* features, int* responses, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
-    std::size_t n_cluster, unsigned int max_iter, double tolerance,
-    std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
+    std::span<double> features, std::span<int> responses, std::size_t n_data,
+    std::size_t n_feature, std::size_t n_category,
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
     : polca_parallel::EmAlgorithm(features, responses, n_data, n_feature,
-                                  n_category, n_outcomes, sum_outcomes,
-                                  n_cluster, max_iter, tolerance, posterior,
-                                  prior, estimated_prob, regress_coeff),
+                                  n_category, n_outcomes, n_cluster, max_iter,
+                                  tolerance, posterior, prior, estimated_prob,
+                                  regress_coeff),
       n_parameters_(n_feature * (n_cluster - 1)),
       gradient_(this->n_parameters_),
       hessian_(this->n_parameters_ * this->n_parameters_) {
@@ -41,7 +44,8 @@ polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
   this->init_regress_coeff();
 }
 
-void polca_parallel::EmAlgorithmRegress::NewRun(double* initial_prob) {
+void polca_parallel::EmAlgorithmRegress::NewRun(
+    std::span<double> initial_prob) {
   this->polca_parallel::EmAlgorithm::NewRun(initial_prob);
   this->init_regress_coeff();
 }
@@ -56,13 +60,10 @@ void polca_parallel::EmAlgorithmRegress::InitPrior() {
   // matrix multiply: eta = features x regress_coeff
   // then into softmax, ie prior probability proportional to exp(eta)
   // restrict regress_coeff for the 0th cluster to be 0
-  arma::Mat<double> features(this->features_, this->n_data_, this->n_feature_,
-                             false);
-
   // for the 0th cluster, eta = 0, prior for 0th cluster propto 1
   this->prior_.col(0).fill(1.0);
   this->prior_.submat(0, 1, this->n_data_ - 1, this->n_cluster_ - 1) =
-      arma::exp(features * this->regress_coeff_);
+      arma::exp(this->features_ * this->regress_coeff_);
 
   // normalise so that prior_ are probabilities
   this->prior_.each_col() /= arma::sum(this->prior_, 1);
@@ -136,9 +137,7 @@ void polca_parallel::EmAlgorithmRegress::CalcGrad() {
     auto prior_m = this->prior_.unsafe_col(m);
     arma::Col<double> post_minus_prior = posterior_m - prior_m;
     for (std::size_t p = 0; p < this->n_feature_; ++p) {
-      arma::Col<double> x_p(this->features_ + p * this->n_data_, this->n_data_,
-                            false);
-      *gradient = arma::dot(x_p, post_minus_prior);
+      *gradient = arma::dot(this->features_.unsafe_col(p), post_minus_prior);
       ++gradient;
     }
   }
@@ -212,11 +211,9 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
 double polca_parallel::EmAlgorithmRegress::CalcHessElement(
     std::size_t feature_index_0, std::size_t feature_index_1,
     arma::Col<double>& prior_post_inter) {
-  arma::Col<double> feature0(this->features_ + feature_index_0 * this->n_data_,
-                             this->n_data_, false);
-  arma::Col<double> feature1(this->features_ + feature_index_1 * this->n_data_,
-                             this->n_data_, false);
-  return arma::sum(feature0 % feature1 % prior_post_inter);
+  return arma::sum(this->features_.unsafe_col(feature_index_0) %
+                   this->features_.unsafe_col(feature_index_1) %
+                   prior_post_inter);
 }
 
 double* polca_parallel::EmAlgorithmRegress::HessianAt(

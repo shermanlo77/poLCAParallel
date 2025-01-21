@@ -23,6 +23,7 @@
 
 #include "RcppArmadillo.h"
 #include "goodness_fit.h"
+#include "util.h"
 
 /**
  * Function to be exported to R, goodness of fit statistics
@@ -57,13 +58,10 @@ Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                            Rcpp::NumericVector prior,
                            Rcpp::NumericVector outcome_prob, std::size_t n_data,
                            std::size_t n_obs, std::size_t n_category,
-                           Rcpp::IntegerVector n_outcomes,
+                           Rcpp::IntegerVector n_outcomes_int,
                            std ::size_t n_cluster) {
-  int* n_outcomes_array = n_outcomes.begin();
-  std::vector<std::size_t> n_outcomes_size_t(n_category);
-  for (std::size_t i = 0; i < n_category; ++i) {
-    n_outcomes_size_t.at(i) = static_cast<std::size_t>(n_outcomes_array[i]);
-  }
+  std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
+                                             n_outcomes_int.end());
 
   // get observed and expected frequencies for each unique response
   // having problems doing static allocation and passing the pointer

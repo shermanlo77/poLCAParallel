@@ -24,6 +24,7 @@
 #include <random>
 
 #include "em_algorithm.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -64,12 +65,12 @@ class EmAlgorithmArray {
   /**
    * Features to provide EmAlgorithm with. See EmAlgorithm for further details.
    */
-  double* features_;
+  std::span<double> features_;
   /**
    * Responses to provide EmAlgorithm with. See EmAlgorithm for further details.
    * format.
    */
-  int* responses_;
+  std::span<int> responses_;
   /** Number of data points */
   const std::size_t n_data_;
   /** Number of features */
@@ -77,9 +78,7 @@ class EmAlgorithmArray {
   /** Number of categories */
   const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  std::size_t* n_outcomes_;
-  /** Sum of n_outcomes_ */
-  const std::size_t sum_outcomes_;
+  NOutcomes n_outcomes_;
   /** Number of clusters (classes in literature) to fit */
   const std::size_t n_cluster_;
   /** Maximum number of iterations for EM algorithm */
@@ -138,9 +137,9 @@ class EmAlgorithmArray {
   bool has_restarted_ = false;
   /**
    * An array of initial probabilities, each repetition uses
-   * sum_outcomes*n_cluster probabilities
+   * n_outcomes.sum()*n_cluster probabilities
    */
-  double* initial_prob_;
+  std::span<double> initial_prob_;
   /**
    * The latest initial value is being worked on. Accessing and writing should
    * be done with locking and unlocking n_rep_done_lock_ when using multiple
@@ -197,8 +196,8 @@ class EmAlgorithmArray {
    * @param n_data Number of data points
    * @param n_feature Number of features
    * @param n_category Number of categories
-   * @param n_outcomes Array of the number of outcomes, for each category
-   * @param sum_outcomes Sum of all integers in n_outcomes
+   * @param n_outcomes Array of the number of outcomes for each category and its
+   * sum
    * @param n_cluster Number of clusters to fit
    * @param n_rep Number of repetitions to do, this defines dim 3 of
    * initial_prob
@@ -231,10 +230,10 @@ class EmAlgorithmArray {
    * form, to be multiplied to the features and linked to the prior
    * using softmax
    */
-  EmAlgorithmArray(double* features, int* responses, double* initial_prob,
-                   std::size_t n_data, std::size_t n_feature,
-                   std::size_t n_category, std::size_t* n_outcomes,
-                   std::size_t sum_outcomes, std::size_t n_cluster,
+  EmAlgorithmArray(std::span<double> features, std::span<int> responses,
+                   std::span<double> initial_prob, std::size_t n_data,
+                   std::size_t n_feature, std::size_t n_category,
+                   NOutcomes n_outcomes, std::size_t n_cluster,
                    std::size_t n_rep, std::size_t n_thread,
                    unsigned int max_iter, double tolerance,
                    std::span<double> posterior, std::span<double> prior,

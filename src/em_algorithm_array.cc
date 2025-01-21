@@ -29,6 +29,7 @@
 #include "em_algorithm.h"
 #include "em_algorithm_nan.h"
 #include "em_algorithm_regress.h"
+#include "util.h"
 
 template void
 polca_parallel::EmAlgorithmArray::Fit<polca_parallel::EmAlgorithm>();
@@ -49,19 +50,19 @@ template void polca_parallel::EmAlgorithmArray::FitThread<
     polca_parallel::EmAlgorithmNanRegress>();
 
 polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
-    double* features, int* responses, double* initial_prob, std::size_t n_data,
-    std::size_t n_feature, std::size_t n_category, std::size_t* n_outcomes,
-    std::size_t sum_outcomes, std::size_t n_cluster, std::size_t n_rep,
-    std::size_t n_thread, unsigned int max_iter, double tolerance,
-    std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
+    std::span<double> features, std::span<int> responses,
+    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, std::size_t n_rep, std::size_t n_thread,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
     : features_(features),
       responses_(responses),
       n_data_(n_data),
       n_feature_(n_feature),
       n_category_(n_category),
       n_outcomes_(n_outcomes),
-      sum_outcomes_(sum_outcomes),
       n_cluster_(n_cluster),
       max_iter_(max_iter),
       tolerance_(tolerance),
@@ -135,22 +136,21 @@ template <typename EmAlgorithmType>
 void polca_parallel::EmAlgorithmArray::FitThread() {
   std::size_t n_data = this->n_data_;
   std::size_t n_feature = this->n_feature_;
-  std::size_t sum_outcomes = this->sum_outcomes_;
   std::size_t n_cluster = this->n_cluster_;
 
   // allocate memory for this thread
   std::vector<double> posterior(n_data * n_cluster);
   std::vector<double> prior(n_data * n_cluster);
-  std::vector<double> estimated_prob(sum_outcomes * n_cluster);
+  std::vector<double> estimated_prob(this->n_outcomes_.sum() * n_cluster);
   std::vector<double> regress_coeff(n_feature * (n_cluster - 1));
-  std::vector<double> best_initial_prob(sum_outcomes * n_cluster);
+  std::vector<double> best_initial_prob(this->n_outcomes_.sum() * n_cluster);
 
   // transfer pointer to data and where to store results
   std::unique_ptr<polca_parallel::EmAlgorithm> fitter =
       std::make_unique<EmAlgorithmType>(
           this->features_, this->responses_, n_data, n_feature,
-          this->n_category_, this->n_outcomes_, sum_outcomes, n_cluster,
-          this->max_iter_, this->tolerance_,
+          this->n_category_, this->n_outcomes_, n_cluster, this->max_iter_,
+          this->tolerance_,
           std::span<double>(posterior.begin(), posterior.size()),
           std::span<double>(prior.begin(), prior.size()),
           std::span<double>(estimated_prob.begin(), estimated_prob.size()),
@@ -178,8 +178,9 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
       this->n_rep_done_lock_.unlock();
 
       // set initial probability for this repetition
-      fitter->NewRun(this->initial_prob_ +
-                     rep_index * sum_outcomes * n_cluster);
+      fitter->NewRun(this->initial_prob_.subspan(
+          rep_index * this->n_outcomes_.sum() * n_cluster,
+          this->n_outcomes_.sum() * n_cluster));
 
       // each repetition uses their own rng
       this->SetFitterRng(*fitter, rep_index);

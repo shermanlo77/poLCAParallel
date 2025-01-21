@@ -22,6 +22,7 @@
 #include <random>
 
 #include "em_algorithm_array.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -47,10 +48,10 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
    * @copydoc EmAlgorithmArraySerial::EmAlgorithmArray
    * @param n_thread omitted EmAlgorithmArraySerial
    */
-  EmAlgorithmArraySerial(double* features, int* responses, double* initial_prob,
-                         std::size_t n_data, std::size_t n_feature,
-                         std::size_t n_category, std::size_t* n_outcomes,
-                         std::size_t sum_outcomes, std::size_t n_cluster,
+  EmAlgorithmArraySerial(std::span<double> features, std::span<int> responses,
+                         std::span<double> initial_prob, std::size_t n_data,
+                         std::size_t n_feature, std::size_t n_category,
+                         NOutcomes n_outcomes, std::size_t n_cluster,
                          std::size_t n_rep, unsigned int max_iter,
                          double tolerance, std::span<double> posterior,
                          std::span<double> prior,

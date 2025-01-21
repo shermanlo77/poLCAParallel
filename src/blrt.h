@@ -25,6 +25,7 @@
 
 #include "em_algorithm.h"
 #include "em_algorithm_array_serial.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -88,9 +89,7 @@ class Blrt {
   /** Number of categories */
   const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  std::size_t* n_outcomes_;
-  /** Sum of n_outcomes */
-  const std::size_t sum_outcomes_;
+  NOutcomes n_outcomes_;
   /** Number of bootstrap samples to run */
   const std::size_t n_bootstrap_;
   /** Number of initial values to try */
@@ -162,10 +161,9 @@ class Blrt {
    */
   Blrt(double* prior_null, double* prob_null, std::size_t n_cluster_null,
        double* prior_alt, double* prob_alt, std::size_t n_cluster_alt,
-       std::size_t n_data, std::size_t n_category, std::size_t* n_outcomes,
-       std::size_t sum_outcomes, std::size_t n_bootstrap, std::size_t n_rep,
-       std::size_t n_thread, unsigned int max_iter, double tolerance,
-       double* ratio_array);
+       std::size_t n_data, std::size_t n_category, NOutcomes n_outcomes,
+       std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
+       unsigned int max_iter, double tolerance, double* ratio_array);
 
   /** Set the rng seed for each bootstrap sample */
   void SetSeed(std::seed_seq& seed);
@@ -202,7 +200,7 @@ class Blrt {
    * </ul>
    */
   void Bootstrap(double* prior, double* prob, std::size_t n_cluster,
-                 std::mt19937_64& rng, int* response);
+                 std::mt19937_64& rng, std::span<int> response);
 };
 
 }  // namespace polca_parallel

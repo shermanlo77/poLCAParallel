@@ -22,6 +22,7 @@
 
 #include "RcppArmadillo.h"
 #include "em_algorithm.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -100,8 +101,8 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * @param n_data Number of data points
    * @param n_feature Number of features
    * @param n_category Number of categories
-   * @param n_outcomes Vector of number of outcomes for each category
-   * @param sum_outcomes Sum of n_outcomes
+   * @param n_outcomes Vector of number of outcomes for each category and its
+   * sum
    * @param n_cluster Number of clusters to fit
    * @param max_iter Maximum number of iterations for EM algorithm
    * @param tolerance Tolerance for difference in log likelihood, used for
@@ -135,16 +136,16 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * regression coefficient in matrix form, to be multiplied to the features and
    * linked to the prior using softmax
    */
-  EmAlgorithmRegress(double* features, int* responses, std::size_t n_data,
-                     std::size_t n_feature, std::size_t n_category,
-                     std::size_t* n_outcomes, std::size_t sum_outcomes,
+  EmAlgorithmRegress(std::span<double> features, std::span<int> responses,
+                     std::size_t n_data, std::size_t n_feature,
+                     std::size_t n_category, NOutcomes n_outcomes,
                      std::size_t n_cluster, unsigned int max_iter,
                      double tolerance, std::span<double> posterior,
                      std::span<double> prior, std::span<double> estimated_prob,
                      std::span<double> regress_coeff);
 
  protected:
-  void NewRun(double* initial_prob) override;
+  void NewRun(std::span<double> initial_prob) override;
 
   /**
    * Reset parameters for a re-run

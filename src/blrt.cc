@@ -31,7 +31,7 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
                            std::size_t n_cluster_null, double* prior_alt,
                            double* prob_alt, std::size_t n_cluster_alt,
                            std::size_t n_data, std::size_t n_category,
-                           std::size_t* n_outcomes, std::size_t sum_outcomes,
+                           polca_parallel::NOutcomes n_outcomes,
                            std::size_t n_bootstrap, std::size_t n_rep,
                            std::size_t n_thread, unsigned int max_iter,
                            double tolerance, double* ratio_array)
@@ -44,7 +44,6 @@ polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
       n_data_(n_data),
       n_category_(n_category),
       n_outcomes_(n_outcomes),
-      sum_outcomes_(sum_outcomes),
       n_bootstrap_(n_bootstrap),
       n_rep_(n_rep),
       n_thread_(n_thread),
@@ -80,27 +79,27 @@ void polca_parallel::Blrt::RunThread() {
   std::size_t i_bootstrap;
 
   // to store the bootstrap samples
-  std::unique_ptr<int[]> bootstrap_data =
-      std::make_unique<int[]>(this->n_data_ * this->n_category_);
+  std::vector<int> bootstrap_data(this->n_data_ * this->n_category_);
+  std::span<int> bootstrap_span(bootstrap_data.begin(), bootstrap_data.size());
 
   // allocate memory for storing initial values for the probabilities
-  std::vector<double> init_prob_null(this->sum_outcomes_ *
+  std::vector<double> init_prob_null(this->n_outcomes_.sum() *
                                      this->n_cluster_null_ * this->n_rep_);
-  std::vector<double> init_prob_alt(this->sum_outcomes_ * this->n_cluster_alt_ *
-                                    this->n_rep_);
+  std::vector<double> init_prob_alt(this->n_outcomes_.sum() *
+                                    this->n_cluster_alt_ * this->n_rep_);
 
   // use the fitted values as the initial values when fitting onto the bootstrap
   // samples
   std::copy(this->prob_null_,
-            this->prob_null_ + this->sum_outcomes_ * this->n_cluster_null_,
+            this->prob_null_ + this->n_outcomes_.sum() * this->n_cluster_null_,
             init_prob_null.begin());
   std::copy(this->prob_alt_,
-            this->prob_alt_ + this->sum_outcomes_ * this->n_cluster_alt_,
+            this->prob_alt_ + this->n_outcomes_.sum() * this->n_cluster_alt_,
             init_prob_alt.begin());
 
   // allocate memory for all required arrays, a lot of them aren't used after
   // fitting
-  std::vector<double> features(this->n_data_);
+  std::span<double> features;
   std::vector<double> fitted_posterior_null(this->n_data_ *
                                             this->n_cluster_null_);
   std::vector<double> fitted_posterior_alt(this->n_data_ *
@@ -108,9 +107,9 @@ void polca_parallel::Blrt::RunThread() {
   std::vector<double> fitted_prior_null(this->n_data_ * this->n_cluster_null_);
   std::vector<double> fitted_prior_alt(this->n_data_ * this->n_cluster_alt_);
   std::vector<double> fitted_prob_null(this->n_cluster_null_ *
-                                       this->sum_outcomes_);
+                                       this->n_outcomes_.sum());
   std::vector<double> fitted_prob_alt(this->n_cluster_alt_ *
-                                      this->sum_outcomes_);
+                                      this->n_outcomes_.sum());
   std::vector<double> fitted_regress_coeff_null(this->n_cluster_null_ - 1);
   std::vector<double> fitted_regress_coeff_alt(this->n_cluster_alt_ - 1);
 
@@ -133,33 +132,34 @@ void polca_parallel::Blrt::RunThread() {
       for (std::size_t i_rep = 1; i_rep < this->n_rep_; ++i_rep) {
         arma::Mat<double> init_prob_null_i(
             init_prob_null.data() +
-                i_rep * this->sum_outcomes_ * this->n_cluster_null_,
-            this->sum_outcomes_, this->n_cluster_null_, false, true);
+                i_rep * this->n_outcomes_.sum() * this->n_cluster_null_,
+            this->n_outcomes_.sum(), this->n_cluster_null_, false, true);
 
         arma::Mat<double> init_prob_alt_i(
             init_prob_alt.data() +
-                i_rep * this->sum_outcomes_ * this->n_cluster_alt_,
-            this->sum_outcomes_, this->n_cluster_alt_, false, true);
+                i_rep * this->n_outcomes_.sum() * this->n_cluster_alt_,
+            this->n_outcomes_.sum(), this->n_cluster_alt_, false, true);
 
         polca_parallel::GenerateNewProb(
-            *rng, uniform, this->n_outcomes_, this->sum_outcomes_,
-            this->n_category_, this->n_cluster_null_, init_prob_null_i);
+            *rng, uniform, this->n_outcomes_, this->n_category_,
+            this->n_cluster_null_, init_prob_null_i);
 
         polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
-                                        this->sum_outcomes_, this->n_category_,
-                                        this->n_cluster_alt_, init_prob_alt_i);
+                                        this->n_category_, this->n_cluster_alt_,
+                                        init_prob_alt_i);
       }
 
       // bootstrap data using null model
       this->Bootstrap(this->prior_null_, this->prob_null_,
-                      this->n_cluster_null_, *rng, bootstrap_data.get());
+                      this->n_cluster_null_, *rng, bootstrap_span);
 
       // null model fit
       polca_parallel::EmAlgorithmArraySerial null_model(
-          features.data(), bootstrap_data.get(), init_prob_null.data(),
+          features, bootstrap_span,
+          std::span<double>(init_prob_null.begin(), init_prob_null.size()),
           this->n_data_, 1, this->n_category_, this->n_outcomes_,
-          this->sum_outcomes_, this->n_cluster_null_, this->n_rep_,
-          this->max_iter_, this->tolerance_,
+          this->n_cluster_null_, this->n_rep_, this->max_iter_,
+          this->tolerance_,
           std::span<double>(fitted_posterior_null.begin(),
                             fitted_posterior_null.size()),
           std::span<double>(fitted_prior_null.begin(),
@@ -173,10 +173,10 @@ void polca_parallel::Blrt::RunThread() {
 
       // alt model fit
       polca_parallel::EmAlgorithmArraySerial alt_model(
-          features.data(), bootstrap_data.get(), init_prob_alt.data(),
+          features, bootstrap_span,
+          std::span<double>(init_prob_alt.begin(), init_prob_alt.size()),
           this->n_data_, 1, this->n_category_, this->n_outcomes_,
-          this->sum_outcomes_, this->n_cluster_alt_, this->n_rep_,
-          this->max_iter_, this->tolerance_,
+          this->n_cluster_alt_, this->n_rep_, this->max_iter_, this->tolerance_,
           std::span<double>(fitted_posterior_alt.begin(),
                             fitted_posterior_alt.size()),
           std::span<double>(fitted_prior_alt.begin(), fitted_prior_alt.size()),
@@ -201,7 +201,8 @@ void polca_parallel::Blrt::RunThread() {
 
 void polca_parallel::Blrt::Bootstrap(double* prior, double* prob,
                                      std::size_t n_cluster,
-                                     std::mt19937_64& rng, int* response) {
+                                     std::mt19937_64& rng,
+                                     std::span<int> response) {
   std::size_t i_cluster;
   double* prob_i_cluster;  // pointer relative to prob
   double p_sum;            // used to sum up probabilities for each outcome
@@ -211,10 +212,12 @@ void polca_parallel::Blrt::Bootstrap(double* prior, double* prob,
   std::uniform_int_distribution<std::size_t> prior_dist(0, n_cluster - 1);
   std::uniform_real_distribution<double> uniform_dist(0, 1);
 
+  auto response_iter = response.begin();
+
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
     i_cluster = prior_dist(rng);  // select a random cluster
     // point to the corresponding probabilites for this random cluster
-    prob_i_cluster = prob + i_cluster * this->sum_outcomes_;
+    prob_i_cluster = prob + i_cluster * this->n_outcomes_.sum();
 
     for (std::size_t i_category = 0; i_category < this->n_category_;
          ++i_category) {
@@ -228,11 +231,11 @@ void polca_parallel::Blrt::Bootstrap(double* prior, double* prob,
       while (rand_uniform > p_sum) {
         p_sum += prob_i_cluster[i_outcome++];
       }
-      *response = i_outcome;  // response is one-based index
+      *response_iter = i_outcome;  // response is one-based index
 
       // increment for the next category
       prob_i_cluster += this->n_outcomes_[i_category];
-      ++response;
+      std::advance(response_iter, 1);
     }
   }
 }

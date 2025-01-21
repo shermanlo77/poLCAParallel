@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "RcppArmadillo.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -75,7 +76,7 @@ class EmAlgorithm {
    *   <li>dim 1: for each feature</li>
    * </ul>
    */
-  double* features_;
+  arma::Mat<double> features_;
   /**
    * Design matrix TRANSPOSED of responses, matrix containing outcomes/responses
    * for each category as integers 1, 2, 3, .... The matrix has dimensions
@@ -84,7 +85,7 @@ class EmAlgorithm {
    *   <li>dim 1: for each data point</li>
    * </ul>
    */
-  int* responses_;
+  std::span<int> responses_;
   /**
    * Vector of initial probabilities for each category and responses, flatten
    * list in the following order
@@ -94,7 +95,7 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  double* initial_prob_;
+  std::span<double> initial_prob_;
   /** Number of data points */
   const std::size_t n_data_;
   /** Number of features */
@@ -102,9 +103,7 @@ class EmAlgorithm {
   /** Number of categories */
   const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  std::size_t* n_outcomes_;
-  /** Sum of n_outcomes */
-  const std::size_t sum_outcomes_;
+  NOutcomes n_outcomes_;
   /** Number of clusters to fit */
   const std::size_t n_cluster_;
   /** Maximum number of iterations for EM algorithm */
@@ -204,8 +203,8 @@ class EmAlgorithm {
    * @param n_data Number of data points
    * @param n_feature Number of features
    * @param n_category Number of categories
-   * @param n_outcomes Vector of number of outcomes for each category
-   * @param sum_outcomes Sum of n_outcomes
+   * @param n_outcomes Vector of number of outcomes for each category and its
+   * sum
    * @param n_cluster Number of clusters to fit
    * @param max_iter Maximum number of iterations for EM algorithm
    * @param tolerance Tolerance for difference in log-likelihood, used for
@@ -237,10 +236,10 @@ class EmAlgorithm {
    * </ul>
    * @param regress_coeff Not used and ignored
    */
-  EmAlgorithm(double* features, int* responses, std::size_t n_data,
-              std::size_t n_feature, std::size_t n_category,
-              std::size_t* n_outcomes, std::size_t sum_outcomes,
-              std::size_t n_cluster, unsigned int max_iter, double tolerance,
+  EmAlgorithm(std::span<double> features, std::span<int> responses,
+              std::size_t n_data, std::size_t n_feature, std::size_t n_category,
+              NOutcomes n_outcomes, std::size_t n_cluster,
+              unsigned int max_iter, double tolerance,
               std::span<double> posterior, std::span<double> prior,
               std::span<double> estimated_prob,
               std::span<double> regress_coeff);
@@ -274,7 +273,8 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  virtual void NewRun(double* initial_prob);
+
+  virtual void NewRun(std::span<double> initial_prob);
 
   /**
    * Set where to store initial probabilities (optional)
@@ -377,7 +377,8 @@ class EmAlgorithm {
    * </ul>
    */
   [[nodiscard]] virtual double PosteriorUnnormalize(
-      int* responses_i, double prior, arma::Col<double>& estimated_prob);
+      std::span<int> responses_i, double prior,
+      arma::Col<double>& estimated_prob);
 
   /**
    * Check if the likelihood is invalid
@@ -487,9 +488,9 @@ class EmAlgorithm {
  * @return the unnormalised posterior for this data point and cluster
  */
 template <bool is_check_zero = false>
-[[nodiscard]] double PosteriorUnnormalize(int* responses_i,
+[[nodiscard]] double PosteriorUnnormalize(std::span<int> responses_i,
                                           std::size_t n_category,
-                                          std::size_t* n_outcomes,
+                                          std::span<std::size_t> n_outcomes,
                                           arma::Col<double>& estimated_prob,
                                           double prior);
 
@@ -500,7 +501,6 @@ template <bool is_check_zero = false>
  * @param uniform uniform (0, 1)
  * @param n_outcomes vector length n_category, number of outcomes for each
  * category
- * @param sum_outcomes sum of n_outcomes
  * @param n_category number of categories
  * @param n_cluster number of clusters
  * @param prob output, matrix of random response probabilities, conditioned on
@@ -512,9 +512,8 @@ template <bool is_check_zero = false>
  */
 void GenerateNewProb(std::mt19937_64& rng,
                      std::uniform_real_distribution<double>& uniform,
-                     std::size_t* n_outcomes, std::size_t sum_outcomes,
-                     std::size_t n_category, std::size_t n_cluster,
-                     arma::Mat<double>& prob);
+                     std::span<std::size_t> n_outcomes, std::size_t n_category,
+                     std::size_t n_cluster, arma::Mat<double>& prob);
 
 }  // namespace polca_parallel
 

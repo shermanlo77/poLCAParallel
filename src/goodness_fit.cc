@@ -79,6 +79,7 @@ void polca_parallel::GetExpected(
   for (auto iter = unique_freq.begin(); iter != unique_freq.end(); ++iter) {
     // calculate likelihood
     response_i = iter->first;
+    std::span<int> response_i_span(response_i.data(), response_i.size());
 
     total_p = 0.0;  // to be summed over all clusters
 
@@ -87,7 +88,8 @@ void polca_parallel::GetExpected(
       auto outcome_prob_col = outcome_prob_arma.unsafe_col(m);
       // polca_parallel::PosteriorUnnormalize is located in em_algorithm
       total_p += polca_parallel::PosteriorUnnormalize(
-          response_i.data(), n_category, n_outcomes, outcome_prob_col,
+          response_i_span, n_category,
+          std::span<std::size_t>(n_outcomes, n_category), outcome_prob_col,
           prior[m]);
     }
 
