@@ -278,7 +278,7 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  void NewRun(double* initial_prob);
+  virtual void NewRun(double* initial_prob);
 
   /**
    * Set where to store initial probabilities (optional)

@@ -32,6 +32,11 @@ polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
   this->init_regress_coeff();
 }
 
+void polca_parallel::EmAlgorithmRegress::NewRun(double* initial_prob) {
+  this->polca_parallel::EmAlgorithm::NewRun(initial_prob);
+  this->init_regress_coeff();
+}
+
 void polca_parallel::EmAlgorithmRegress::Reset(
     std::uniform_real_distribution<double>* uniform) {
   this->polca_parallel::EmAlgorithm::Reset(uniform);
