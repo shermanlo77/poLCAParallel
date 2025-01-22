@@ -41,7 +41,7 @@ polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
                      true),
       n_parameters_(n_feature * (n_cluster - 1)),
       gradient_(this->n_parameters_),
-      hessian_(this->n_parameters_ * this->n_parameters_) {
+      hessian_(this->n_parameters_, this->n_parameters_) {
   this->init_regress_coeff();
 }
 
@@ -99,15 +99,11 @@ bool polca_parallel::EmAlgorithmRegress::MStep() {
   this->CalcHess();
 
   // single Newton step
-  arma::Col<double> gradient(this->gradient_.data(), this->n_parameters_,
-                             false);
-  arma::Mat<double> hessian(this->hessian_.data(), this->n_parameters_,
-                            this->n_parameters_, false);
   try {
-    auto result = arma::Col<double>(
-        arma::solve(hessian, gradient, arma::solve_opts::likely_sympd));
+    auto result = arma::solve(this->hessian_, this->gradient_,
+                              arma::solve_opts::likely_sympd);
     this->regress_coeff_ -=
-        arma::reshape(result, arma::size(this->regress_coeff_));
+        arma::reshape(std::move(result), arma::size(this->regress_coeff_));
   } catch (const std::runtime_error&) {
     return true;
   }
@@ -132,14 +128,14 @@ void polca_parallel::EmAlgorithmRegress::init_regress_coeff() {
 }
 
 void polca_parallel::EmAlgorithmRegress::CalcGrad() {
-  double* gradient = this->gradient_.data();
+  auto gradient = this->gradient_.begin();
   for (std::size_t m = 1; m < this->n_cluster_; ++m) {
     auto posterior_m = this->posterior_.unsafe_col(m);
     auto prior_m = this->prior_.unsafe_col(m);
     arma::Col<double> post_minus_prior = posterior_m - prior_m;
     for (std::size_t p = 0; p < this->n_feature_; ++p) {
       *gradient = arma::dot(this->features_.unsafe_col(p), post_minus_prior);
-      ++gradient;
+      std::advance(gradient, 1);
     }
   }
 }
@@ -190,19 +186,22 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
   for (std::size_t j = 0; j < this->n_feature_; ++j) {
     for (std::size_t i = j; i < this->n_feature_; ++i) {
       hess_element = CalcHessElement(i, j, prior_post_inter);
-      *this->HessianAt(cluster_index_0, cluster_index_1, i, j) = hess_element;
+      this->AssignHessianAt(hess_element, cluster_index_0, cluster_index_1, i,
+                            j);
 
       // hessian and each block is symmetric
       // copy over values to their mirror
       if (i != j) {
-        *this->HessianAt(cluster_index_0, cluster_index_1, j, i) = hess_element;
+        this->AssignHessianAt(hess_element, cluster_index_0, cluster_index_1, j,
+                              i);
       }
 
       if (cluster_index_0 != cluster_index_1) {
-        *this->HessianAt(cluster_index_1, cluster_index_0, i, j) = hess_element;
+        this->AssignHessianAt(hess_element, cluster_index_1, cluster_index_0, i,
+                              j);
         if (i != j) {
-          *this->HessianAt(cluster_index_1, cluster_index_0, j, i) =
-              hess_element;
+          this->AssignHessianAt(hess_element, cluster_index_1, cluster_index_0,
+                                j, i);
         }
       }
     }
@@ -217,11 +216,12 @@ double polca_parallel::EmAlgorithmRegress::CalcHessElement(
                    prior_post_inter);
 }
 
-double* polca_parallel::EmAlgorithmRegress::HessianAt(
-    std::size_t cluster_index_0, std::size_t cluster_index_1,
-    std::size_t feature_index_0, std::size_t feature_index_1) {
-  return this->hessian_.data() +
-         cluster_index_1 * this->n_parameters_ * this->n_feature_ +
-         feature_index_1 * this->n_parameters_ +
-         cluster_index_0 * this->n_feature_ + feature_index_0;
+void polca_parallel::EmAlgorithmRegress::AssignHessianAt(
+    double hess_element, std::size_t cluster_index_0,
+    std::size_t cluster_index_1, std::size_t feature_index_0,
+    std::size_t feature_index_1) {
+  std::size_t index = cluster_index_1 * this->n_parameters_ * this->n_feature_ +
+                      feature_index_1 * this->n_parameters_ +
+                      cluster_index_0 * this->n_feature_ + feature_index_0;
+  this->hessian_[index] = hess_element;
 }

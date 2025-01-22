@@ -83,9 +83,9 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   /** Number of parameters to estimate for the softmax */
   const std::size_t n_parameters_;
   /** vector, length n_parameters_, gradient of the log likelihood */
-  std::vector<double> gradient_;
+  arma::Col<double> gradient_;
   /** matrix, n_parameters_ x n_parameters, hessian of the log likelihood */
-  std::vector<double> hessian_;
+  arma::Mat<double> hessian_;
 
  public:
   /**
@@ -242,23 +242,23 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
                                        arma::Col<double>& prior_post_inter);
 
   /**
-   * Get pointer of Hessian at specificed indexes
+   * Assign an entry of the Hessian at specificed indexes
    *
    * Hessian is a block matrix, each rows/columns of block matrices correspond
    * to a cluster, and then each row/column of the block matrix correspond
    * to a feature. Use this method to get a pointer of a specified element
    * of the hessian matrix
    *
+   * @param hess_element value of an entry of the Hessian
    * @param cluster_index_0 row index of block matrices
    * @param cluster_index_1 column index of block matrices
    * @param feature_index_0 row index within block matrix
    * @param feature_index_1 column index within block matrix
    * @return double* pointer to an element of the Hessian
    */
-  [[nodiscard]] double* HessianAt(std::size_t cluster_index_0,
-                                  std::size_t cluster_index_1,
-                                  std::size_t feature_index_0,
-                                  std::size_t feature_index_1);
+  void AssignHessianAt(double hess_element, std::size_t cluster_index_0,
+                       std::size_t cluster_index_1, std::size_t feature_index_0,
+                       std::size_t feature_index_1);
 };
 
 }  // namespace polca_parallel
