@@ -66,6 +66,20 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   static constexpr double kMinLogLikelihoodDifference = -1e-7;
 
  private:
+  /**
+   * Design matrix of features, matrix with dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each feature</li>
+   * </ul>
+   */
+  arma::Mat<double> features_;
+  /**
+   * Vector length n_features_*(n_cluster-1), linear regression coefficient
+   * in matrix form, to be multiplied to the features and linked to the
+   * prior using softmax
+   */
+  arma::Mat<double> regress_coeff_;
   /** Number of parameters to estimate for the softmax */
   const std::size_t n_parameters_;
   /** vector, length n_parameters_, gradient of the log likelihood */

@@ -70,14 +70,6 @@ class EmAlgorithm {
 
  protected:
   /**
-   * Design matrix of features, matrix with dimensions
-   * <ul>
-   *   <li>dim 0: for each data point</li>
-   *   <li>dim 1: for each feature</li>
-   * </ul>
-   */
-  arma::Mat<double> features_;
-  /**
    * Design matrix TRANSPOSED of responses, matrix containing outcomes/responses
    * for each category as integers 1, 2, 3, .... The matrix has dimensions
    * <ul>
@@ -144,12 +136,6 @@ class EmAlgorithm {
    * </ul>
    */
   arma::Mat<double> estimated_prob_;
-  /**
-   * Vector length n_features_*(n_cluster-1), linear regression coefficient
-   * in matrix form, to be multiplied to the features and linked to the
-   * prior using softmax
-   */
-  arma::Mat<double> regress_coeff_;
   /**
    * Optional, vector of INITIAL response probabilities used to get the maximum
    * log-likelihood, this member variable is optional, set to NULL if not used.

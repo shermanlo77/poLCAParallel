@@ -37,8 +37,7 @@ polca_parallel::EmAlgorithm::EmAlgorithm(
     unsigned int max_iter, double tolerance, std::span<double> posterior,
     std::span<double> prior, std::span<double> estimated_prob,
     std::span<double> regress_coeff)
-    : features_(features.data(), n_data, n_feature, false, true),
-      responses_(responses),
+    : responses_(responses),
       n_data_(n_data),
       n_feature_(n_feature),
       n_category_(n_category),

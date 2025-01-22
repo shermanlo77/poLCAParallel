@@ -36,11 +36,12 @@ polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
                                   n_category, n_outcomes, n_cluster, max_iter,
                                   tolerance, posterior, prior, estimated_prob,
                                   regress_coeff),
+      features_(features.data(), n_data, n_feature, false, true),
+      regress_coeff_(regress_coeff.data(), n_feature, n_cluster - 1, false,
+                     true),
       n_parameters_(n_feature * (n_cluster - 1)),
       gradient_(this->n_parameters_),
       hessian_(this->n_parameters_ * this->n_parameters_) {
-  this->regress_coeff_ = std::move(arma::Mat<double>(
-      regress_coeff.data(), n_feature, n_cluster - 1, false, true));
   this->init_regress_coeff();
 }
 
