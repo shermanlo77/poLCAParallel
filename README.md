@@ -255,6 +255,7 @@ may be useful for further troubleshooting.
 The following should be actioned in the next major version:
 
 * The R package MASS is not required as a prerequisite.
+* The default value for `n.thread` should be `1`
 
 The following R functions (and their corresponding C functions if available) are
 marked as deprecated and should be deleted in the next major version

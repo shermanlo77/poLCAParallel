@@ -5,16 +5,16 @@ BlrtRcpp <- function(prior_null, prob_null, n_cluster_null, prior_alt, prob_alt,
     .Call(`_poLCAParallel_BlrtRcpp`, prior_null, prob_null, n_cluster_null, prior_alt, prob_alt, n_cluster_alt, n_data, n_category, n_outcomes, n_bootstrap, n_rep, n_thread, max_iter, tolerance, seed)
 }
 
-EmAlgorithmRcpp <- function(features, responses, initial_prob, n_data, n_feature, n_category, n_outcomes, n_cluster, n_rep, n_thread, max_iter, tolerance, seed) {
-    .Call(`_poLCAParallel_EmAlgorithmRcpp`, features, responses, initial_prob, n_data, n_feature, n_category, n_outcomes, n_cluster, n_rep, n_thread, max_iter, tolerance, seed)
+EmAlgorithmRcpp <- function(features, responses, initial_prob, n_data, n_feature, n_category, n_outcomes, n_cluster, n_rep, na_rm, n_thread, max_iter, tolerance, seed) {
+    .Call(`_poLCAParallel_EmAlgorithmRcpp`, features, responses, initial_prob, n_data, n_feature, n_category, n_outcomes, n_cluster, n_rep, na_rm, n_thread, max_iter, tolerance, seed)
 }
 
 ylik <- function(probs, y, obs, items, numChoices, classes) {
     .Call(`_poLCAParallel_ylik`, probs, y, obs, items, numChoices, classes)
 }
 
-GoodnessFitRcpp <- function(responses, prior, outcome_prob, n_data, n_category, n_outcomes, n_cluster) {
-    .Call(`_poLCAParallel_GoodnessFitRcpp`, responses, prior, outcome_prob, n_data, n_category, n_outcomes, n_cluster)
+GoodnessFitRcpp <- function(responses, prior, outcome_prob, n_data, n_obs, n_category, n_outcomes, n_cluster) {
+    .Call(`_poLCAParallel_GoodnessFitRcpp`, responses, prior, outcome_prob, n_data, n_obs, n_category, n_outcomes, n_cluster)
 }
 
 StandardErrorRcpp <- function(features, responses, probs, prior, posterior, n_data, n_feature, n_category, n_outcomes, n_cluster, use_smooth) {

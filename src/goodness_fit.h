@@ -1,3 +1,4 @@
+
 // poLCAParallel
 // Copyright (C) 2022 Sherman Lo
 
@@ -84,6 +85,7 @@ void GetUniqueObserved(int* responses, int n_data, int n_category,
  *   <li>dim 2: for each cluster</li>
  * </ul>
  * @param n_data number of data points
+ * @param n_obs number of fully observed data points
  * @param n_category number of categories
  * @param n_outcomes array of integers, number of outcomes for each category,
  * array of length n_category
@@ -94,7 +96,7 @@ void GetUniqueObserved(int* responses, int n_data, int n_category,
  *   <li>value: Frequency, the expected attributed shall be modified</li>
  * </ul>
  */
-void GetExpected(double* prior, double* outcome_prob, int n_data,
+void GetExpected(double* prior, double* outcome_prob, int n_data, int n_obs,
                  int n_category, int* n_outcomes, int n_cluster,
                  std::map<std::vector<int>, Frequency>* unique_freq);
 

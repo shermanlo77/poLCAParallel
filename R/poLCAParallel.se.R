@@ -1,3 +1,4 @@
+
 #' Calculate the standard errors and adds them to the poLCA object
 #'
 #' R wrapper function for the C++ function StandardError Rcpp
@@ -23,8 +24,9 @@ poLCAParallel.se <- function(polca, is_smooth = FALSE) {
   formula <- formula(
     paste0("cbind(", paste(colnames(y), collapse = ","), ")~1")
   )
-  mframe <- model.frame(formula, y)
+  mframe <- model.frame(formula, y, na.action = NULL)
   responses <- model.response(mframe)
+  responses[is.na(responses)] <- 0
 
   features <- as.matrix(polca$x)
   n_data <- nrow(features)

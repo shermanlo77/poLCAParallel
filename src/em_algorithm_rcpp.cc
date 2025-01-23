@@ -18,7 +18,9 @@
 #include <memory>
 
 #include "RcppArmadillo.h"
+#include "em_algorithm.h"
 #include "em_algorithm_array.h"
+#include "em_algorithm_nan.h"
 #include "poLCA.c"
 
 /**
@@ -77,7 +79,7 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
                            Rcpp::NumericVector initial_prob, int n_data,
                            int n_feature, int n_category,
                            Rcpp::IntegerVector n_outcomes, int n_cluster,
-                           int n_rep, int n_thread, int max_iter,
+                           int n_rep, bool na_rm, int n_thread, int max_iter,
                            double tolerance, Rcpp::IntegerVector seed) {
   int sum_outcomes = 0;  // calculate sum of number of outcomes
   int* n_outcomes_array = n_outcomes.begin();
@@ -94,19 +96,31 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
   Rcpp::NumericVector best_initial_prob(sum_outcomes * n_cluster);
 
   // fit using EM algorithm
-  bool is_regress = n_feature > 1;
   polca_parallel::EmAlgorithmArray fitter(
       features.begin(), responses.begin(), initial_prob.begin(), n_data,
       n_feature, n_category, n_outcomes.begin(), sum_outcomes, n_cluster, n_rep,
       n_thread, max_iter, tolerance, posterior.begin(), prior.begin(),
-      estimated_prob.begin(), regress_coeff.begin(), is_regress);
+      estimated_prob.begin(), regress_coeff.begin());
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   fitter.SetSeed(&seed_seq);
   fitter.set_best_initial_prob(best_initial_prob.begin());
   fitter.set_ln_l_array(ln_l_array.begin());
 
-  fitter.Fit();
+  bool is_regress = n_feature > 1;
+  if (is_regress) {
+    if (na_rm) {
+      fitter.Fit<polca_parallel::EmAlgorithmRegress>();
+    } else {
+      fitter.Fit<polca_parallel::EmAlgorithmNanRegress>();
+    }
+  } else {
+    if (na_rm) {
+      fitter.Fit<polca_parallel::EmAlgorithm>();
+    } else {
+      fitter.Fit<polca_parallel::EmAlgorithmNan>();
+    }
+  }
 
   int best_rep_index = fitter.get_best_rep_index();
   int n_iter = fitter.get_n_iter();

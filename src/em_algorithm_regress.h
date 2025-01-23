@@ -138,6 +138,8 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
                      double* estimated_prob, double* regress_coeff);
 
  protected:
+  void NewRun(double* initial_prob) override;
+
   /**
    * Reset parameters for a re-run
    *

@@ -127,12 +127,14 @@ void polca_parallel::StandardError::CalcScoreProbsCol(int outcome_index,
   // remember response is one index, not zero index
   int is_outcome;
   // iterate for each data point
-  // dev notes: it is possible to do an arma implementation using element-wise
-  // equality and then case the umat to a Mat<double>
   for (double* score = score_start; score < score_start + this->n_data_;
        ++score) {
-    is_outcome = outcome_index == (*response - 1);
-    *score = *posterior * (static_cast<double>(is_outcome) - *prob);
+    if (*response > 0) {
+      is_outcome = outcome_index == (*response - 1);
+      *score = *posterior * (static_cast<double>(is_outcome) - *prob);
+    } else {
+      *score = 0.0;
+    }
     ++posterior;
     ++response;
   }

@@ -1,3 +1,4 @@
+
 // poLCAParallel
 // Copyright (C) 2022 Sherman Lo
 
@@ -22,24 +23,35 @@ void polca_parallel::GetUniqueObserved(
     std::map<std::vector<int>, Frequency>* unique_freq) {
   // iterate through each data point
   std::vector<int> response_i(n_category);
+  bool fullyobserved;  // only considered fully observed responses
   for (int i = 0; i < n_data; ++i) {
-    // get the outcomes for each category
+    fullyobserved = true;
     std::memcpy(response_i.data(), responses,
                 response_i.size() * sizeof(*responses));
-    // add or update observation count
-    try {
-      ++unique_freq->at(response_i).observed;
-    } catch (std::out_of_range& e) {
-      Frequency frequency;
-      frequency.observed = 1;
-      unique_freq->insert({response_i, frequency});
+
+    for (size_t j = 0; j < response_i.size(); ++j) {
+      if (response_i.at(j) == 0) {
+        fullyobserved = false;
+        break;
+      }
+    }
+
+    if (fullyobserved) {
+      // add or update observation count
+      try {
+        ++unique_freq->at(response_i).observed;
+      } catch (std::out_of_range& e) {
+        Frequency frequency;
+        frequency.observed = 1;
+        unique_freq->insert({response_i, frequency});
+      }
     }
     responses += n_category;
   }
 }
 
 void polca_parallel::GetExpected(
-    double* prior, double* outcome_prob, int n_data, int n_category,
+    double* prior, double* outcome_prob, int n_data, int n_obs, int n_category,
     int* n_outcomes, int n_cluster,
     std::map<std::vector<int>, Frequency>* unique_freq) {
   double total_p;
@@ -62,7 +74,7 @@ void polca_parallel::GetExpected(
           prior[m]);
     }
 
-    iter->second.expected = total_p * n_data;
+    iter->second.expected = total_p * static_cast<double>(n_obs);
   }
 }
 
