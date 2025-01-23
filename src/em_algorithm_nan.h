@@ -50,11 +50,11 @@ class EmAlgorithmNanTemplate : public T {
    * @copydoc EmAlgorithm::EmAlgorithm
    */
   EmAlgorithmNanTemplate(std::span<double> features, std::span<int> responses,
-                         std::size_t n_data, std::size_t n_feature,
-                         std::size_t n_category, NOutcomes n_outcomes,
-                         std::size_t n_cluster, unsigned int max_iter,
-                         double tolerance, std::span<double> posterior,
-                         std::span<double> prior,
+                         std::span<double> initial_prob, std::size_t n_data,
+                         std::size_t n_feature, std::size_t n_category,
+                         NOutcomes n_outcomes, std::size_t n_cluster,
+                         unsigned int max_iter, double tolerance,
+                         std::span<double> posterior, std::span<double> prior,
                          std::span<double> estimated_prob,
                          std::span<double> regress_coeff);
 
@@ -93,9 +93,10 @@ class EmAlgorithmNan : public EmAlgorithmNanTemplate<EmAlgorithm> {
    * @copydoc EmAlgorithm::EmAlgorithm
    */
   EmAlgorithmNan(std::span<double> features, std::span<int> responses,
-                 std::size_t n_data, std::size_t n_feature,
-                 std::size_t n_category, NOutcomes n_outcomes,
-                 std::size_t n_cluster, unsigned int max_iter, double tolerance,
+                 std::span<double> initial_prob, std::size_t n_data,
+                 std::size_t n_feature, std::size_t n_category,
+                 NOutcomes n_outcomes, std::size_t n_cluster,
+                 unsigned int max_iter, double tolerance,
                  std::span<double> posterior, std::span<double> prior,
                  std::span<double> estimated_prob,
                  std::span<double> regress_coeff);
@@ -117,11 +118,11 @@ class EmAlgorithmNanRegress
    * @copydoc EmAlgorithm::EmAlgorithmRegress
    */
   EmAlgorithmNanRegress(std::span<double> features, std::span<int> responses,
-                        std::size_t n_data, std::size_t n_feature,
-                        std::size_t n_category, NOutcomes n_outcomes,
-                        std::size_t n_cluster, unsigned int max_iter,
-                        double tolerance, std::span<double> posterior,
-                        std::span<double> prior,
+                        std::span<double> initial_prob, std::size_t n_data,
+                        std::size_t n_feature, std::size_t n_category,
+                        NOutcomes n_outcomes, std::size_t n_cluster,
+                        unsigned int max_iter, double tolerance,
+                        std::span<double> posterior, std::span<double> prior,
                         std::span<double> estimated_prob,
                         std::span<double> regress_coeff);
 };

@@ -146,19 +146,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
   std::vector<double> best_initial_prob(this->n_outcomes_.sum() * n_cluster);
 
   // transfer pointer to data and where to store results
-  std::unique_ptr<polca_parallel::EmAlgorithm> fitter =
-      std::make_unique<EmAlgorithmType>(
-          this->features_, this->responses_, n_data, n_feature,
-          this->n_category_, this->n_outcomes_, n_cluster, this->max_iter_,
-          this->tolerance_,
-          std::span<double>(posterior.begin(), posterior.size()),
-          std::span<double>(prior.begin(), prior.size()),
-          std::span<double>(estimated_prob.begin(), estimated_prob.size()),
-          std::span<double>(regress_coeff.begin(), regress_coeff.size()));
-  if (this->best_initial_prob_) {
-    fitter->set_best_initial_prob(
-        std::span<double>(best_initial_prob.begin(), best_initial_prob.size()));
-  }
+  std::unique_ptr<polca_parallel::EmAlgorithm> fitter;
 
   // which initial probability this thread is working on
   std::size_t rep_index;
@@ -177,10 +165,21 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
 
       this->n_rep_done_lock_.unlock();
 
-      // set initial probability for this repetition
-      fitter->NewRun(this->initial_prob_.subspan(
-          rep_index * this->n_outcomes_.sum() * n_cluster,
-          this->n_outcomes_.sum() * n_cluster));
+      fitter = std::make_unique<EmAlgorithmType>(
+          this->features_, this->responses_,
+          this->initial_prob_.subspan(
+              rep_index * this->n_outcomes_.sum() * n_cluster,
+              this->n_outcomes_.sum() * n_cluster),
+          n_data, n_feature, this->n_category_, this->n_outcomes_, n_cluster,
+          this->max_iter_, this->tolerance_,
+          std::span<double>(posterior.begin(), posterior.size()),
+          std::span<double>(prior.begin(), prior.size()),
+          std::span<double>(estimated_prob.begin(), estimated_prob.size()),
+          std::span<double>(regress_coeff.begin(), regress_coeff.size()));
+      if (this->best_initial_prob_) {
+        fitter->set_best_initial_prob(std::span<double>(
+            best_initial_prob.begin(), best_initial_prob.size()));
+      }
 
       // each repetition uses their own rng
       this->SetFitterRng(*fitter, rep_index);

@@ -31,13 +31,14 @@
 #include "util.h"
 
 polca_parallel::EmAlgorithm::EmAlgorithm(
-    std::span<double> features, std::span<int> responses, std::size_t n_data,
-    std::size_t n_feature, std::size_t n_category,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    unsigned int max_iter, double tolerance, std::span<double> posterior,
-    std::span<double> prior, std::span<double> estimated_prob,
-    std::span<double> regress_coeff)
+    std::span<double> features, std::span<int> responses,
+    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : responses_(responses),
+      initial_prob_(initial_prob),
       n_data_(n_data),
       n_feature_(n_feature),
       n_category_(n_category),
@@ -131,14 +132,6 @@ void polca_parallel::EmAlgorithm::Fit() {
 
   // reformat prior
   this->FinalPrior();
-}
-
-void polca_parallel::EmAlgorithm::NewRun(std::span<double> initial_prob) {
-  this->initial_prob_ = initial_prob;
-  this->ln_l_ = -INFINITY;
-  this->n_iter_ = 0;
-  this->has_restarted_ = false;
-  std::fill(this->ln_l_array_.begin(), this->ln_l_array_.end(), 0.0);
 }
 
 // Set where to store initial probabilities (optional)

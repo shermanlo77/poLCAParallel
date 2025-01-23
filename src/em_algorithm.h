@@ -36,10 +36,10 @@ namespace polca_parallel {
  * How to use:
  * <ul>
  *   <li>
- *     Pass the data and other parameters to the constructor. Also in the
- *     constructor, pass an array to store the posterior and prior probabilities
- *     (for each cluster) and the estimated response probabilities. Then call
- *     NewRun(), passing the initial probabilities for the EM algorithm.
+ *     Pass the data, initial probabilities and other parameters to the
+ *     constructor. Also in the constructor, pass an array to store the
+ *     posterior and prior probabilities (for each cluster) and the estimated
+ *     response probabilities
  *   </li>
  *   <li>
  *     Call optional methods such as set_best_initial_prob(), set_seed()
@@ -53,9 +53,6 @@ namespace polca_parallel {
  *   <li>
  *     Extract optional results using the methods get_ln_l(), get_n_iter()
  *     and/or get_has_restarted()
- *   </li>
- *   <li>
- *      To do another run, called NewRun(), passing new initial probabilities.
  *   </li>
  * </ul>
  */
@@ -186,6 +183,13 @@ class EmAlgorithm {
    *   <li>dim 0: for each category</li>
    *   <li>dim 1: for each data point</li>
    * </ul>
+   * @param initial_prob Vector of initial probabilities for each category and
+   * outcome, flatten list in the following order
+   * <ul>
+   *   <li>dim 0: for each outcome</li>
+   *   <li>dim 1: for each category</li>
+   *   <li>dim 2: for each cluster</li>
+   * </ul>
    * @param n_data Number of data points
    * @param n_feature Number of features
    * @param n_category Number of categories
@@ -223,7 +227,8 @@ class EmAlgorithm {
    * @param regress_coeff Not used and ignored
    */
   EmAlgorithm(std::span<double> features, std::span<int> responses,
-              std::size_t n_data, std::size_t n_feature, std::size_t n_category,
+              std::span<double> initial_prob, std::size_t n_data,
+              std::size_t n_feature, std::size_t n_category,
               NOutcomes n_outcomes, std::size_t n_cluster,
               unsigned int max_iter, double tolerance,
               std::span<double> posterior, std::span<double> prior,
@@ -259,8 +264,6 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-
-  virtual void NewRun(std::span<double> initial_prob);
 
   /**
    * Set where to store initial probabilities (optional)

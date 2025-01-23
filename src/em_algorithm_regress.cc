@@ -26,28 +26,22 @@
 #include "util.h"
 
 polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
-    std::span<double> features, std::span<int> responses, std::size_t n_data,
-    std::size_t n_feature, std::size_t n_category,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    unsigned int max_iter, double tolerance, std::span<double> posterior,
-    std::span<double> prior, std::span<double> estimated_prob,
-    std::span<double> regress_coeff)
-    : polca_parallel::EmAlgorithm(features, responses, n_data, n_feature,
-                                  n_category, n_outcomes, n_cluster, max_iter,
-                                  tolerance, posterior, prior, estimated_prob,
-                                  regress_coeff),
+    std::span<double> features, std::span<int> responses,
+    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
+    : polca_parallel::EmAlgorithm(features, responses, initial_prob, n_data,
+                                  n_feature, n_category, n_outcomes, n_cluster,
+                                  max_iter, tolerance, posterior, prior,
+                                  estimated_prob, regress_coeff),
       features_(features.data(), n_data, n_feature, false, true),
       regress_coeff_(regress_coeff.data(), n_feature, n_cluster - 1, false,
                      true),
       n_parameters_(n_feature * (n_cluster - 1)),
       gradient_(this->n_parameters_),
       hessian_(this->n_parameters_, this->n_parameters_) {
-  this->init_regress_coeff();
-}
-
-void polca_parallel::EmAlgorithmRegress::NewRun(
-    std::span<double> initial_prob) {
-  this->polca_parallel::EmAlgorithm::NewRun(initial_prob);
   this->init_regress_coeff();
 }
 

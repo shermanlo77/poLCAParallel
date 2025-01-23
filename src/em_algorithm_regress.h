@@ -33,10 +33,10 @@ namespace polca_parallel {
  * How to use:
  * <ul>
  *   <li>
- *     Pass the data and other parameters to the constructor. Also in the
- *     constructor, pass an array to store the posterior and prior probabilities
- *     (for each cluster) and the estimated response probabilities. Then call
- *     NewRun(), passing the initial probabilities for the EM algorithm.
+ *     Pass the data, initial probabilities and other parameters to the
+ *     constructor. Also in the constructor, pass an array to store the
+ *     posterior and prior probabilities (for each cluster) and the estimated
+ *     response probabilities
  *   </li>
  *   <li>
  *     Call optional methods such as set_best_initial_prob(), set_seed()
@@ -50,9 +50,6 @@ namespace polca_parallel {
  *   <li>
  *     Extract optional results using the methods get_ln_l(), get_n_iter()
  *     and/or get_has_restarted()
- *   </li>
- *   <li>
- *      To do another run, called NewRun(), passing new initial probabilities.
  *   </li>
  * </ul>
  */
@@ -151,16 +148,15 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * linked to the prior using softmax
    */
   EmAlgorithmRegress(std::span<double> features, std::span<int> responses,
-                     std::size_t n_data, std::size_t n_feature,
-                     std::size_t n_category, NOutcomes n_outcomes,
-                     std::size_t n_cluster, unsigned int max_iter,
-                     double tolerance, std::span<double> posterior,
-                     std::span<double> prior, std::span<double> estimated_prob,
+                     std::span<double> initial_prob, std::size_t n_data,
+                     std::size_t n_feature, std::size_t n_category,
+                     NOutcomes n_outcomes, std::size_t n_cluster,
+                     unsigned int max_iter, double tolerance,
+                     std::span<double> posterior, std::span<double> prior,
+                     std::span<double> estimated_prob,
                      std::span<double> regress_coeff);
 
  protected:
-  void NewRun(std::span<double> initial_prob) override;
-
   /**
    * Reset parameters for a re-run
    *
