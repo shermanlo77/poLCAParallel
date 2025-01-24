@@ -19,174 +19,194 @@
 
 #include <algorithm>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include "RcppArmadillo.h"
 #include "error_solver.h"
+#include "util.h"
 
 polca_parallel::StandardError::StandardError(
-    double* features, int* responses, double* probs, double* prior,
-    double* posterior, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, std::size_t* n_outcomes, std::size_t sum_outcomes,
-    std::size_t n_cluster, double* prior_error, double* prob_error,
-    double* regress_coeff_error)
-    : features_(features),
-      responses_(responses),
+    std::span<double> features, std::span<int> responses,
+    std::span<double> probs, std::span<double> prior,
+    std::span<double> posterior, std::size_t n_data, std::size_t n_feature,
+    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, std::span<double> prior_error,
+    std::span<double> prob_error, std::span<double> regress_coeff_error)
+    : responses_(responses.data(), n_data, n_category, false, true),
       probs_(probs),
-      prior_(prior),
-      posterior_(posterior),
+      prior_(prior.data(), n_data, n_cluster, false, true),
+      posterior_(posterior.data(), n_data, n_cluster, false, true),
       n_data_(n_data),
       n_feature_(n_feature),
       n_category_(n_category),
       n_outcomes_(n_outcomes),
-      sum_outcomes_(sum_outcomes),
       n_cluster_(n_cluster),
       prior_error_(prior_error),
       prob_error_(prob_error),
       regress_coeff_error_(regress_coeff_error),
       info_size_(n_feature_ * (n_cluster_ - 1) +
-                 n_cluster_ * (sum_outcomes_ - n_category_)),
-      jacobian_width_(n_cluster_ + n_cluster_ * sum_outcomes_) {}
+                 n_cluster_ * (n_outcomes.sum() - n_category_)),
+      jacobian_width_(n_cluster_ + n_cluster_ * n_outcomes.sum()) {}
 
 void polca_parallel::StandardError::Calc() {
   this->SmoothProbs();
 
   // calculate the score matrix
-  std::vector<double> score(this->n_data_ * this->info_size_);
-  this->CalcScore(score.data());
+  arma::Mat<double> score(this->n_data_, this->info_size_);
+  this->CalcScore(score);
 
   // calculate the Jacobian matrix
-  std::vector<double> jacobian(this->info_size_ * this->jacobian_width_);
-  this->CalcJacobian(jacobian.data());
+  arma::Mat<double> jacobian(this->info_size_, this->jacobian_width_);
+  this->CalcJacobian(jacobian);
 
   // for solving equations, see error_solver.cc
   std::unique_ptr<polca_parallel::ErrorSolver> solver = this->InitErrorSolver();
-  solver->Solve(score.data(), jacobian.data());
+  solver->Solve(score, jacobian);
 }
 
 void polca_parallel::StandardError::SmoothProbs() {
   if (this->smoother_) {
     this->smoother_->Smooth();
     this->probs_ = this->smoother_->get_probs();
-    this->prior_ = this->smoother_->get_prior();
-    this->posterior_ = this->smoother_->get_posterior();
+    std::span<double> prior = this->smoother_->get_prior();
+    this->prior_ = arma::Mat<double>(prior.data(), this->n_data_,
+                                     this->n_cluster_, false, true);
+    std::span<double> posterior = this->smoother_->get_posterior();
+    this->posterior_ = arma::Mat<double>(posterior.data(), this->n_data_,
+                                         this->n_cluster_, false, true);
   }
 }
 
 std::unique_ptr<polca_parallel::ErrorSolver>
 polca_parallel::StandardError::InitErrorSolver() {
-  return (std::make_unique<polca_parallel::ScoreSvdSolver>(
-      this->n_data_, this->n_feature_, this->sum_outcomes_, this->n_cluster_,
-      this->info_size_, this->jacobian_width_, this->prior_error_,
-      this->prob_error_, this->regress_coeff_error_));
+  return std::make_unique<polca_parallel::ScoreSvdSolver>(
+      this->n_data_, this->n_feature_, this->n_outcomes_.sum(),
+      this->n_cluster_, this->info_size_, this->jacobian_width_,
+      this->prior_error_, this->prob_error_, this->regress_coeff_error_);
 }
 
-void polca_parallel::StandardError::CalcScore(double* score) {
+void polca_parallel::StandardError::CalcScore(arma::Mat<double>& score) {
   // each call of CalcScorePrior and CalcScoreProbs fills in many of the columns
   // of the score design matrix
   // score is shifted automatically by these methods
-  this->CalcScorePrior(&score);
-  this->CalcScoreProbs(&score);
+  auto score_prior =
+      score.cols(0, this->n_feature_ * (this->n_cluster_ - 1) - 1);
+  this->CalcScorePrior(score_prior);
+  auto score_probs =
+      score.cols(this->n_feature_ * (this->n_cluster_ - 1), score.n_cols - 1);
+  this->CalcScoreProbs(score_probs);
 }
 
-void polca_parallel::StandardError::CalcScorePrior(double** score) {
-  std::size_t size = this->n_data_ * (this->n_cluster_ - 1);
-  arma::Col<double> score_prior_arma(*score, size, false, true);
-  arma::Col<double> prior_arma(this->prior_ + this->n_data_, size, false);
-  arma::Col<double> posterior_arma(this->posterior_ + this->n_data_, size,
-                                   false);
-  score_prior_arma = posterior_arma - prior_arma;
-  *score += size;
+void polca_parallel::StandardError::CalcScorePrior(
+    arma::subview<double>& score_prior) {
+  score_prior = this->posterior_.cols(1, this->n_cluster_ - 1) -
+                this->prior_.cols(1, this->n_cluster_ - 1);
 }
 
-void polca_parallel::StandardError::CalcScoreProbs(double** score) {
+void polca_parallel::StandardError::CalcScoreProbs(
+    arma::subview<double>& score_probs) {
   // call CalcScoreProbsCol() for every cluster, category and outcome except
   // for the zeroth outcome
+  std::size_t col = 0;
+  auto prob = this->probs_.begin();
   for (std::size_t cluster_index = 0; cluster_index < this->n_cluster_;
        ++cluster_index) {
+    // posterior for the given cluster
+    auto posterior_i = this->posterior_.col(cluster_index);
     for (std::size_t category_index = 0; category_index < this->n_category_;
          ++category_index) {
+      // response for the given category
+      auto responses_j = this->responses_.col(category_index);
+      std::advance(prob, 1);  // ignore the zeroth outcome
       for (std::size_t outcome_index = 1;
            outcome_index < this->n_outcomes_[category_index]; ++outcome_index) {
-        this->CalcScoreProbsCol(outcome_index, category_index, cluster_index,
-                                *score);
-        *score += this->n_data_;
+        auto score_col = score_probs.col(col++);
+        this->CalcScoreProbsCol(outcome_index, *prob, responses_j, posterior_i,
+                                score_col);
+        std::advance(prob, 1);
       }
     }
   }
 }
 
 void polca_parallel::StandardError::CalcScoreProbsCol(
-    std::size_t outcome_index, std::size_t category_index,
-    std::size_t cluster_index, double* score_start) {
-  // start posterior for the given cluster
-  double* posterior = this->posterior_ + cluster_index * this->n_data_;
-  // start the response for the given category
-  int* response = this->responses_ + category_index * this->n_data_;
-  // start the prob for the given cluster, category and outcome triplet
-  double* prob = this->probs_ + cluster_index * this->sum_outcomes_;
-  for (std::size_t i = 0; i < category_index; ++i) {
-    prob += this->n_outcomes_[i];
-  }
-  prob += outcome_index;
+    std::size_t outcome_index, double prob, arma::subview_col<int>& responses_j,
+    arma::subview_col<double>& posterior_i,
+    arma::subview_col<double>& score_col) {
+  auto posterior_iter = posterior_i.begin();
+  auto responses_iter = responses_j.begin();
 
   // boolean if the response is the same as the outcome
   // remember response is one index, not zero index
   bool is_outcome;
   // iterate for each data point
-  for (double* score = score_start; score < score_start + this->n_data_;
-       ++score) {
-    if (*response > 0) {
-      is_outcome = outcome_index == static_cast<std::size_t>(*response - 1);
-      *score = *posterior * (static_cast<double>(is_outcome) - *prob);
+  for (auto& score_i : score_col) {
+    if (*responses_iter > 0) {
+      is_outcome =
+          outcome_index == static_cast<std::size_t>(*responses_iter - 1);
+      score_i = *posterior_iter * (static_cast<double>(is_outcome) - prob);
     } else {
-      *score = 0.0;
+      score_i = 0.0;
     }
-    ++posterior;
-    ++response;
+    std::advance(posterior_iter, 1);
+    std::advance(responses_iter, 1);
   }
 }
 
-void polca_parallel::StandardError::CalcJacobian(double* jacobian) {
-  std::fill(jacobian, jacobian + this->info_size_ * this->jacobian_width_, 0.0);
+void polca_parallel::StandardError::CalcJacobian(arma::Mat<double>& jacobian) {
   // block matrix for prior
-  this->CalcJacobianPrior(&jacobian);
+  auto jacobian_prior =
+      jacobian.submat(0, 0, this->n_feature_ * (this->n_cluster_ - 1) - 1,
+                      this->n_cluster_ - 1);
+  this->CalcJacobianPrior(jacobian_prior);
   // block matrix for probs
-  this->CalcJacobianProbs(&jacobian);
+  auto jacobian_probs = jacobian.submat(
+      this->n_feature_ * (this->n_cluster_ - 1), this->n_cluster_,
+      jacobian.n_rows - 1, jacobian.n_cols - 1);
+  this->CalcJacobianProbs(jacobian_probs);
 }
 
-void polca_parallel::StandardError::CalcJacobianPrior(double** jacobian_ptr) {
+void polca_parallel::StandardError::CalcJacobianPrior(
+    arma::subview<double>& jacobian_prior) {
   // copy over the prior, they will be the same for all data points
   std::vector<double> prior(this->n_cluster_);
   for (std::size_t cluster_index = 0; cluster_index < this->n_cluster_;
        ++cluster_index) {
     prior[cluster_index] = this->prior_[cluster_index * this->n_data_];
   }
-  this->CalcJacobianBlock(prior.data(), this->n_cluster_, jacobian_ptr);
+  this->CalcJacobianBlock(std::span<double>(prior.begin(), prior.size()),
+                          jacobian_prior);
 }
 
-void polca_parallel::StandardError::CalcJacobianProbs(double** jacobian_ptr) {
+void polca_parallel::StandardError::CalcJacobianProbs(
+    arma::subview<double>& jacobian_probs) {
   // block matrix for probs, one for each cluster and category pair
-  std::size_t n_outcome;
-  double* probs = this->probs_;
+  std::size_t row_start = 0;
+  std::size_t col_start = 0;
+  auto probs = this->probs_.begin();
   for (std::size_t cluster_index = 0; cluster_index < this->n_cluster_;
        ++cluster_index) {
-    for (std::size_t category_index = 0; category_index < this->n_category_;
-         ++category_index) {
-      n_outcome = this->n_outcomes_[category_index];
-      this->CalcJacobianBlock(probs, n_outcome, jacobian_ptr);
-      probs += n_outcome;
+    for (std::size_t n_outcome : this->n_outcomes_) {
+      auto jacobian_block =
+          jacobian_probs.submat(row_start, col_start, row_start + n_outcome - 2,
+                                col_start + n_outcome - 1);
+      this->CalcJacobianBlock(std::span<double>(probs, n_outcome),
+                              jacobian_block);
+      std::advance(probs, n_outcome);
+      row_start += n_outcome - 1;
+      col_start += n_outcome;
     }
   }
 }
 
-void polca_parallel::StandardError::CalcJacobianBlock(double* probs,
-                                                      std::size_t n_prob,
-                                                      double** jacobian_ptr) {
+void polca_parallel::StandardError::CalcJacobianBlock(
+    std::span<double> probs, arma::subview<double>& jacobian_block) {
   // dev notes: possible to do outer product of probs and then add to the off
   // diagonal, but note this method will commonly be used to create small
   // block matrices (ie n_prob typically be 2 or 3, the n_outcomes)
-  double* jacobian = *jacobian_ptr;
+  auto jacobian = jacobian_block.begin();
+  std::size_t n_prob = probs.size();
   // for each col
   for (std::size_t j = 0; j < n_prob; ++j) {
     // for each row
@@ -195,13 +215,7 @@ void polca_parallel::StandardError::CalcJacobianBlock(double* probs,
       if (i == j) {
         *jacobian += probs[i];
       }
-      ++jacobian;
+      std::advance(jacobian, 1);
     }
-    // shift to next column
-    *jacobian_ptr += this->info_size_;
-    jacobian = *jacobian_ptr;
   }
-  // shift to the bottom right corner of the block matrix, ready for next block
-  // matrix
-  *jacobian_ptr += n_prob - 1;
 }

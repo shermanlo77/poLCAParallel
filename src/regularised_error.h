@@ -18,8 +18,11 @@
 #ifndef POLCAPARALLEL_SRC_REGULARISED_ERROR_H
 #define POLCAPARALLEL_SRC_REGULARISED_ERROR_H
 
+#include <span>
+
 #include "standard_error.h"
 #include "standard_error_regress.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -35,12 +38,13 @@ namespace polca_parallel {
 class RegularisedError : public polca_parallel::StandardError {
  public:
   /** @copydoc StandardError::StandardError */
-  RegularisedError(double* features, int* responses, double* probs,
-                   double* prior, double* posterior, std::size_t n_data,
+  RegularisedError(std::span<double> features, std::span<int> responses,
+                   std::span<double> probs, std::span<double> prior,
+                   std::span<double> posterior, std::size_t n_data,
                    std::size_t n_feature, std::size_t n_category,
-                   std::size_t* n_outcomes, std::size_t sum_outcomes,
-                   std::size_t n_cluster, double* prior_error,
-                   double* prob_error, double* regress_coeff_error);
+                   NOutcomes n_outcomes, std::size_t n_cluster,
+                   std::span<double> prior_error, std::span<double> prob_error,
+                   std::span<double> regress_coeff_error);
 };
 
 /**
@@ -55,12 +59,14 @@ class RegularisedError : public polca_parallel::StandardError {
 class RegularisedRegressError : public polca_parallel::StandardErrorRegress {
  public:
   /** @copydoc StandardErrorRegress::StandardErrorRegress */
-  RegularisedRegressError(double* features, int* responses, double* probs,
-                          double* prior, double* posterior, std::size_t n_data,
+  RegularisedRegressError(std::span<double> features, std::span<int> responses,
+                          std::span<double> probs, std::span<double> prior,
+                          std::span<double> posterior, std::size_t n_data,
                           std::size_t n_feature, std::size_t n_category,
-                          std::size_t* n_outcomes, std::size_t sum_outcomes,
-                          std::size_t n_cluster, double* prior_error,
-                          double* prob_error, double* regress_coeff_error);
+                          NOutcomes n_outcomes, std::size_t n_cluster,
+                          std::span<double> prior_error,
+                          std::span<double> prob_error,
+                          std::span<double> regress_coeff_error);
 };
 }  // namespace polca_parallel
 

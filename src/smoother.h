@@ -18,7 +18,10 @@
 #ifndef POLCAPARALLEL_SRC_SMOOTHER_H
 #define POLCAPARALLEL_SRC_SMOOTHER_H
 
+#include <span>
 #include <vector>
+
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -46,7 +49,6 @@ namespace polca_parallel {
  */
 class Smoother {
  private:
-  int* responses_;
   /**
    * Vector of smoothed probabilities for the outcome probabilities. Flatten
    * list in the order
@@ -80,9 +82,7 @@ class Smoother {
   /** Number of categories */
   const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
-  std::size_t* n_outcomes_;
-  /** Sum of n_outcomes */
-  const std::size_t sum_outcomes_;
+  NOutcomes n_outcomes_;
   /** Number of clusters to fit */
   const std::size_t n_cluster_;
 
@@ -93,13 +93,6 @@ class Smoother {
    * Creates a copy of probs, prior and posterior. Call Smooth() to smooth
    * these probabilities
    *
-   * @param responses Design matrix of responses, matrix containing
-   * outcomes/responses for each category as integers 1, 2, 3, .... The matrix
-   * has dimensions
-   * <ul>
-   *   <li>dim 0: for each data point</li>
-   *   <li>dim 1: for each category</li>
-   * </ul>
    * @param probs Vector of probabilities for each outcome, for each category,
    * for each cluster flatten list in the order
    * <ul>
@@ -125,9 +118,9 @@ class Smoother {
    * @param sum_outcomes Sum of all integers in n_outcomes
    * @param n_cluster Number of clusters
    */
-  Smoother(int* responses, double* probs, double* prior, double* posterior,
-           std::size_t n_data, std::size_t n_category, std::size_t* n_outcomes,
-           std::size_t sum_outcomes, std::size_t n_cluster);
+  Smoother(std::span<double> probs, std::span<double> prior,
+           std::span<double> posterior, std::size_t n_data,
+           std::size_t n_category, NOutcomes n_outcomes, std::size_t n_cluster);
 
   /**
    * Smooth the probabilities probs_, prior_ and posterior_
@@ -138,13 +131,13 @@ class Smoother {
   void Smooth();
 
   /** Get the pointer to the array of smoothed probs */
-  [[nodiscard]] double* get_probs();
+  [[nodiscard]] std::span<double> get_probs();
 
   /** Get the pointer to the array of prior probs */
-  [[nodiscard]] double* get_prior();
+  [[nodiscard]] std::span<double> get_prior();
 
   /** Get the pointer to the array of posterior probs */
-  [[nodiscard]] double* get_posterior();
+  [[nodiscard]] std::span<double> get_posterior();
 
  private:
   /**

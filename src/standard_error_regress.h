@@ -19,8 +19,10 @@
 #define POLCAPARALLEL_SRC_STANDARD_ERROR_REGRESS_H_
 
 #include <memory>
+#include <span>
 
 #include "standard_error.h"
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -31,6 +33,16 @@ namespace polca_parallel {
  * regression models
  */
 class StandardErrorRegress : public polca_parallel::StandardError {
+ protected:
+  /**
+   * Design matrix of features, matrix with dimensions
+   * <ul>
+   *   <li>dim 0: for each data point</li>
+   *   <li>dim 1: for each feature</li>
+   * </ul>
+   */
+  arma::Mat<double> features_;
+
  public:
   /**
    * Construct a new StandardErrorRegress object
@@ -74,8 +86,8 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    * @param n_data Number of data points
    * @param n_feature Number of features
    * @param n_category Number of categories
-   * @param n_outcomes Array of number of outcomes, for each category
-   * @param sum_outcomes Sum of all integers in n_outcomes
+   * @param n_outcomes Array of number of outcomes, for each category, and its
+   * sum
    * @param n_cluster Number of clusters fitted
    * @param prior_error Vector to contain the standard error for the prior
    * probabilities for each cluster, modified after calling Calc()
@@ -90,18 +102,20 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    * @param regress_coeff_error Matrix to contain the covariance matrix of the
    * regression coefficient, modified after calling Calc()
    */
-  StandardErrorRegress(double* features, int* responses, double* probs,
-                       double* prior, double* posterior, std::size_t n_data,
+  StandardErrorRegress(std::span<double> features, std::span<int> responses,
+                       std::span<double> probs, std::span<double> prior,
+                       std::span<double> posterior, std::size_t n_data,
                        std::size_t n_feature, std::size_t n_category,
-                       std::size_t* n_outcomes, std::size_t sum_outcomes,
-                       std::size_t n_cluster, double* prior_error,
-                       double* prob_error, double* regress_coeff_error);
+                       NOutcomes n_outcomes, std::size_t n_cluster,
+                       std::span<double> prior_error,
+                       std::span<double> prob_error,
+                       std::span<double> regress_coeff_error);
 
  protected:
   [[nodiscard]] std::unique_ptr<polca_parallel::ErrorSolver> InitErrorSolver()
       override;
-  void CalcScorePrior(double** score_start) override;
-  void CalcJacobianPrior(double** jacobian_ptr) override;
+  void CalcScorePrior(arma::subview<double>& score_prior) override;
+  void CalcJacobianPrior(arma::subview<double>& jacobian_prior) override;
 };
 
 }  // namespace polca_parallel
