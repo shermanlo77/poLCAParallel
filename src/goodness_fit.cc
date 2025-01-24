@@ -23,74 +23,68 @@
 #include <cmath>
 #include <cstring>
 #include <map>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
 #include "RcppArmadillo.h"
 #include "em_algorithm.h"
+#include "util.h"
 
 void polca_parallel::GetUniqueObserved(
-    int* responses, std::size_t n_data, std::size_t n_category,
+    std::span<int> responses, std::size_t n_data, std::size_t n_category,
     std::map<std::vector<int>, Frequency>& unique_freq) {
   // iterate through each data point
-  std::vector<int> response_i(n_category);
-  bool fullyobserved;  // only considered fully observed responses
+  auto responses_iter = responses.begin();
   for (std::size_t i = 0; i < n_data; ++i) {
-    fullyobserved = true;
-    std::copy(responses, responses + n_category, response_i.begin());
+    bool fullyobserved = true;  // only considered fully observed responses
+    auto response_span_i = std::span<int>(responses_iter, n_category);
 
-    for (std::size_t j = 0; j < response_i.size(); ++j) {
-      if (response_i.at(j) == 0) {
+    for (int response_i_j : response_span_i) {
+      if (response_i_j == 0) {
         fullyobserved = false;
         break;
       }
     }
 
     if (fullyobserved) {
+      std::vector<int> response_copy_i(response_span_i.begin(),
+                                       response_span_i.end());
       // add or update observation count
       try {
-        ++unique_freq.at(response_i).observed;
+        ++unique_freq.at(response_copy_i).observed;
       } catch (std::out_of_range& e) {
         Frequency frequency;
         frequency.observed = 1;
-        unique_freq.insert({response_i, frequency});
+        unique_freq.insert({response_copy_i, frequency});
       }
     }
-    responses += n_category;
+    std::advance(responses_iter, n_category);
   }
 }
 
 void polca_parallel::GetExpected(
-    double* prior, double* outcome_prob, std::size_t n_data, std::size_t n_obs,
-    std::size_t n_category, std::size_t* n_outcomes, std::size_t n_cluster,
+    std::span<double> prior, std::span<double> outcome_prob, std::size_t n_data,
+    std::size_t n_obs, std::size_t n_category,
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
     std::map<std::vector<int>, Frequency>& unique_freq) {
-  double total_p;
-  std::vector<int> response_i;
-
-  std::size_t sum_outcomes = 0;
-  for (std::size_t i = 0; i < n_category; ++i) {
-    sum_outcomes += n_outcomes[i];
-  }
-
-  arma::Mat<double> outcome_prob_arma(outcome_prob, sum_outcomes, n_cluster,
-                                      false, true);
+  arma::Mat<double> outcome_prob_arma(outcome_prob.data(), n_outcomes.sum(),
+                                      n_cluster, false, true);
 
   // iterate through the map
   for (auto iter = unique_freq.begin(); iter != unique_freq.end(); ++iter) {
     // calculate likelihood
-    response_i = iter->first;
+    std::vector<int> response_i = iter->first;
     std::span<int> response_i_span(response_i.data(), response_i.size());
 
-    total_p = 0.0;  // to be summed over all clusters
+    double total_p = 0.0;  // to be summed over all clusters
 
     // iterate through each cluster
     for (std::size_t m = 0; m < n_cluster; ++m) {
       auto outcome_prob_col = outcome_prob_arma.unsafe_col(m);
       // polca_parallel::PosteriorUnnormalize is located in em_algorithm
       total_p += polca_parallel::PosteriorUnnormalize(
-          response_i_span, n_category,
-          std::span<std::size_t>(n_outcomes, n_category), outcome_prob_col,
-          prior[m]);
+          response_i_span, n_category, n_outcomes, outcome_prob_col, prior[m]);
     }
 
     iter->second.expected = total_p * static_cast<double>(n_obs);
@@ -99,26 +93,20 @@ void polca_parallel::GetExpected(
 
 std::array<double, 2> polca_parallel::GetStatistics(
     std::map<std::vector<int>, Frequency>& unique_freq, std::size_t n_data) {
-  Frequency frequency;
-
   std::size_t n_unique = unique_freq.size();
-
   // store statistics for each unique response
-  std::vector<double> chi_squared_array(n_unique);
-  std::vector<double> ln_l_ratio_array(n_unique);
-  std::vector<double> expected_array(n_unique);
-  double expected;
-  double observed;
-  double diff_squared;
+  arma::Row<double> chi_squared_array(n_unique);
+  arma::Row<double> ln_l_ratio_array(n_unique);
+  arma::Row<double> expected_array(n_unique);
 
   // extract and calculate statistics for each unique response
   std::size_t index = 0;
   for (auto iter = unique_freq.begin(); iter != unique_freq.end(); ++iter) {
-    frequency = iter->second;
-    expected = frequency.expected;
-    observed = static_cast<double>(frequency.observed);
+    Frequency frequency = iter->second;
+    double expected = frequency.expected;
+    double observed = static_cast<double>(frequency.observed);
 
-    diff_squared = (expected - observed);
+    double diff_squared = (expected - observed);
     diff_squared *= diff_squared;
 
     expected_array[index] = expected;
@@ -126,17 +114,11 @@ std::array<double, 2> polca_parallel::GetStatistics(
     ln_l_ratio_array[index] = observed * std::log(observed / expected);
     ++index;
   }
-
-  double chi_squared;
-  double ln_l_ratio;
-
   // chi squared calculation also use unobserved responses
-  chi_squared =
-      arma::sum(arma::Row<double>(chi_squared_array.data(), n_unique, false)) +
-      (static_cast<double>(n_data) -
-       arma::sum(arma::Row<double>(expected_array.data(), n_unique, false)));
-  ln_l_ratio = 2.0 * arma::sum(arma::Row<double>(ln_l_ratio_array.data(),
-                                                 n_unique, false));
+  double chi_squared =
+      arma::sum(chi_squared_array) +
+      (static_cast<double>(n_data) - arma::sum(expected_array));
+  double ln_l_ratio = 2.0 * arma::sum(ln_l_ratio_array);
 
   return {ln_l_ratio, chi_squared};
 }

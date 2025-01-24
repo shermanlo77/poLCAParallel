@@ -21,7 +21,10 @@
 
 #include <array>
 #include <map>
+#include <span>
 #include <vector>
+
+#include "util.h"
 
 namespace polca_parallel {
 
@@ -58,7 +61,7 @@ struct Frequency {
  *   times those unique responses were observed in the dataset</li>
  * </ul>
  */
-void GetUniqueObserved(int* responses, std::size_t n_data,
+void GetUniqueObserved(std::span<int> responses, std::size_t n_data,
                        std::size_t n_category,
                        std::map<std::vector<int>, Frequency>& unique_freq);
 
@@ -90,9 +93,9 @@ void GetUniqueObserved(int* responses, std::size_t n_data,
  *   <li>value: Frequency, the expected attributed shall be modified</li>
  * </ul>
  */
-void GetExpected(double* prior, double* outcome_prob, std::size_t n_data,
-                 std::size_t n_obs, std::size_t n_category,
-                 std::size_t* n_outcomes, std::size_t n_cluster,
+void GetExpected(std::span<double> prior, std::span<double> outcome_prob,
+                 std::size_t n_data, std::size_t n_obs, std::size_t n_category,
+                 NOutcomes n_outcomes, std::size_t n_cluster,
                  std::map<std::vector<int>, Frequency>& unique_freq);
 
 /**
