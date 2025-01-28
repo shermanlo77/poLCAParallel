@@ -21,6 +21,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <span>
 #include <vector>
 
 #include "em_algorithm.h"
@@ -53,7 +54,7 @@ class Blrt {
    * Vector of probabilities, one for each cluster. Probability a data point
    * belongs to each cluster in the null model.
    */
-  double* prior_null_;
+  std::span<double> prior_null_;
   /**
    * Vector of estimated response probabilities, conditioned on cluster, for
    * each category, for the null model, flatten list in the order
@@ -63,14 +64,14 @@ class Blrt {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  double* prob_null_;
+  std::span<double> prob_null_;
   /** Number of clusters fitted onto the null model */
   const std::size_t n_cluster_null_;
   /**
    * Vector of probabilities, one for each cluster. Probability a data point
    * belongs to each cluster in the alt model.
    */
-  double* prior_alt_;
+  std::span<double> prior_alt_;
   /**
    * Vector of estimated response probabilities, conditioned on cluster, for
    * each category, for the alt model, flatten list in the order
@@ -80,7 +81,7 @@ class Blrt {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  double* prob_alt_;
+  std::span<double> prob_alt_;
   /** Number of clusters fitted onto the alt model */
   const std::size_t n_cluster_alt_;
 
@@ -104,7 +105,7 @@ class Blrt {
   /** What bootstrap sample is being worked on */
   std::size_t n_bootstrap_done_ = 0;
   /** Log-likelihood ratio for each bootstrap sample */
-  double* ratio_array_;
+  std::span<double> ratio_array_;
 
   /** For locking n_bootstrap_done_ */
   std::mutex n_bootstrap_done_lock_;
@@ -159,11 +160,12 @@ class Blrt {
    * @param ratio_array To store results, array, the log-likelihood ratio for
    * each bootstrap sample
    */
-  Blrt(double* prior_null, double* prob_null, std::size_t n_cluster_null,
-       double* prior_alt, double* prob_alt, std::size_t n_cluster_alt,
+  Blrt(std::span<double> prior_null, std::span<double> prob_null,
+       std::size_t n_cluster_null, std::span<double> prior_alt,
+       std::span<double> prob_alt, std::size_t n_cluster_alt,
        std::size_t n_data, std::size_t n_category, NOutcomes n_outcomes,
        std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
-       unsigned int max_iter, double tolerance, double* ratio_array);
+       unsigned int max_iter, double tolerance, std::span<double> ratio_array);
 
   /** Set the rng seed for each bootstrap sample */
   void SetSeed(std::seed_seq& seed);
@@ -199,8 +201,9 @@ class Blrt {
    *   <li>dim 1: for each data point</li>
    * </ul>
    */
-  void Bootstrap(double* prior, double* prob, std::size_t n_cluster,
-                 std::mt19937_64& rng, std::span<int> response);
+  void Bootstrap(std::span<double> prior, std::span<double> prob,
+                 std::size_t n_cluster, std::mt19937_64& rng,
+                 std::span<int> response);
 };
 
 }  // namespace polca_parallel

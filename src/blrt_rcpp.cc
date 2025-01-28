@@ -15,6 +15,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+#include <span>
 #include <vector>
 
 #include "RcppArmadillo.h"
@@ -80,29 +81,24 @@ Rcpp::NumericVector BlrtRcpp(
     Rcpp::NumericVector prior_null, Rcpp::NumericVector prob_null,
     std::size_t n_cluster_null, Rcpp::NumericVector prior_alt,
     Rcpp::NumericVector prob_alt, std::size_t n_cluster_alt, std::size_t n_data,
-    std::size_t n_category, Rcpp::IntegerVector n_outcomes,
+    std::size_t n_category, Rcpp::IntegerVector n_outcomes_int,
     std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
     unsigned int max_iter, double tolerance, Rcpp::IntegerVector seed) {
-  std::size_t sum_outcomes = 0;  // calculate sum of number of outcomes
-  int* n_outcomes_array = n_outcomes.begin();
-
-  std::vector<std::size_t> n_outcomes_size_t(n_category);
-  std::size_t n_outcomes_i;
-  for (std::size_t i = 0; i < n_category; ++i) {
-    n_outcomes_i = static_cast<std::size_t>(n_outcomes_array[i]);
-    n_outcomes_size_t.at(i) = n_outcomes_i;
-    sum_outcomes += n_outcomes_i;
-  }
+  std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
+                                             n_outcomes_int.end());
+  polca_parallel::NOutcomes n_outcomes(n_outcomes_size_t.data(),
+                                       n_outcomes_size_t.size());
 
   // allocate memory for storing log likelihood ratios
   Rcpp::NumericVector ratio_array(n_bootstrap);
 
   polca_parallel::Blrt blrt(
-      prior_null.begin(), prob_null.begin(), n_cluster_null, prior_alt.begin(),
-      prob_alt.begin(), n_cluster_alt, n_data, n_category,
-      polca_parallel::NOutcomes(n_outcomes_size_t.data(),
-                                n_outcomes_size_t.size()),
-      n_bootstrap, n_rep, n_thread, max_iter, tolerance, ratio_array.begin());
+      std::span<double>(prior_null.begin(), prior_null.size()),
+      std::span<double>(prob_null.begin(), prob_null.size()), n_cluster_null,
+      std::span<double>(prior_alt.begin(), prior_alt.size()),
+      std::span<double>(prob_alt.begin(), prob_alt.size()), n_cluster_alt,
+      n_data, n_category, n_outcomes, n_bootstrap, n_rep, n_thread, max_iter,
+      tolerance, std::span<double>(ratio_array.begin(), ratio_array.size()));
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   blrt.SetSeed(seed_seq);

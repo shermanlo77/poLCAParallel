@@ -27,14 +27,13 @@
 #include <thread>
 #include <vector>
 
-polca_parallel::Blrt::Blrt(double* prior_null, double* prob_null,
-                           std::size_t n_cluster_null, double* prior_alt,
-                           double* prob_alt, std::size_t n_cluster_alt,
-                           std::size_t n_data, std::size_t n_category,
-                           polca_parallel::NOutcomes n_outcomes,
-                           std::size_t n_bootstrap, std::size_t n_rep,
-                           std::size_t n_thread, unsigned int max_iter,
-                           double tolerance, double* ratio_array)
+polca_parallel::Blrt::Blrt(
+    std::span<double> prior_null, std::span<double> prob_null,
+    std::size_t n_cluster_null, std::span<double> prior_alt,
+    std::span<double> prob_alt, std::size_t n_cluster_alt, std::size_t n_data,
+    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
+    unsigned int max_iter, double tolerance, std::span<double> ratio_array)
     : prior_null_(prior_null),
       prob_null_(prob_null),
       n_cluster_null_(n_cluster_null),
@@ -90,11 +89,9 @@ void polca_parallel::Blrt::RunThread() {
 
   // use the fitted values as the initial values when fitting onto the bootstrap
   // samples
-  std::copy(this->prob_null_,
-            this->prob_null_ + this->n_outcomes_.sum() * this->n_cluster_null_,
+  std::copy(this->prob_null_.begin(), this->prob_null_.end(),
             init_prob_null.begin());
-  std::copy(this->prob_alt_,
-            this->prob_alt_ + this->n_outcomes_.sum() * this->n_cluster_alt_,
+  std::copy(this->prob_alt_.begin(), this->prob_alt_.end(),
             init_prob_alt.begin());
 
   // allocate memory for all required arrays, a lot of them aren't used after
@@ -199,42 +196,37 @@ void polca_parallel::Blrt::RunThread() {
   }
 }
 
-void polca_parallel::Blrt::Bootstrap(double* prior, double* prob,
+void polca_parallel::Blrt::Bootstrap(std::span<double> prior,
+                                     std::span<double> prob,
                                      std::size_t n_cluster,
                                      std::mt19937_64& rng,
                                      std::span<int> response) {
-  std::size_t i_cluster;
-  double* prob_i_cluster;  // pointer relative to prob
-  double p_sum;            // used to sum up probabilities for each outcome
-  double rand_uniform;
-  std::size_t i_outcome;
-
   std::uniform_int_distribution<std::size_t> prior_dist(0, n_cluster - 1);
   std::uniform_real_distribution<double> uniform_dist(0, 1);
 
   auto response_iter = response.begin();
 
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
-    i_cluster = prior_dist(rng);  // select a random cluster
+    std::size_t i_cluster = prior_dist(rng);  // select a random cluster
     // point to the corresponding probabilites for this random cluster
-    prob_i_cluster = prob + i_cluster * this->n_outcomes_.sum();
+    auto prob_i = prob.begin();
+    std::advance(prob_i, i_cluster * this->n_outcomes_.sum());
 
-    for (std::size_t i_category = 0; i_category < this->n_category_;
-         ++i_category) {
-      p_sum = 0.0;
-      rand_uniform = uniform_dist(rng);
+    for (std::size_t n_outcome : this->n_outcomes_) {
+      double p_sum = 0.0;  // used to sum up probabilities for each outcome
+      double rand_uniform = uniform_dist(rng);
 
       // use rand_uniform to randomly sample an outcome according to the
       // probabilities in prob_i_cluster[0], prob_i_cluster[1], ...
       // i_outcome is the randomly selected outcome
-      i_outcome = 0;
+      std::size_t i_outcome = 0;
       while (rand_uniform > p_sum) {
-        p_sum += prob_i_cluster[i_outcome++];
+        p_sum += *std::next(prob_i, i_outcome++);
       }
       *response_iter = i_outcome;  // response is one-based index
 
       // increment for the next category
-      prob_i_cluster += this->n_outcomes_[i_category];
+      std::advance(prob_i, n_outcome);
       std::advance(response_iter, 1);
     }
   }
