@@ -199,11 +199,10 @@ void polca_parallel::Blrt::Bootstrap(std::span<const double> prior,
                                      std::span<const double> prob,
                                      std::mt19937_64& rng,
                                      std::span<int> response) const {
-  std::uniform_int_distribution<std::size_t> prior_dist(0, prior.size() - 1);
-  std::uniform_real_distribution<double> uniform_dist(0, 1);
+  std::discrete_distribution<std::size_t> prior_dist(prior.begin(),
+                                                     prior.end());
 
   auto response_iter = response.begin();
-
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
     std::size_t i_cluster = prior_dist(rng);  // select a random cluster
     // point to the corresponding probabilites for this random cluster
@@ -211,18 +210,9 @@ void polca_parallel::Blrt::Bootstrap(std::span<const double> prior,
     std::advance(prob_i, i_cluster * this->n_outcomes_.sum());
 
     for (std::size_t n_outcome : this->n_outcomes_) {
-      double p_sum = 0.0;  // used to sum up probabilities for each outcome
-      double rand_uniform = uniform_dist(rng);
-
-      // use rand_uniform to randomly sample an outcome according to the
-      // probabilities in prob_i_cluster[0], prob_i_cluster[1], ...
-      // i_outcome is the randomly selected outcome
-      std::size_t i_outcome = 0;
-      while (rand_uniform > p_sum) {
-        p_sum += *std::next(prob_i, i_outcome++);
-      }
-      *response_iter = i_outcome;  // response is one-based index
-
+      std::discrete_distribution<int> outcome_dist(
+          prob_i, std::next(prob_i, n_outcome));
+      *response_iter = outcome_dist(rng) + 1;  // response is one-based index
       // increment for the next category
       std::advance(prob_i, n_outcome);
       std::advance(response_iter, 1);
