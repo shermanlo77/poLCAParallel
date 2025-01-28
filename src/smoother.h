@@ -143,12 +143,11 @@ class Smoother {
    * (n_data * probs + num_add) / (n_data + demo_add)
    *
    * @param probs array of probabilities to modify
-   * @param length length of the array probs
    * @param n_data number of data points used to estimate the probabilities
    * @param num_add see equation
    * @param demo_add see equation
    */
-  void Smooth(double* probs, std::size_t length, double n_data, double num_add,
+  void Smooth(std::span<double> probs, double n_data, double num_add,
               double demo_add);
 };
 
