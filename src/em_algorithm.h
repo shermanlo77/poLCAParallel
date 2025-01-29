@@ -87,8 +87,6 @@ class EmAlgorithm {
   std::span<double> initial_prob_;
   /** Number of data points */
   const std::size_t n_data_;
-  /** Number of features */
-  const std::size_t n_feature_;
   /** Vector of the number of outcomes for each category */
   NOutcomes n_outcomes_;
   /** Number of clusters to fit */

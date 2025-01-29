@@ -37,6 +37,7 @@ polca_parallel::EmAlgorithmRegress::EmAlgorithmRegress(
                                   tolerance, posterior, prior, estimated_prob,
                                   regress_coeff),
       features_(features.data(), n_data, n_feature, false, true),
+      n_feature_(n_feature),
       regress_coeff_(regress_coeff.data(), n_feature, n_cluster - 1, false,
                      true),
       n_parameters_(n_feature * (n_cluster - 1)),

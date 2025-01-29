@@ -71,6 +71,8 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * </ul>
    */
   arma::Mat<double> features_;
+  /** Number of features */
+  const std::size_t n_feature_;
   /**
    * Vector length n_features_*(n_cluster-1), linear regression coefficient
    * in matrix form, to be multiplied to the features and linked to the

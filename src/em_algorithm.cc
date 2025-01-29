@@ -40,7 +40,6 @@ polca_parallel::EmAlgorithm::EmAlgorithm(
     : responses_(responses),
       initial_prob_(initial_prob),
       n_data_(n_data),
-      n_feature_(n_feature),
       n_outcomes_(n_outcomes),
       n_cluster_(n_cluster),
       max_iter_(max_iter),
