@@ -46,7 +46,7 @@ polca_parallel::StandardErrorRegress::InitErrorSolver() {
 }
 
 void polca_parallel::StandardErrorRegress::CalcScorePrior(
-    arma::subview<double>& score_prior) {
+    arma::subview<double>& score_prior) const {
   for (std::size_t cluster_index = 1; cluster_index < this->n_cluster_;
        ++cluster_index) {
     auto score_prior_i =
@@ -59,7 +59,7 @@ void polca_parallel::StandardErrorRegress::CalcScorePrior(
 }
 
 void polca_parallel::StandardErrorRegress::CalcJacobianPrior(
-    arma::subview<double>& jacobian_prior) {
+    arma::subview<double>& jacobian_prior) const {
   auto jacobian = jacobian_prior.begin();
   for (std::size_t j_cluster = 0; j_cluster < this->n_cluster_; ++j_cluster) {
     for (std::size_t i_cluster = 1; i_cluster < this->n_cluster_; ++i_cluster) {

@@ -135,11 +135,13 @@ void polca_parallel::EmAlgorithm::set_best_initial_prob(
   this->best_initial_prob_ = best_initial_prob;
 }
 
-double polca_parallel::EmAlgorithm::get_ln_l() { return this->ln_l_; }
+double polca_parallel::EmAlgorithm::get_ln_l() const { return this->ln_l_; }
 
-unsigned int polca_parallel::EmAlgorithm::get_n_iter() { return this->n_iter_; }
+unsigned int polca_parallel::EmAlgorithm::get_n_iter() const {
+  return this->n_iter_;
+}
 
-bool polca_parallel::EmAlgorithm::get_has_restarted() {
+bool polca_parallel::EmAlgorithm::get_has_restarted() const {
   return this->has_restarted_;
 }
 
@@ -183,7 +185,7 @@ void polca_parallel::EmAlgorithm::FinalPrior() {
 }
 
 double polca_parallel::EmAlgorithm::GetPrior(std::size_t data_index,
-                                             std::size_t cluster_index) {
+                                             std::size_t cluster_index) const {
   return this->prior_[cluster_index];
 }
 
@@ -208,12 +210,13 @@ void polca_parallel::EmAlgorithm::EStep() {
 
 double polca_parallel::EmAlgorithm::PosteriorUnnormalize(
     std::span<int> responses_i, double prior,
-    arma::Col<double>& estimated_prob) {
+    arma::Col<double>& estimated_prob) const {
   return polca_parallel::PosteriorUnnormalize(responses_i, this->n_outcomes_,
                                               estimated_prob, prior);
 }
 
-bool polca_parallel::EmAlgorithm::IsInvalidLikelihood(double ln_l_difference) {
+bool polca_parallel::EmAlgorithm::IsInvalidLikelihood(
+    double ln_l_difference) const {
   return std::isnan(this->ln_l_);
 }
 

@@ -212,7 +212,7 @@ class StandardError {
    *   <li>dim 1: for each parameter</li>
    * </ul>
    */
-  void CalcScore(arma::Mat<double>& score);
+  void CalcScore(arma::Mat<double>& score) const;
 
   /**
    * Calculate the scores for the prior for all clusters except the zeroth one
@@ -224,7 +224,7 @@ class StandardError {
    * fill in with scores of the prior probabilities (and regression parameter if
    * applicable)
    */
-  virtual void CalcScorePrior(arma::subview<double>& score_prior);
+  virtual void CalcScorePrior(arma::subview<double>& score_prior) const;
 
   /**
    * Calculate the scores for ALL outcome probabilities (except zeroth outcome)
@@ -235,7 +235,7 @@ class StandardError {
    * @param score_probs MODIFIED - submatrix of the complete score matrix, to
    * fill in with the scores of the outcome probabilities
    */
-  void CalcScoreProbs(arma::subview<double>& score_probs);
+  void CalcScoreProbs(arma::subview<double>& score_probs) const;
 
   /**
    * Calculate the scores for the outcome probabilities
@@ -253,7 +253,7 @@ class StandardError {
   void CalcScoreProbsCol(std::size_t outcome_index, double prob,
                          arma::subview_col<int>& responses_j,
                          arma::subview_col<double>& posterior_i,
-                         arma::subview_col<double>& score_col);
+                         arma::subview_col<double>& score_col) const;
 
   /**
    * Calculate the Jacobian matrix
@@ -263,7 +263,7 @@ class StandardError {
    *
    * @param jacobian pointer to save the Jacobian matrix
    */
-  void CalcJacobian(arma::Mat<double>& jacobian);
+  void CalcJacobian(arma::Mat<double>& jacobian) const;
 
   /**
    * Calculate the block matrix for the prior in the Jacobian matrix
@@ -277,7 +277,7 @@ class StandardError {
    * *jacobian_ptr is modified so that it points to the start of the next block
    * matrix after calling this method
    */
-  virtual void CalcJacobianPrior(arma::subview<double>& jacobian_prior);
+  virtual void CalcJacobianPrior(arma::subview<double>& jacobian_prior) const;
 
   /**
    * Calculate all block matrices for the probabilities in the Jacobian matrix
@@ -291,7 +291,7 @@ class StandardError {
    * *jacobian_ptr is modified so that it points to the start of the next block
    * matrix after calling this method
    */
-  void CalcJacobianProbs(arma::subview<double>& jacobian_probs);
+  void CalcJacobianProbs(arma::subview<double>& jacobian_probs) const;
 
   /**
    * Calculate a block matrix for given probabilities
@@ -308,7 +308,7 @@ class StandardError {
    * matrix after calling this method
    */
   void CalcJacobianBlock(std::span<double> probs,
-                         arma::subview<double>& jacobian_block);
+                         arma::subview<double>& jacobian_block) const;
 };
 
 }  // namespace polca_parallel

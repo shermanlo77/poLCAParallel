@@ -274,14 +274,14 @@ class EmAlgorithmArray {
    *
    * Only available after calling Fit()
    */
-  [[nodiscard]] std::size_t get_best_rep_index();
+  [[nodiscard]] std::size_t get_best_rep_index() const;
 
   /**
    * Get the best log-likelihood from all repetitions
    *
    * Only available after calling Fit()
    */
-  [[nodiscard]] double get_optimal_ln_l();
+  [[nodiscard]] double get_optimal_ln_l() const;
 
   /**
    * Get the number of EM iterations done for the repetition with the highest
@@ -289,7 +289,7 @@ class EmAlgorithmArray {
    *
    * Only available after calling Fit()
    */
-  [[nodiscard]] unsigned int get_n_iter();
+  [[nodiscard]] unsigned int get_n_iter() const;
 
   /**
    * Return true if at least one repetition had to restart, eg due to a singular
@@ -297,7 +297,7 @@ class EmAlgorithmArray {
    *
    * Only available after calling Fit()
    */
-  [[nodiscard]] bool get_has_restarted();
+  [[nodiscard]] bool get_has_restarted() const;
 
  protected:
   /** Set the rng of a EmAlgorithm object given the rep_index it is working on*/

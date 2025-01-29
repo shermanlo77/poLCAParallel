@@ -171,9 +171,9 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
   void FinalPrior() override;
 
   [[nodiscard]] double GetPrior(std::size_t data_index,
-                                std::size_t cluster_index) override;
+                                std::size_t cluster_index) const override;
 
-  [[nodiscard]] bool IsInvalidLikelihood(double ln_l_difference) override;
+  [[nodiscard]] bool IsInvalidLikelihood(double ln_l_difference) const override;
 
   /**
    * Do M step

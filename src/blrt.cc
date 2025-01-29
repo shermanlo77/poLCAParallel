@@ -197,7 +197,7 @@ void polca_parallel::Blrt::RunThread() {
 void polca_parallel::Blrt::Bootstrap(std::span<double> prior,
                                      std::span<double> prob,
                                      std::mt19937_64& rng,
-                                     std::span<int> response) {
+                                     std::span<int> response) const {
   std::uniform_int_distribution<std::size_t> prior_dist(0, prior.size() - 1);
   std::uniform_real_distribution<double> uniform_dist(0, 1);
 

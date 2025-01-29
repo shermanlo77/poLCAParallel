@@ -273,16 +273,16 @@ class EmAlgorithm {
   void set_best_initial_prob(std::span<double> best_initial_prob);
 
   /** Get the log-likelihood */
-  [[nodiscard]] double get_ln_l();
+  [[nodiscard]] double get_ln_l() const;
 
   /** Get the number of iterations of EM done */
-  [[nodiscard]] unsigned int get_n_iter();
+  [[nodiscard]] unsigned int get_n_iter() const;
 
   /**
    * Indicate if it needed to use new initial values during a fit, it can happen
    * if a matrix is singular for example
    */
-  [[nodiscard]] bool get_has_restarted();
+  [[nodiscard]] bool get_has_restarted() const;
 
   /** Set rng using a seed, for generating new random initial values */
   void set_seed(unsigned seed);
@@ -331,7 +331,7 @@ class EmAlgorithm {
    * @return double prior
    */
   [[nodiscard]] virtual double GetPrior(std::size_t data_index,
-                                        std::size_t cluster_index);
+                                        std::size_t cluster_index) const;
 
   /**
    * Do E step
@@ -361,7 +361,7 @@ class EmAlgorithm {
    */
   [[nodiscard]] virtual double PosteriorUnnormalize(
       std::span<int> responses_i, double prior,
-      arma::Col<double>& estimated_prob);
+      arma::Col<double>& estimated_prob) const;
 
   /**
    * Check if the likelihood is invalid
@@ -371,7 +371,7 @@ class EmAlgorithm {
    * @return true if the likelihood is invalid
    * @return false if the likelihood is okay
    */
-  [[nodiscard]] virtual bool IsInvalidLikelihood(double ln_l_difference);
+  [[nodiscard]] virtual bool IsInvalidLikelihood(double ln_l_difference) const;
 
   /**
    * Do M step

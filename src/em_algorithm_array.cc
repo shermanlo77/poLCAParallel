@@ -102,19 +102,19 @@ void polca_parallel::EmAlgorithmArray::set_ln_l_array(
   this->ln_l_array_ = ln_l_array;
 }
 
-std::size_t polca_parallel::EmAlgorithmArray::get_best_rep_index() {
+std::size_t polca_parallel::EmAlgorithmArray::get_best_rep_index() const {
   return this->best_rep_index_;
 }
 
-double polca_parallel::EmAlgorithmArray::get_optimal_ln_l() {
+double polca_parallel::EmAlgorithmArray::get_optimal_ln_l() const {
   return this->optimal_ln_l_;
 }
 
-unsigned int polca_parallel::EmAlgorithmArray::get_n_iter() {
+unsigned int polca_parallel::EmAlgorithmArray::get_n_iter() const {
   return this->n_iter_;
 }
 
-bool polca_parallel::EmAlgorithmArray::get_has_restarted() {
+bool polca_parallel::EmAlgorithmArray::get_has_restarted() const {
   return this->has_restarted_;
 }
 

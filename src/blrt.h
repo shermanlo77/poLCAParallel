@@ -190,7 +190,7 @@ class Blrt {
    * </ul>
    */
   void Bootstrap(std::span<double> prior, std::span<double> prob,
-                 std::mt19937_64& rng, std::span<int> response);
+                 std::mt19937_64& rng, std::span<int> response) const;
 };
 
 }  // namespace polca_parallel

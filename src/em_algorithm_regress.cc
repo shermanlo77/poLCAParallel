@@ -69,13 +69,13 @@ void polca_parallel::EmAlgorithmRegress::FinalPrior() {
   // do nothing, prior_ already in required format
 }
 
-double polca_parallel::EmAlgorithmRegress::GetPrior(std::size_t data_index,
-                                                    std::size_t cluster_index) {
+double polca_parallel::EmAlgorithmRegress::GetPrior(
+    std::size_t data_index, std::size_t cluster_index) const {
   return this->prior_[data_index + this->n_data_ * cluster_index];
 }
 
 bool polca_parallel::EmAlgorithmRegress::IsInvalidLikelihood(
-    double ln_l_difference) {
+    double ln_l_difference) const {
   // comparing nan may be unclear, check nan first
   // check if the newton step decreases the log likelihood
   if (this->polca_parallel::EmAlgorithm::IsInvalidLikelihood(ln_l_difference)) {

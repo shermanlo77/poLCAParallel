@@ -112,8 +112,8 @@ class StandardErrorRegress : public polca_parallel::StandardError {
  protected:
   [[nodiscard]] std::unique_ptr<polca_parallel::ErrorSolver> InitErrorSolver()
       override;
-  void CalcScorePrior(arma::subview<double>& score_prior) override;
-  void CalcJacobianPrior(arma::subview<double>& jacobian_prior) override;
+  void CalcScorePrior(arma::subview<double>& score_prior) const override;
+  void CalcJacobianPrior(arma::subview<double>& jacobian_prior) const override;
 };
 
 }  // namespace polca_parallel

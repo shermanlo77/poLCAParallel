@@ -75,7 +75,7 @@ class EmAlgorithmNanTemplate : public T {
 
   [[nodiscard]] double PosteriorUnnormalize(
       std::span<int> responses_i, double prior,
-      arma::Col<double>& estimated_prob) override;
+      arma::Col<double>& estimated_prob) const override;
 };
 
 /**
