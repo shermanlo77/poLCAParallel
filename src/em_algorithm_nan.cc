@@ -35,30 +35,29 @@ template <typename T>
 polca_parallel::EmAlgorithmNanTemplate<T>::EmAlgorithmNanTemplate(
     std::span<double> features, std::span<int> responses,
     std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, unsigned int max_iter, double tolerance,
-    std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
-    : T(features, responses, initial_prob, n_data, n_feature, n_category,
-        n_outcomes, n_cluster, max_iter, tolerance, posterior, prior,
-        estimated_prob, regress_coeff),
-      posterior_sum_(n_category) {}
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
+    : T(features, responses, initial_prob, n_data, n_feature, n_outcomes,
+        n_cluster, max_iter, tolerance, posterior, prior, estimated_prob,
+        regress_coeff),
+      posterior_sum_(n_outcomes.size()) {}
 
 template <typename T>
 void polca_parallel::EmAlgorithmNanTemplate<T>::WeightedSumProb(
     std::size_t cluster_index) {
   polca_parallel::NanWeightedSumProb(
-      cluster_index, this->responses_, this->n_data_, this->n_category_,
-      this->n_outcomes_, this->posterior_, this->estimated_prob_,
-      this->posterior_sum_);
+      cluster_index, this->responses_, this->n_data_, this->n_outcomes_,
+      this->posterior_, this->estimated_prob_, this->posterior_sum_);
 }
 
 template <typename T>
 void polca_parallel::EmAlgorithmNanTemplate<T>::NormalWeightedSumProb(
     std::size_t cluster_index) {
-  polca_parallel::NanNormalWeightedSumProb(
-      cluster_index, this->n_category_, this->n_outcomes_, this->posterior_sum_,
-      this->estimated_prob_);
+  polca_parallel::NanNormalWeightedSumProb(cluster_index, this->n_outcomes_,
+                                           this->posterior_sum_,
+                                           this->estimated_prob_);
 }
 
 template <typename T>
@@ -66,38 +65,37 @@ double polca_parallel::EmAlgorithmNanTemplate<T>::PosteriorUnnormalize(
     std::span<int> responses_i, double prior,
     arma::Col<double>& estimated_prob) {
   return polca_parallel::PosteriorUnnormalize<true>(
-      responses_i, this->n_category_, this->n_outcomes_, estimated_prob, prior);
+      responses_i, this->n_outcomes_, estimated_prob, prior);
 }
 
 polca_parallel::EmAlgorithmNan::EmAlgorithmNan(
     std::span<double> features, std::span<int> responses,
     std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, unsigned int max_iter, double tolerance,
-    std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
     : EmAlgorithmNanTemplate<EmAlgorithm>(
-          features, responses, initial_prob, n_data, n_feature, n_category,
-          n_outcomes, n_cluster, max_iter, tolerance, posterior, prior,
-          estimated_prob, regress_coeff) {}
+          features, responses, initial_prob, n_data, n_feature, n_outcomes,
+          n_cluster, max_iter, tolerance, posterior, prior, estimated_prob,
+          regress_coeff) {}
 
 polca_parallel::EmAlgorithmNanRegress::EmAlgorithmNanRegress(
     std::span<double> features, std::span<int> responses,
     std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, unsigned int max_iter, double tolerance,
-    std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
     : EmAlgorithmNanTemplate<EmAlgorithmRegress>(
-          features, responses, initial_prob, n_data, n_feature, n_category,
-          n_outcomes, n_cluster, max_iter, tolerance, posterior, prior,
-          estimated_prob, regress_coeff) {}
+          features, responses, initial_prob, n_data, n_feature, n_outcomes,
+          n_cluster, max_iter, tolerance, posterior, prior, estimated_prob,
+          regress_coeff) {}
 
 void polca_parallel::NanWeightedSumProb(
     std::size_t cluster_index, std::span<int> responses, std::size_t n_data,
-    std::size_t n_category, std::span<std::size_t> n_outcomes,
-    arma::Mat<double>& posterior, arma::Mat<double>& estimated_prob,
-    std::vector<double>& posterior_sum) {
+    std::span<std::size_t> n_outcomes, arma::Mat<double>& posterior,
+    arma::Mat<double>& estimated_prob, std::vector<double>& posterior_sum) {
   std::fill(posterior_sum.begin(), posterior_sum.end(), 0.0);
 
   auto y = responses.begin();
@@ -126,12 +124,12 @@ void polca_parallel::NanWeightedSumProb(
 }
 
 void polca_parallel::NanNormalWeightedSumProb(
-    std::size_t cluster_index, std::size_t n_category,
-    std::span<std::size_t> n_outcomes, std::vector<double>& posterior_sum,
-    arma::Mat<double>& estimated_prob) {
+    std::size_t cluster_index, std::span<std::size_t> n_outcomes,
+    std::vector<double>& posterior_sum, arma::Mat<double>& estimated_prob) {
   auto estimated_prob_col = estimated_prob.unsafe_col(cluster_index).begin();
   std::size_t n_outcome;
-  for (std::size_t i_category = 0; i_category < n_category; ++i_category) {
+  for (std::size_t i_category = 0; i_category < n_outcomes.size();
+       ++i_category) {
     n_outcome = n_outcomes[i_category];
     arma::Col<double> estimated_prob_i(estimated_prob_col, n_outcome, false,
                                        true);

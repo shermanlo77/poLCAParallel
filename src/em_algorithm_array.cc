@@ -52,16 +52,14 @@ template void polca_parallel::EmAlgorithmArray::FitThread<
 polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
     std::span<double> features, std::span<int> responses,
     std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, std::size_t n_rep, std::size_t n_thread,
-    unsigned int max_iter, double tolerance, std::span<double> posterior,
-    std::span<double> prior, std::span<double> estimated_prob,
-    std::span<double> regress_coeff)
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
+    double tolerance, std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : features_(features),
       responses_(responses),
       n_data_(n_data),
       n_feature_(n_feature),
-      n_category_(n_category),
       n_outcomes_(n_outcomes),
       n_cluster_(n_cluster),
       max_iter_(max_iter),
@@ -170,8 +168,8 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
           this->initial_prob_.subspan(
               rep_index * this->n_outcomes_.sum() * n_cluster,
               this->n_outcomes_.sum() * n_cluster),
-          n_data, n_feature, this->n_category_, this->n_outcomes_, n_cluster,
-          this->max_iter_, this->tolerance_,
+          n_data, n_feature, this->n_outcomes_, n_cluster, this->max_iter_,
+          this->tolerance_,
           std::span<double>(posterior.begin(), posterior.size()),
           std::span<double>(prior.begin(), prior.size()),
           std::span<double>(estimated_prob.begin(), estimated_prob.size()),

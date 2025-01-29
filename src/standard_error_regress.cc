@@ -29,13 +29,12 @@ polca_parallel::StandardErrorRegress::StandardErrorRegress(
     std::span<double> features, std::span<int> responses,
     std::span<double> probs, std::span<double> prior,
     std::span<double> posterior, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, std::span<double> prior_error,
-    std::span<double> prob_error, std::span<double> regress_coeff_error)
-    : polca_parallel::StandardError(features, responses, probs, prior,
-                                    posterior, n_data, n_feature, n_category,
-                                    n_outcomes, n_cluster, prior_error,
-                                    prob_error, regress_coeff_error),
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    std::span<double> prior_error, std::span<double> prob_error,
+    std::span<double> regress_coeff_error)
+    : polca_parallel::StandardError(
+          features, responses, probs, prior, posterior, n_data, n_feature,
+          n_outcomes, n_cluster, prior_error, prob_error, regress_coeff_error),
       features_(features.data(), n_data, n_feature, false, true) {}
 
 std::unique_ptr<polca_parallel::ErrorSolver>

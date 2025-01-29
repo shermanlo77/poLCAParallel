@@ -31,9 +31,9 @@ polca_parallel::Blrt::Blrt(
     std::span<double> prior_null, std::span<double> prob_null,
     std::size_t n_cluster_null, std::span<double> prior_alt,
     std::span<double> prob_alt, std::size_t n_cluster_alt, std::size_t n_data,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
-    unsigned int max_iter, double tolerance, std::span<double> ratio_array)
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_bootstrap,
+    std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
+    double tolerance, std::span<double> ratio_array)
     : prior_null_(prior_null),
       prob_null_(prob_null),
       n_cluster_null_(n_cluster_null),
@@ -41,7 +41,6 @@ polca_parallel::Blrt::Blrt(
       prob_alt_(prob_alt),
       n_cluster_alt_(n_cluster_alt),
       n_data_(n_data),
-      n_category_(n_category),
       n_outcomes_(n_outcomes),
       n_bootstrap_(n_bootstrap),
       n_rep_(n_rep),
@@ -78,7 +77,7 @@ void polca_parallel::Blrt::RunThread() {
   std::size_t i_bootstrap;
 
   // to store the bootstrap samples
-  std::vector<int> bootstrap_data(this->n_data_ * this->n_category_);
+  std::vector<int> bootstrap_data(this->n_data_ * this->n_outcomes_.size());
   std::span<int> bootstrap_span(bootstrap_data.begin(), bootstrap_data.size());
 
   // allocate memory for storing initial values for the probabilities
@@ -137,13 +136,12 @@ void polca_parallel::Blrt::RunThread() {
                 i_rep * this->n_outcomes_.sum() * this->n_cluster_alt_,
             this->n_outcomes_.sum(), this->n_cluster_alt_, false, true);
 
-        polca_parallel::GenerateNewProb(
-            *rng, uniform, this->n_outcomes_, this->n_category_,
-            this->n_cluster_null_, init_prob_null_i);
+        polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
+                                        this->n_cluster_null_,
+                                        init_prob_null_i);
 
         polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
-                                        this->n_category_, this->n_cluster_alt_,
-                                        init_prob_alt_i);
+                                        this->n_cluster_alt_, init_prob_alt_i);
       }
 
       // bootstrap data using null model
@@ -154,9 +152,8 @@ void polca_parallel::Blrt::RunThread() {
       polca_parallel::EmAlgorithmArraySerial null_model(
           features, bootstrap_span,
           std::span<double>(init_prob_null.begin(), init_prob_null.size()),
-          this->n_data_, 1, this->n_category_, this->n_outcomes_,
-          this->n_cluster_null_, this->n_rep_, this->max_iter_,
-          this->tolerance_,
+          this->n_data_, 1, this->n_outcomes_, this->n_cluster_null_,
+          this->n_rep_, this->max_iter_, this->tolerance_,
           std::span<double>(fitted_posterior_null.begin(),
                             fitted_posterior_null.size()),
           std::span<double>(fitted_prior_null.begin(),
@@ -172,8 +169,8 @@ void polca_parallel::Blrt::RunThread() {
       polca_parallel::EmAlgorithmArraySerial alt_model(
           features, bootstrap_span,
           std::span<double>(init_prob_alt.begin(), init_prob_alt.size()),
-          this->n_data_, 1, this->n_category_, this->n_outcomes_,
-          this->n_cluster_alt_, this->n_rep_, this->max_iter_, this->tolerance_,
+          this->n_data_, 1, this->n_outcomes_, this->n_cluster_alt_,
+          this->n_rep_, this->max_iter_, this->tolerance_,
           std::span<double>(fitted_posterior_alt.begin(),
                             fitted_posterior_alt.size()),
           std::span<double>(fitted_prior_alt.begin(), fitted_prior_alt.size()),

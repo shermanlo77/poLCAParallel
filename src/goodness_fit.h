@@ -83,7 +83,6 @@ void GetUniqueObserved(std::span<int> responses, std::size_t n_data,
  * </ul>
  * @param n_data number of data points
  * @param n_obs number of fully observed data points
- * @param n_category number of categories
  * @param n_outcomes array of integers, number of outcomes for each category,
  * array of length n_category
  * @param n_cluster number of clusters (or classes)
@@ -94,8 +93,8 @@ void GetUniqueObserved(std::span<int> responses, std::size_t n_data,
  * </ul>
  */
 void GetExpected(std::span<double> prior, std::span<double> outcome_prob,
-                 std::size_t n_data, std::size_t n_obs, std::size_t n_category,
-                 NOutcomes n_outcomes, std::size_t n_cluster,
+                 std::size_t n_data, std::size_t n_obs, NOutcomes n_outcomes,
+                 std::size_t n_cluster,
                  std::map<std::vector<int>, Frequency>& unique_freq);
 
 /**

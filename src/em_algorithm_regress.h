@@ -111,7 +111,6 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * </ul>
    * @param n_data Number of data points
    * @param n_feature Number of features
-   * @param n_category Number of categories
    * @param n_outcomes Vector of number of outcomes for each category and its
    * sum
    * @param n_cluster Number of clusters to fit
@@ -149,11 +148,10 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    */
   EmAlgorithmRegress(std::span<double> features, std::span<int> responses,
                      std::span<double> initial_prob, std::size_t n_data,
-                     std::size_t n_feature, std::size_t n_category,
-                     NOutcomes n_outcomes, std::size_t n_cluster,
-                     unsigned int max_iter, double tolerance,
-                     std::span<double> posterior, std::span<double> prior,
-                     std::span<double> estimated_prob,
+                     std::size_t n_feature, NOutcomes n_outcomes,
+                     std::size_t n_cluster, unsigned int max_iter,
+                     double tolerance, std::span<double> posterior,
+                     std::span<double> prior, std::span<double> estimated_prob,
                      std::span<double> regress_coeff);
 
  protected:

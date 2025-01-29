@@ -87,8 +87,6 @@ class Blrt {
 
   /** Number of data points */
   const std::size_t n_data_;
-  /** Number of categories */
-  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   NOutcomes n_outcomes_;
   /** Number of bootstrap samples to run */
@@ -147,7 +145,6 @@ class Blrt {
    * @param n_cluster_alt Alt model, number of clusters fitted
    * @param n_data Number of data points, used to bootstrap this many data
    * points
-   * @param n_category Number of categories
    * @param n_outcomes Array of number of outcomes, for each category
    * @param sum_outcomes Sum of all integers in n_outcomes
    * @param n_bootstrap Number of bootstrap samples to generate
@@ -163,9 +160,9 @@ class Blrt {
   Blrt(std::span<double> prior_null, std::span<double> prob_null,
        std::size_t n_cluster_null, std::span<double> prior_alt,
        std::span<double> prob_alt, std::size_t n_cluster_alt,
-       std::size_t n_data, std::size_t n_category, NOutcomes n_outcomes,
-       std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
-       unsigned int max_iter, double tolerance, std::span<double> ratio_array);
+       std::size_t n_data, NOutcomes n_outcomes, std::size_t n_bootstrap,
+       std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
+       double tolerance, std::span<double> ratio_array);
 
   /** Set the rng seed for each bootstrap sample */
   void SetSeed(std::seed_seq& seed);

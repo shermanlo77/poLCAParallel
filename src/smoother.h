@@ -79,8 +79,6 @@ class Smoother {
   std::vector<double> posterior_;
   /** Number of data points */
   const std::size_t n_data_;
-  /** Number of categories */
-  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   NOutcomes n_outcomes_;
   /** Number of clusters to fit */
@@ -113,14 +111,13 @@ class Smoother {
    *   <li>dim 1: for each cluster</li>
    * </ul>
    * @param n_data Number of data points
-   * @param n_category Number of categories
    * @param n_outcomes Array of number of outcomes, for each category
    * @param sum_outcomes Sum of all integers in n_outcomes
    * @param n_cluster Number of clusters
    */
   Smoother(std::span<double> probs, std::span<double> prior,
            std::span<double> posterior, std::size_t n_data,
-           std::size_t n_category, NOutcomes n_outcomes, std::size_t n_cluster);
+           NOutcomes n_outcomes, std::size_t n_cluster);
 
   /**
    * Smooth the probabilities probs_, prior_ and posterior_

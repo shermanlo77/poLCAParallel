@@ -26,14 +26,14 @@
 polca_parallel::EmAlgorithmArraySerial::EmAlgorithmArraySerial(
     std::span<double> features, std::span<int> responses,
     std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, std::size_t n_rep, unsigned int max_iter,
-    double tolerance, std::span<double> posterior, std::span<double> prior,
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    std::size_t n_rep, unsigned int max_iter, double tolerance,
+    std::span<double> posterior, std::span<double> prior,
     std::span<double> estimated_prob, std::span<double> regress_coeff)
-    : polca_parallel::EmAlgorithmArray(
-          features, responses, initial_prob, n_data, n_feature, n_category,
-          n_outcomes, n_cluster, n_rep, 1, max_iter, tolerance, posterior,
-          prior, estimated_prob, regress_coeff) {}
+    : polca_parallel::EmAlgorithmArray(features, responses, initial_prob,
+                                       n_data, n_feature, n_outcomes, n_cluster,
+                                       n_rep, 1, max_iter, tolerance, posterior,
+                                       prior, estimated_prob, regress_coeff) {}
 
 void polca_parallel::EmAlgorithmArraySerial::SetSeed(std::seed_seq& seed) {
   this->seed_array_ = std::make_unique<std::vector<unsigned>>(1);

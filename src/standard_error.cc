@@ -30,23 +30,22 @@ polca_parallel::StandardError::StandardError(
     std::span<double> features, std::span<int> responses,
     std::span<double> probs, std::span<double> prior,
     std::span<double> posterior, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, std::span<double> prior_error,
-    std::span<double> prob_error, std::span<double> regress_coeff_error)
-    : responses_(responses.data(), n_data, n_category, false, true),
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    std::span<double> prior_error, std::span<double> prob_error,
+    std::span<double> regress_coeff_error)
+    : responses_(responses.data(), n_data, n_outcomes.size(), false, true),
       probs_(probs),
       prior_(prior.data(), n_data, n_cluster, false, true),
       posterior_(posterior.data(), n_data, n_cluster, false, true),
       n_data_(n_data),
       n_feature_(n_feature),
-      n_category_(n_category),
       n_outcomes_(n_outcomes),
       n_cluster_(n_cluster),
       prior_error_(prior_error),
       prob_error_(prob_error),
       regress_coeff_error_(regress_coeff_error),
       info_size_(n_feature_ * (n_cluster_ - 1) +
-                 n_cluster_ * (n_outcomes.sum() - n_category_)),
+                 n_cluster_ * (n_outcomes.sum() - n_outcomes.size())),
       jacobian_width_(n_cluster_ + n_cluster_ * n_outcomes.sum()) {}
 
 void polca_parallel::StandardError::Calc() {
@@ -114,8 +113,8 @@ void polca_parallel::StandardError::CalcScoreProbs(
        ++cluster_index) {
     // posterior for the given cluster
     auto posterior_i = this->posterior_.col(cluster_index);
-    for (std::size_t category_index = 0; category_index < this->n_category_;
-         ++category_index) {
+    for (std::size_t category_index = 0;
+         category_index < this->n_outcomes_.size(); ++category_index) {
       // response for the given category
       auto responses_j = this->responses_.col(category_index);
       std::advance(prob, 1);  // ignore the zeroth outcome

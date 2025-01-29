@@ -89,8 +89,6 @@ class EmAlgorithm {
   const std::size_t n_data_;
   /** Number of features */
   const std::size_t n_feature_;
-  /** Number of categories */
-  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   NOutcomes n_outcomes_;
   /** Number of clusters to fit */
@@ -192,7 +190,6 @@ class EmAlgorithm {
    * </ul>
    * @param n_data Number of data points
    * @param n_feature Number of features
-   * @param n_category Number of categories
    * @param n_outcomes Vector of number of outcomes for each category and its
    * sum
    * @param n_cluster Number of clusters to fit
@@ -228,9 +225,8 @@ class EmAlgorithm {
    */
   EmAlgorithm(std::span<double> features, std::span<int> responses,
               std::span<double> initial_prob, std::size_t n_data,
-              std::size_t n_feature, std::size_t n_category,
-              NOutcomes n_outcomes, std::size_t n_cluster,
-              unsigned int max_iter, double tolerance,
+              std::size_t n_feature, NOutcomes n_outcomes,
+              std::size_t n_cluster, unsigned int max_iter, double tolerance,
               std::span<double> posterior, std::span<double> prior,
               std::span<double> estimated_prob,
               std::span<double> regress_coeff);
@@ -464,7 +460,6 @@ class EmAlgorithm {
  * @tparam is_check_zero to check if the responses are zero or not, for
  * performance reason, use false when the responses do not contain zero values
  * @param responses_i the responses for a given data point, length n_catgeory
- * @param n_catgeory number of categories
  * @param n_outcomes number of outcomes for each category
  * @param estimated_prob A column view of estimated_prob_. This is modified to
  * point to the probabilities for the next cluster. It points to a flattened
@@ -478,7 +473,6 @@ class EmAlgorithm {
  */
 template <bool is_check_zero = false>
 [[nodiscard]] double PosteriorUnnormalize(std::span<int> responses_i,
-                                          std::size_t n_category,
                                           std::span<std::size_t> n_outcomes,
                                           arma::Col<double>& estimated_prob,
                                           double prior);
@@ -490,7 +484,6 @@ template <bool is_check_zero = false>
  * @param uniform uniform (0, 1)
  * @param n_outcomes vector length n_category, number of outcomes for each
  * category
- * @param n_category number of categories
  * @param n_cluster number of clusters
  * @param prob output, matrix of random response probabilities, conditioned on
  * cluster, for each outcome, category and cluster
@@ -501,8 +494,8 @@ template <bool is_check_zero = false>
  */
 void GenerateNewProb(std::mt19937_64& rng,
                      std::uniform_real_distribution<double>& uniform,
-                     std::span<std::size_t> n_outcomes, std::size_t n_category,
-                     std::size_t n_cluster, arma::Mat<double>& prob);
+                     std::span<std::size_t> n_outcomes, std::size_t n_cluster,
+                     arma::Mat<double>& prob);
 
 }  // namespace polca_parallel
 

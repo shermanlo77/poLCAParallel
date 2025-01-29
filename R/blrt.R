@@ -45,7 +45,6 @@ blrt <- function(model_null, model_alt, n_bootstrap,
 
   # extract other information, use the null model
   n_data <- model_null$N
-  n_category <- ncol(model_null$y)
   n_outcomes <- apply(model_null$y, 2, max)
 
   # random seed required to generate new initial values when needed
@@ -56,7 +55,7 @@ blrt <- function(model_null, model_alt, n_bootstrap,
 
   bootstrap_log_ratio_array <- BlrtRcpp(
     prior_null, prob_null, n_cluster_null, prior_alt,
-    prob_alt, n_cluster_alt, n_data, n_category, n_outcomes, n_bootstrap, n_rep,
+    prob_alt, n_cluster_alt, n_data, n_outcomes, n_bootstrap, n_rep,
     n_thread, max_iter, tol, seed
   )
 

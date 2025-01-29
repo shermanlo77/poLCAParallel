@@ -64,7 +64,6 @@
  * @param n_cluster_alt Alt model, number of clusters fitted
  * @param n_data Number of data points, used to bootstrap this many data
  * points
- * @param n_category Number of categories
  * @param n_outcomes Array of number of outcomes, for each category
  * @param n_bootstrap Number of bootstrap samples to generate
  * @param n_rep Number of initial values to try when fitting on the bootstrap
@@ -81,9 +80,9 @@ Rcpp::NumericVector BlrtRcpp(
     Rcpp::NumericVector prior_null, Rcpp::NumericVector prob_null,
     std::size_t n_cluster_null, Rcpp::NumericVector prior_alt,
     Rcpp::NumericVector prob_alt, std::size_t n_cluster_alt, std::size_t n_data,
-    std::size_t n_category, Rcpp::IntegerVector n_outcomes_int,
-    std::size_t n_bootstrap, std::size_t n_rep, std::size_t n_thread,
-    unsigned int max_iter, double tolerance, Rcpp::IntegerVector seed) {
+    Rcpp::IntegerVector n_outcomes_int, std::size_t n_bootstrap,
+    std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
+    double tolerance, Rcpp::IntegerVector seed) {
   std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
                                              n_outcomes_int.end());
   polca_parallel::NOutcomes n_outcomes(n_outcomes_size_t.data(),
@@ -97,8 +96,8 @@ Rcpp::NumericVector BlrtRcpp(
       std::span<double>(prob_null.begin(), prob_null.size()), n_cluster_null,
       std::span<double>(prior_alt.begin(), prior_alt.size()),
       std::span<double>(prob_alt.begin(), prob_alt.size()), n_cluster_alt,
-      n_data, n_category, n_outcomes, n_bootstrap, n_rep, n_thread, max_iter,
-      tolerance, std::span<double>(ratio_array.begin(), ratio_array.size()));
+      n_data, n_outcomes, n_bootstrap, n_rep, n_thread, max_iter, tolerance,
+      std::span<double>(ratio_array.begin(), ratio_array.size()));
 
   std::seed_seq seed_seq(seed.begin(), seed.end());
   blrt.SetSeed(seed_seq);

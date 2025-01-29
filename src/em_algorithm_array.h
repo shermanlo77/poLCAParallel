@@ -75,8 +75,6 @@ class EmAlgorithmArray {
   const std::size_t n_data_;
   /** Number of features */
   const std::size_t n_feature_;
-  /** Number of categories */
-  const std::size_t n_category_;
   /** Vector of the number of outcomes for each category */
   NOutcomes n_outcomes_;
   /** Number of clusters (classes in literature) to fit */
@@ -195,7 +193,6 @@ class EmAlgorithmArray {
    * </ul>
    * @param n_data Number of data points
    * @param n_feature Number of features
-   * @param n_category Number of categories
    * @param n_outcomes Array of the number of outcomes for each category and its
    * sum
    * @param n_cluster Number of clusters to fit
@@ -232,12 +229,11 @@ class EmAlgorithmArray {
    */
   EmAlgorithmArray(std::span<double> features, std::span<int> responses,
                    std::span<double> initial_prob, std::size_t n_data,
-                   std::size_t n_feature, std::size_t n_category,
-                   NOutcomes n_outcomes, std::size_t n_cluster,
-                   std::size_t n_rep, std::size_t n_thread,
-                   unsigned int max_iter, double tolerance,
-                   std::span<double> posterior, std::span<double> prior,
-                   std::span<double> estimated_prob,
+                   std::size_t n_feature, NOutcomes n_outcomes,
+                   std::size_t n_cluster, std::size_t n_rep,
+                   std::size_t n_thread, unsigned int max_iter,
+                   double tolerance, std::span<double> posterior,
+                   std::span<double> prior, std::span<double> estimated_prob,
                    std::span<double> regress_coeff);
 
   /**

@@ -35,14 +35,13 @@ poLCAParallel.se <- function(polca, is_smooth = FALSE) {
   probs <- prob_vec$vecprobs
   n_outcomes <- prob_vec$numChoices
   n_cluster <- prob_vec$classes
-  n_category <- length(n_outcomes)
   prior <- polca$prior
   posterior <- polca$posterior
 
   # call the C++ function
   results <- StandardErrorRcpp(
     features, responses, probs, prior, posterior,
-    n_data, n_feature, n_category, n_outcomes, n_cluster, is_smooth
+    n_data, n_feature, n_outcomes, n_cluster, is_smooth
   )
 
   # standard errors for the prior

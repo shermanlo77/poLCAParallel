@@ -43,7 +43,6 @@
  * </ul>
  * @param n_data number of data points
  * @param n_obs number of fully observed data points
- * @param n_category number of categories
  * @param n_outcomes vector, number of possible responses for each category
  * @param n_cluster number of clusters, or classes, to fit
  * @return a list containing:
@@ -58,13 +57,14 @@
 Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                            Rcpp::NumericVector prior,
                            Rcpp::NumericVector outcome_prob, std::size_t n_data,
-                           std::size_t n_obs, std::size_t n_category,
+                           std::size_t n_obs,
                            Rcpp::IntegerVector n_outcomes_int,
                            std ::size_t n_cluster) {
   std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
                                              n_outcomes_int.end());
   polca_parallel::NOutcomes n_outcomes(n_outcomes_size_t.data(),
                                        n_outcomes_size_t.size());
+  std::size_t n_category = n_outcomes.size();
 
   // get observed and expected frequencies for each unique response
   // having problems doing static allocation and passing the pointer
@@ -75,7 +75,7 @@ Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                     n_category, *unique_freq);
   GetExpected(std::span<double>(prior.begin(), prior.size()),
               std::span<double>(outcome_prob.begin(), outcome_prob.size()),
-              n_data, n_obs, n_category, n_outcomes, n_cluster, *unique_freq);
+              n_data, n_obs, n_outcomes, n_cluster, *unique_freq);
   // get log likelihood ratio and chi squared statistics
   std::array<double, 2> stats = GetStatistics(*unique_freq, n_data);
 

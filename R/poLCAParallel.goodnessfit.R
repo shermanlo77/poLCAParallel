@@ -26,7 +26,6 @@ poLCAParallel.goodnessfit <- function(results) {
         prob_vec$vecprobs,
         results$N,
         results$Nobs,
-        length(prob_vec$numChoices),
         prob_vec$numChoices,
         prob_vec$classes
     )

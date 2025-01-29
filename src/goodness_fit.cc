@@ -65,9 +65,8 @@ void polca_parallel::GetUniqueObserved(
 
 void polca_parallel::GetExpected(
     std::span<double> prior, std::span<double> outcome_prob, std::size_t n_data,
-    std::size_t n_obs, std::size_t n_category,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    std::map<std::vector<int>, Frequency>& unique_freq) {
+    std::size_t n_obs, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, std::map<std::vector<int>, Frequency>& unique_freq) {
   arma::Mat<double> outcome_prob_arma(outcome_prob.data(), n_outcomes.sum(),
                                       n_cluster, false, true);
 
@@ -84,7 +83,7 @@ void polca_parallel::GetExpected(
       auto outcome_prob_col = outcome_prob_arma.unsafe_col(m);
       // polca_parallel::PosteriorUnnormalize is located in em_algorithm
       total_p += polca_parallel::PosteriorUnnormalize(
-          response_i_span, n_category, n_outcomes, outcome_prob_col, prior[m]);
+          response_i_span, n_outcomes, outcome_prob_col, prior[m]);
     }
 
     iter->second.expected = total_p * static_cast<double>(n_obs);

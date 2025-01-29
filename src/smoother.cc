@@ -25,13 +25,12 @@
 polca_parallel::Smoother::Smoother(std::span<double> probs,
                                    std::span<double> prior,
                                    std::span<double> posterior,
-                                   std::size_t n_data, std::size_t n_category,
-                                   NOutcomes n_outcomes, std::size_t n_cluster)
+                                   std::size_t n_data, NOutcomes n_outcomes,
+                                   std::size_t n_cluster)
     : probs_(probs.begin(), probs.end()),
       prior_(prior.begin(), prior.end()),
       posterior_(posterior.begin(), posterior.end()),
       n_data_(n_data),
-      n_category_(n_category),
       n_outcomes_(n_outcomes),
       n_cluster_(n_cluster) {
   // std::vector makes a copy of the array

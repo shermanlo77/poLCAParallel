@@ -51,7 +51,6 @@
  * </ul>
  * @param n_data number of data points
  * @param n_feature number of features
- * @param n_category number of categories
  * @param n_outcomes: vector, number of possible outcomes for each category
  * @param n_cluster: number of clusters, or classes, to fit
  * @param n_rep: number of repetitions
@@ -80,7 +79,7 @@
 Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
                            Rcpp::IntegerMatrix responses,
                            Rcpp::NumericVector initial_prob, std::size_t n_data,
-                           std::size_t n_feature, std::size_t n_category,
+                           std::size_t n_feature,
                            Rcpp::IntegerVector n_outcomes_int,
                            std::size_t n_cluster, std::size_t n_rep, bool na_rm,
                            std::size_t n_thread, unsigned int max_iter,
@@ -103,8 +102,8 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
       std::span<double>(features.begin(), features.size()),
       std::span<int>(responses.begin(), responses.size()),
       std::span<double>(initial_prob.begin(), initial_prob.size()), n_data,
-      n_feature, n_category, n_outcomes, n_cluster, n_rep, n_thread, max_iter,
-      tolerance, std::span<double>(posterior.begin(), posterior.size()),
+      n_feature, n_outcomes, n_cluster, n_rep, n_thread, max_iter, tolerance,
+      std::span<double>(posterior.begin(), posterior.size()),
       std::span<double>(prior.begin(), prior.size()),
       std::span<double>(estimated_prob.begin(), estimated_prob.size()),
       std::span<double>(regress_coeff.begin(), regress_coeff.size()));

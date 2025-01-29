@@ -33,15 +33,14 @@
 polca_parallel::EmAlgorithm::EmAlgorithm(
     std::span<double> features, std::span<int> responses,
     std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    std::size_t n_category, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, unsigned int max_iter, double tolerance,
-    std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
     : responses_(responses),
       initial_prob_(initial_prob),
       n_data_(n_data),
       n_feature_(n_feature),
-      n_category_(n_category),
       n_outcomes_(n_outcomes),
       n_cluster_(n_cluster),
       max_iter_(max_iter),
@@ -166,8 +165,7 @@ void polca_parallel::EmAlgorithm::Reset(
   // generate random number for estimated_prob_
   this->has_restarted_ = true;
   polca_parallel::GenerateNewProb(*this->rng_, uniform, this->n_outcomes_,
-                                  this->n_category_, this->n_cluster_,
-                                  this->estimated_prob_);
+                                  this->n_cluster_, this->estimated_prob_);
 }
 
 void polca_parallel::EmAlgorithm::InitPrior() {
@@ -196,8 +194,8 @@ double polca_parallel::EmAlgorithm::GetPrior(std::size_t data_index,
 void polca_parallel::EmAlgorithm::EStep() {
   double prior;
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
-    auto responses_i =
-        this->responses_.subspan(i_data * this->n_category_, this->n_category_);
+    auto responses_i = this->responses_.subspan(
+        i_data * this->n_outcomes_.size(), this->n_outcomes_.size());
     for (std::size_t i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
       // access to posterior_ in this manner should result in cache misses
       // however PosteriorUnnormalize() is designed for cache efficiency
@@ -216,8 +214,8 @@ void polca_parallel::EmAlgorithm::EStep() {
 double polca_parallel::EmAlgorithm::PosteriorUnnormalize(
     std::span<int> responses_i, double prior,
     arma::Col<double>& estimated_prob) {
-  return polca_parallel::PosteriorUnnormalize(
-      responses_i, this->n_category_, this->n_outcomes_, estimated_prob, prior);
+  return polca_parallel::PosteriorUnnormalize(responses_i, this->n_outcomes_,
+                                              estimated_prob, prior);
 }
 
 bool polca_parallel::EmAlgorithm::IsInvalidLikelihood(double ln_l_difference) {
@@ -288,18 +286,15 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(
 }
 
 template double polca_parallel::PosteriorUnnormalize<false>(
-    std::span<int> responses_i, std::size_t n_category,
-    std::span<std::size_t> n_outcomes, arma::Col<double>& estimated_prob,
-    double prior);
+    std::span<int> responses_i, std::span<std::size_t> n_outcomes,
+    arma::Col<double>& estimated_prob, double prior);
 
 template double polca_parallel::PosteriorUnnormalize<true>(
-    std::span<int> responses_i, std::size_t n_category,
-    std::span<std::size_t> n_outcomes, arma::Col<double>& estimated_prob,
-    double prior);
+    std::span<int> responses_i, std::span<std::size_t> n_outcomes,
+    arma::Col<double>& estimated_prob, double prior);
 
 template <bool is_check_zero>
 double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
-                                            std::size_t n_category,
                                             std::span<std::size_t> n_outcomes,
                                             arma::Col<double>& estimated_prob,
                                             double prior) {
@@ -378,7 +373,7 @@ double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
 
 void polca_parallel::GenerateNewProb(
     std::mt19937_64& rng, std::uniform_real_distribution<double>& uniform,
-    std::span<size_t> n_outcomes, std::size_t n_category, std::size_t n_cluster,
+    std::span<size_t> n_outcomes, std::size_t n_cluster,
     arma::Mat<double>& prob) {
   for (auto& prob_i : prob) {
     prob_i = uniform(rng);

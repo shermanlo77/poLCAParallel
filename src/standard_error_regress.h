@@ -85,7 +85,6 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    * </ul>
    * @param n_data Number of data points
    * @param n_feature Number of features
-   * @param n_category Number of categories
    * @param n_outcomes Array of number of outcomes, for each category, and its
    * sum
    * @param n_cluster Number of clusters fitted
@@ -105,9 +104,8 @@ class StandardErrorRegress : public polca_parallel::StandardError {
   StandardErrorRegress(std::span<double> features, std::span<int> responses,
                        std::span<double> probs, std::span<double> prior,
                        std::span<double> posterior, std::size_t n_data,
-                       std::size_t n_feature, std::size_t n_category,
-                       NOutcomes n_outcomes, std::size_t n_cluster,
-                       std::span<double> prior_error,
+                       std::size_t n_feature, NOutcomes n_outcomes,
+                       std::size_t n_cluster, std::span<double> prior_error,
                        std::span<double> prob_error,
                        std::span<double> regress_coeff_error);
 
