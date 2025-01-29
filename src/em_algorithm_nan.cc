@@ -48,8 +48,8 @@ template <typename T>
 void polca_parallel::EmAlgorithmNanTemplate<T>::WeightedSumProb(
     std::size_t cluster_index) {
   polca_parallel::NanWeightedSumProb(
-      cluster_index, this->responses_, this->n_data_, this->n_outcomes_,
-      this->posterior_, this->estimated_prob_, this->posterior_sum_);
+      cluster_index, this->responses_, this->n_outcomes_, this->posterior_,
+      this->estimated_prob_, this->posterior_sum_);
 }
 
 template <typename T>
@@ -92,10 +92,12 @@ polca_parallel::EmAlgorithmNanRegress::EmAlgorithmNanRegress(
           n_cluster, max_iter, tolerance, posterior, prior, estimated_prob,
           regress_coeff) {}
 
-void polca_parallel::NanWeightedSumProb(
-    std::size_t cluster_index, std::span<int> responses, std::size_t n_data,
-    std::span<std::size_t> n_outcomes, arma::Mat<double>& posterior,
-    arma::Mat<double>& estimated_prob, std::vector<double>& posterior_sum) {
+void polca_parallel::NanWeightedSumProb(std::size_t cluster_index,
+                                        std::span<int> responses,
+                                        std::span<std::size_t> n_outcomes,
+                                        arma::Mat<double>& posterior,
+                                        arma::Mat<double>& estimated_prob,
+                                        std::vector<double>& posterior_sum) {
   std::fill(posterior_sum.begin(), posterior_sum.end(), 0.0);
 
   auto y = responses.begin();

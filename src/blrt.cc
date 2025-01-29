@@ -145,8 +145,8 @@ void polca_parallel::Blrt::RunThread() {
       }
 
       // bootstrap data using null model
-      this->Bootstrap(this->prior_null_, this->prob_null_,
-                      this->n_cluster_null_, *rng, bootstrap_span);
+      this->Bootstrap(this->prior_null_, this->prob_null_, *rng,
+                      bootstrap_span);
 
       // null model fit
       polca_parallel::EmAlgorithmArraySerial null_model(
@@ -195,10 +195,9 @@ void polca_parallel::Blrt::RunThread() {
 
 void polca_parallel::Blrt::Bootstrap(std::span<double> prior,
                                      std::span<double> prob,
-                                     std::size_t n_cluster,
                                      std::mt19937_64& rng,
                                      std::span<int> response) {
-  std::uniform_int_distribution<std::size_t> prior_dist(0, n_cluster - 1);
+  std::uniform_int_distribution<std::size_t> prior_dist(0, prior.size() - 1);
   std::uniform_real_distribution<double> uniform_dist(0, 1);
 
   auto response_iter = response.begin();

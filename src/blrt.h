@@ -190,7 +190,6 @@ class Blrt {
    *   <li>dim 1: for each category</li>
    *   <li>dim 2: for each cluster</li>
    * </ul>
-   * @param n_cluster Number of clusters
    * @param rng Random number generator
    * @param response To store results, design matrix transpose of responses
    * <ul>
@@ -199,8 +198,7 @@ class Blrt {
    * </ul>
    */
   void Bootstrap(std::span<double> prior, std::span<double> prob,
-                 std::size_t n_cluster, std::mt19937_64& rng,
-                 std::span<int> response);
+                 std::mt19937_64& rng, std::span<int> response);
 };
 
 }  // namespace polca_parallel

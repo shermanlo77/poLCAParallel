@@ -64,9 +64,9 @@ void polca_parallel::GetUniqueObserved(
 }
 
 void polca_parallel::GetExpected(
-    std::span<double> prior, std::span<double> outcome_prob, std::size_t n_data,
-    std::size_t n_obs, polca_parallel::NOutcomes n_outcomes,
-    std::size_t n_cluster, std::map<std::vector<int>, Frequency>& unique_freq) {
+    std::span<double> prior, std::span<double> outcome_prob, std::size_t n_obs,
+    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
+    std::map<std::vector<int>, Frequency>& unique_freq) {
   arma::Mat<double> outcome_prob_arma(outcome_prob.data(), n_outcomes.sum(),
                                       n_cluster, false, true);
 

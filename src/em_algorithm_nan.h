@@ -143,7 +143,6 @@ class EmAlgorithmNanRegress
  *   <li>dim 0: for each category</li>
  *   <li>dim 1: for each data point</li>
  * </ul>
- * @param n_data Number of data points
  * @param n_outcomes Vector of number of outcomes for each category
  * @param posterior Design matrix of posterior probabilities (also called
  * responsibility). It's the probability a data point is in cluster m given
@@ -164,7 +163,7 @@ class EmAlgorithmNanRegress
  * category
  */
 void NanWeightedSumProb(std::size_t cluster_index, std::span<int> responses,
-                        std::size_t n_data, std::span<std::size_t> n_outcomes,
+                        std::span<std::size_t> n_outcomes,
                         arma::Mat<double>& posterior,
                         arma::Mat<double>& estimated_prob,
                         std::vector<double>& posterior_sum);

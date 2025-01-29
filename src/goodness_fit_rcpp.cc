@@ -75,7 +75,7 @@ Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                     n_category, *unique_freq);
   GetExpected(std::span<double>(prior.begin(), prior.size()),
               std::span<double>(outcome_prob.begin(), outcome_prob.size()),
-              n_data, n_obs, n_outcomes, n_cluster, *unique_freq);
+              n_obs, n_outcomes, n_cluster, *unique_freq);
   // get log likelihood ratio and chi squared statistics
   std::array<double, 2> stats = GetStatistics(*unique_freq, n_data);
 
