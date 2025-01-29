@@ -57,9 +57,6 @@ void polca_parallel::EmAlgorithm::Fit() {
   bool is_first_run = true;
   bool is_success = false;
 
-  double ln_l_difference;
-  double ln_l_before;
-
   std::uniform_real_distribution<double> uniform(0.0, 1.0);
 
   while (!is_success) {
@@ -79,7 +76,7 @@ void polca_parallel::EmAlgorithm::Fit() {
                 this->best_initial_prob_.value().begin());
     }
 
-    ln_l_before = -INFINITY;
+    double ln_l_before = -INFINITY;
 
     // initalise prior probabilities, for each cluster
     this->InitPrior();
@@ -103,7 +100,7 @@ void polca_parallel::EmAlgorithm::Fit() {
       this->ln_l_ = arma::sum(this->ln_l_array_);
 
       // check for any errors
-      ln_l_difference = this->ln_l_ - ln_l_before;
+      double ln_l_difference = this->ln_l_ - ln_l_before;
       if (this->IsInvalidLikelihood(ln_l_difference)) {
         is_success = false;
         break;
@@ -171,7 +168,7 @@ void polca_parallel::EmAlgorithm::InitPrior() {
   // prior probabilities are the same for all data points in this
   // implementation
   auto prior = this->prior_.begin();
-  std::fill(prior, prior + this->n_cluster_,
+  std::fill(prior, std::next(prior, this->n_cluster_),
             1.0 / static_cast<double>(this->n_cluster_));
 }
 
@@ -179,7 +176,7 @@ void polca_parallel::EmAlgorithm::FinalPrior() {
   // Copying prior probabilities as each data point as the same prior
   auto prior = this->prior_.begin();
   std::vector<double> prior_copy(this->n_cluster_);
-  std::copy(prior, prior + this->n_cluster_, prior_copy.begin());
+  std::copy(prior, std::next(prior, this->n_cluster_), prior_copy.begin());
   for (std::size_t m = 0; m < this->n_cluster_; ++m) {
     this->prior_.col(m).fill(prior_copy.at(m));
   }
@@ -191,14 +188,13 @@ double polca_parallel::EmAlgorithm::GetPrior(std::size_t data_index,
 }
 
 void polca_parallel::EmAlgorithm::EStep() {
-  double prior;
   for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {
     auto responses_i = this->responses_.subspan(
         i_data * this->n_outcomes_.size(), this->n_outcomes_.size());
     for (std::size_t i_cluster = 0; i_cluster < this->n_cluster_; ++i_cluster) {
       // access to posterior_ in this manner should result in cache misses
       // however PosteriorUnnormalize() is designed for cache efficiency
-      prior = this->GetPrior(i_data, i_cluster);
+      double prior = this->GetPrior(i_data, i_cluster);
       auto estimated_prob = this->estimated_prob_.unsafe_col(i_cluster);
       this->posterior_[i_cluster * this->n_data_ + i_data] =
           this->PosteriorUnnormalize(responses_i, prior, estimated_prob);
@@ -250,10 +246,9 @@ void polca_parallel::EmAlgorithm::WeightedSumProb(std::size_t cluster_index) {
   // point to outcome probabilites for given cluster for the zeroth category
   arma::Col<double> estimated_prob_col =
       this->estimated_prob_.unsafe_col(cluster_index);
-  arma::Col<double>::iterator estimated_prob_iter;
 
   for (double posterior_i : this->posterior_.unsafe_col(cluster_index)) {
-    estimated_prob_iter = estimated_prob_col.begin();
+    auto estimated_prob_iter = estimated_prob_col.begin();
     for (std::size_t n_outcome_j : this->n_outcomes_) {
       // selective summing of posterior
       *std::next(estimated_prob_iter, *y - 1) += posterior_i;
@@ -303,7 +298,6 @@ double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
   // P(cluster m | Y^{(i)})
   double posterior;
   // for getting a response from responses_
-  int y;
   auto responses_i_it = responses_i.begin();
 
   bool use_sum_log = false;
@@ -316,7 +310,7 @@ double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
 
   // calculate conditioned on cluster m likelihood
   for (std::size_t n_outcome : n_outcomes) {
-    y = *responses_i_it;  // cache hit by accesing adjacent memory
+    int y = *responses_i_it;  // cache hit by accesing adjacent memory
     std::advance(responses_i_it, 1);
     // cache hit in estimated_prob by accesing memory n_outcomes + y -1 away
 
@@ -349,7 +343,7 @@ double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
     auto responses_i_it_2 = responses_i.begin();
     // calculate conditioned on cluster m likelihood
     for (std::size_t n_outcome : n_outcomes) {
-      y = *responses_i_it_2;  // cache hit by accesing adjacent memory
+      int y = *responses_i_it_2;  // cache hit by accesing adjacent memory
       std::advance(responses_i_it_2, 1);
       // cache hit in estimated_prob by accessing memory n_outcomes + y -1
       // away

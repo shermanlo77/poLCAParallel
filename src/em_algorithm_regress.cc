@@ -157,11 +157,11 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
   // for the same cluster, copy over results as they will be modified
   bool is_same_cluster = cluster_index_0 == cluster_index_1;
 
-  arma::Col<double> posterior1(
-      this->posterior_.begin() + (cluster_index_1 + 1) * this->n_data_,
-      this->n_data_, is_same_cluster);
+  arma::Col<double> posterior1(std::next(this->posterior_.begin(),
+                                         (cluster_index_1 + 1) * this->n_data_),
+                               this->n_data_, is_same_cluster);
   arma::Col<double> prior1(
-      this->prior_.begin() + (cluster_index_1 + 1) * this->n_data_,
+      std::next(this->prior_.begin(), (cluster_index_1 + 1) * this->n_data_),
       this->n_data_, is_same_cluster);
 
   // Suppose r = posterior, pi = prior, u, v = cluster indexs
@@ -175,12 +175,11 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
   arma::Col<double> prior_post_inter =
       prior0 % prior1 - posterior0 % posterior1;
 
-  double hess_element;
   // iterate through features i, j, working out the elements of the hessian
   // symmetric matrix, so loop over diagonal and lower triangle
   for (std::size_t j = 0; j < this->n_feature_; ++j) {
     for (std::size_t i = j; i < this->n_feature_; ++i) {
-      hess_element = CalcHessElement(i, j, prior_post_inter);
+      double hess_element = CalcHessElement(i, j, prior_post_inter);
       this->AssignHessianAt(hess_element, cluster_index_0, cluster_index_1, i,
                             j);
 

@@ -138,11 +138,10 @@ void polca_parallel::StandardError::CalcScoreProbsCol(
 
   // boolean if the response is the same as the outcome
   // remember response is one index, not zero index
-  bool is_outcome;
   // iterate for each data point
   for (auto& score_i : score_col) {
     if (*responses_iter > 0) {
-      is_outcome =
+      bool is_outcome =
           outcome_index == static_cast<std::size_t>(*responses_iter - 1);
       score_i = *posterior_iter * (static_cast<double>(is_outcome) - prob);
     } else {

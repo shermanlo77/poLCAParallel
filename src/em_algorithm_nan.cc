@@ -106,11 +106,9 @@ void polca_parallel::NanWeightedSumProb(std::size_t cluster_index,
       estimated_prob.unsafe_col(cluster_index);
   arma::Col<double>::iterator estimated_prob_iter;
 
-  std::size_t i_category;
-
   for (double posterior_i : posterior.unsafe_col(cluster_index)) {
     estimated_prob_iter = estimated_prob_col.begin();
-    i_category = 0;
+    std::size_t i_category = 0;
     for (std::size_t n_outcome_j : n_outcomes) {
       // selective summing of posterior
       if (*y > 0) {
@@ -129,10 +127,9 @@ void polca_parallel::NanNormalWeightedSumProb(
     std::size_t cluster_index, std::span<std::size_t> n_outcomes,
     std::vector<double>& posterior_sum, arma::Mat<double>& estimated_prob) {
   auto estimated_prob_col = estimated_prob.unsafe_col(cluster_index).begin();
-  std::size_t n_outcome;
   for (std::size_t i_category = 0; i_category < n_outcomes.size();
        ++i_category) {
-    n_outcome = n_outcomes[i_category];
+    std::size_t n_outcome = n_outcomes[i_category];
     arma::Col<double> estimated_prob_i(estimated_prob_col, n_outcome, false,
                                        true);
     estimated_prob_i /= posterior_sum[i_category];

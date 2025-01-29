@@ -88,7 +88,7 @@ void polca_parallel::InfoEigenSolver::ExtractErrorGivenEigen(
       arma::diagmat(arma::sqrt(eigval_inv)) * eigvec.t() * jacobian, 2, 0);
 
   std::copy_n(std_err.begin(), this->n_cluster_, this->prior_error_.begin());
-  std::copy_n(std_err.begin() + this->n_cluster_,
+  std::copy_n(std::next(std_err.begin(), this->n_cluster_),
               this->sum_outcomes_ * this->n_cluster_,
               this->prob_error_.begin());
 }
@@ -166,7 +166,7 @@ void polca_parallel::ScoreSvdSolver::ExtractErrorGivenEigen(
       arma::vecnorm(arma::diagmat(singular_inv) * v_mat.t() * jacobian, 2, 0);
 
   std::copy_n(std_err.begin(), this->n_cluster_, this->prior_error_.begin());
-  std::copy_n(std_err.begin() + this->n_cluster_,
+  std::copy_n(std::next(std_err.begin(), this->n_cluster_),
               this->sum_outcomes_ * this->n_cluster_,
               this->prob_error_.begin());
 }
