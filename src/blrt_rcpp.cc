@@ -47,7 +47,6 @@
  *   <li>dim 1: for each cluster</li>
  *   <li>dim 2: for each category</li>
  * </ul>
- * @param n_cluster_null Null model, number of clusters fitted
  * @param prior_alt Alt model, vector of prior probabilities for the null
  * model, probability data point is in cluster m NOT given responses
  * <ul>
@@ -61,7 +60,6 @@
  *   <li>dim 1: for each cluster</li>
  *   <li>dim 2: for each category</li>
  * </ul>
- * @param n_cluster_alt Alt model, number of clusters fitted
  * @param n_data Number of data points, used to bootstrap this many data
  * points
  * @param n_outcomes Array of number of outcomes, for each category
@@ -76,13 +74,14 @@
  * @return Rcpp::NumericVector array of bootstrap log likelihood ratios
  */
 // [[Rcpp::export]]
-Rcpp::NumericVector BlrtRcpp(
-    Rcpp::NumericVector prior_null, Rcpp::NumericVector prob_null,
-    std::size_t n_cluster_null, Rcpp::NumericVector prior_alt,
-    Rcpp::NumericVector prob_alt, std::size_t n_cluster_alt, std::size_t n_data,
-    Rcpp::IntegerVector n_outcomes_int, std::size_t n_bootstrap,
-    std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
-    double tolerance, Rcpp::IntegerVector seed) {
+Rcpp::NumericVector BlrtRcpp(Rcpp::NumericVector prior_null,
+                             Rcpp::NumericVector prob_null,
+                             Rcpp::NumericVector prior_alt,
+                             Rcpp::NumericVector prob_alt, std::size_t n_data,
+                             Rcpp::IntegerVector n_outcomes_int,
+                             std::size_t n_bootstrap, std::size_t n_rep,
+                             std::size_t n_thread, unsigned int max_iter,
+                             double tolerance, Rcpp::IntegerVector seed) {
   std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
                                              n_outcomes_int.end());
   polca_parallel::NOutcomes n_outcomes(n_outcomes_size_t.data(),
@@ -93,10 +92,10 @@ Rcpp::NumericVector BlrtRcpp(
 
   polca_parallel::Blrt blrt(
       std::span<double>(prior_null.begin(), prior_null.size()),
-      std::span<double>(prob_null.begin(), prob_null.size()), n_cluster_null,
+      std::span<double>(prob_null.begin(), prob_null.size()),
       std::span<double>(prior_alt.begin(), prior_alt.size()),
-      std::span<double>(prob_alt.begin(), prob_alt.size()), n_cluster_alt,
-      n_data, n_outcomes, n_bootstrap, n_rep, n_thread, max_iter, tolerance,
+      std::span<double>(prob_alt.begin(), prob_alt.size()), n_data, n_outcomes,
+      n_bootstrap, n_rep, n_thread, max_iter, tolerance,
       std::span<double>(ratio_array.begin(), ratio_array.size()));
 
   std::seed_seq seed_seq(seed.begin(), seed.end());

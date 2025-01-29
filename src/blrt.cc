@@ -27,19 +27,18 @@
 #include <thread>
 #include <vector>
 
-polca_parallel::Blrt::Blrt(
-    std::span<double> prior_null, std::span<double> prob_null,
-    std::size_t n_cluster_null, std::span<double> prior_alt,
-    std::span<double> prob_alt, std::size_t n_cluster_alt, std::size_t n_data,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_bootstrap,
-    std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
-    double tolerance, std::span<double> ratio_array)
+polca_parallel::Blrt::Blrt(std::span<double> prior_null,
+                           std::span<double> prob_null,
+                           std::span<double> prior_alt,
+                           std::span<double> prob_alt, std::size_t n_data,
+                           polca_parallel::NOutcomes n_outcomes,
+                           std::size_t n_bootstrap, std::size_t n_rep,
+                           std::size_t n_thread, unsigned int max_iter,
+                           double tolerance, std::span<double> ratio_array)
     : prior_null_(prior_null),
       prob_null_(prob_null),
-      n_cluster_null_(n_cluster_null),
       prior_alt_(prior_alt),
       prob_alt_(prob_alt),
-      n_cluster_alt_(n_cluster_alt),
       n_data_(n_data),
       n_outcomes_(n_outcomes),
       n_bootstrap_(n_bootstrap),
@@ -82,9 +81,9 @@ void polca_parallel::Blrt::RunThread() {
 
   // allocate memory for storing initial values for the probabilities
   std::vector<double> init_prob_null(this->n_outcomes_.sum() *
-                                     this->n_cluster_null_ * this->n_rep_);
+                                     this->prior_null_.size() * this->n_rep_);
   std::vector<double> init_prob_alt(this->n_outcomes_.sum() *
-                                    this->n_cluster_alt_ * this->n_rep_);
+                                    this->prior_alt_.size() * this->n_rep_);
 
   // use the fitted values as the initial values when fitting onto the bootstrap
   // samples
@@ -97,17 +96,18 @@ void polca_parallel::Blrt::RunThread() {
   // fitting
   std::span<double> features;
   std::vector<double> fitted_posterior_null(this->n_data_ *
-                                            this->n_cluster_null_);
+                                            this->prior_null_.size());
   std::vector<double> fitted_posterior_alt(this->n_data_ *
-                                           this->n_cluster_alt_);
-  std::vector<double> fitted_prior_null(this->n_data_ * this->n_cluster_null_);
-  std::vector<double> fitted_prior_alt(this->n_data_ * this->n_cluster_alt_);
-  std::vector<double> fitted_prob_null(this->n_cluster_null_ *
+                                           this->prior_alt_.size());
+  std::vector<double> fitted_prior_null(this->n_data_ *
+                                        this->prior_null_.size());
+  std::vector<double> fitted_prior_alt(this->n_data_ * this->prior_alt_.size());
+  std::vector<double> fitted_prob_null(this->prior_null_.size() *
                                        this->n_outcomes_.sum());
-  std::vector<double> fitted_prob_alt(this->n_cluster_alt_ *
+  std::vector<double> fitted_prob_alt(this->prior_alt_.size() *
                                       this->n_outcomes_.sum());
-  std::vector<double> fitted_regress_coeff_null(this->n_cluster_null_ - 1);
-  std::vector<double> fitted_regress_coeff_alt(this->n_cluster_alt_ - 1);
+  std::vector<double> fitted_regress_coeff_null(this->prior_null_.size() - 1);
+  std::vector<double> fitted_regress_coeff_alt(this->prior_alt_.size() - 1);
 
   while (is_working) {
     // lock to retrive n_bootstrap_done_
@@ -128,20 +128,21 @@ void polca_parallel::Blrt::RunThread() {
       for (std::size_t i_rep = 1; i_rep < this->n_rep_; ++i_rep) {
         arma::Mat<double> init_prob_null_i(
             init_prob_null.data() +
-                i_rep * this->n_outcomes_.sum() * this->n_cluster_null_,
-            this->n_outcomes_.sum(), this->n_cluster_null_, false, true);
+                i_rep * this->n_outcomes_.sum() * this->prior_null_.size(),
+            this->n_outcomes_.sum(), this->prior_null_.size(), false, true);
 
         arma::Mat<double> init_prob_alt_i(
             init_prob_alt.data() +
-                i_rep * this->n_outcomes_.sum() * this->n_cluster_alt_,
-            this->n_outcomes_.sum(), this->n_cluster_alt_, false, true);
+                i_rep * this->n_outcomes_.sum() * this->prior_alt_.size(),
+            this->n_outcomes_.sum(), this->prior_alt_.size(), false, true);
 
         polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
-                                        this->n_cluster_null_,
+                                        this->prior_null_.size(),
                                         init_prob_null_i);
 
         polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
-                                        this->n_cluster_alt_, init_prob_alt_i);
+                                        this->prior_alt_.size(),
+                                        init_prob_alt_i);
       }
 
       // bootstrap data using null model
@@ -152,7 +153,7 @@ void polca_parallel::Blrt::RunThread() {
       polca_parallel::EmAlgorithmArraySerial null_model(
           features, bootstrap_span,
           std::span<double>(init_prob_null.begin(), init_prob_null.size()),
-          this->n_data_, 1, this->n_outcomes_, this->n_cluster_null_,
+          this->n_data_, 1, this->n_outcomes_, this->prior_null_.size(),
           this->n_rep_, this->max_iter_, this->tolerance_,
           std::span<double>(fitted_posterior_null.begin(),
                             fitted_posterior_null.size()),
@@ -169,7 +170,7 @@ void polca_parallel::Blrt::RunThread() {
       polca_parallel::EmAlgorithmArraySerial alt_model(
           features, bootstrap_span,
           std::span<double>(init_prob_alt.begin(), init_prob_alt.size()),
-          this->n_data_, 1, this->n_outcomes_, this->n_cluster_alt_,
+          this->n_data_, 1, this->n_outcomes_, this->prior_alt_.size(),
           this->n_rep_, this->max_iter_, this->tolerance_,
           std::span<double>(fitted_posterior_alt.begin(),
                             fitted_posterior_alt.size()),

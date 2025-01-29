@@ -65,8 +65,6 @@ class Blrt {
    * </ul>
    */
   std::span<double> prob_null_;
-  /** Number of clusters fitted onto the null model */
-  const std::size_t n_cluster_null_;
   /**
    * Vector of probabilities, one for each cluster. Probability a data point
    * belongs to each cluster in the alt model.
@@ -82,9 +80,6 @@ class Blrt {
    * </ul>
    */
   std::span<double> prob_alt_;
-  /** Number of clusters fitted onto the alt model */
-  const std::size_t n_cluster_alt_;
-
   /** Number of data points */
   const std::size_t n_data_;
   /** Vector of the number of outcomes for each category */
@@ -128,7 +123,6 @@ class Blrt {
    *   <li>dim 1: for each category</li>
    *   <li>dim 2: for each cluster</li>
    * </ul>
-   * @param n_cluster_null Null model, number of clusters fitted
    * @param prior_alt Alt model, vector of prior probabilities for the null
    * model, the probability data point is in cluster m NOT given responses
    * <ul>
@@ -142,7 +136,6 @@ class Blrt {
    *   <li>dim 1: for each category</li>
    *   <li>dim 2: for each cluster</li>
    * </ul>
-   * @param n_cluster_alt Alt model, number of clusters fitted
    * @param n_data Number of data points, used to bootstrap this many data
    * points
    * @param n_outcomes Array of number of outcomes, for each category
@@ -158,8 +151,7 @@ class Blrt {
    * each bootstrap sample
    */
   Blrt(std::span<double> prior_null, std::span<double> prob_null,
-       std::size_t n_cluster_null, std::span<double> prior_alt,
-       std::span<double> prob_alt, std::size_t n_cluster_alt,
+       std::span<double> prior_alt, std::span<double> prob_alt,
        std::size_t n_data, NOutcomes n_outcomes, std::size_t n_bootstrap,
        std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
        double tolerance, std::span<double> ratio_array);

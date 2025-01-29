@@ -36,12 +36,10 @@ blrt <- function(model_null, model_alt, n_bootstrap,
   # extract fitted variables from the null model
   prior_null <- model_null$P
   prob_null <- poLCAParallel::poLCAParallel.vectorize(model_null$probs)$vecprobs
-  n_cluster_null <- length(prior_null)
 
   # extract fitted variables from the alt model
   prior_alt <- model_alt$P
   prob_alt <- poLCAParallel::poLCAParallel.vectorize(model_alt$probs)$vecprobs
-  n_cluster_alt <- length(prior_alt)
 
   # extract other information, use the null model
   n_data <- model_null$N
@@ -54,8 +52,8 @@ blrt <- function(model_null, model_alt, n_bootstrap,
   )
 
   bootstrap_log_ratio_array <- BlrtRcpp(
-    prior_null, prob_null, n_cluster_null, prior_alt,
-    prob_alt, n_cluster_alt, n_data, n_outcomes, n_bootstrap, n_rep,
+    prior_null, prob_null, prior_alt,
+    prob_alt, n_data, n_outcomes, n_bootstrap, n_rep,
     n_thread, max_iter, tol, seed
   )
 
