@@ -97,8 +97,8 @@ class EmAlgorithmArraySerial : public polca_parallel::EmAlgorithmArray {
    * Because each repetition reuses the same rng, the parameter rep_index is
    * ignored.
    */
-  void SetFitterRng(polca_parallel::EmAlgorithm& fitter,
-                    std::size_t rep_index) override;
+  void SetFitterRng(std::size_t rep_index,
+                    polca_parallel::EmAlgorithm& fitter) override;
 
   /**
    * Transfer ownership of an EmAlgorithm's rng back to this object's rng_

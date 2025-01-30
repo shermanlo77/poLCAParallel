@@ -162,8 +162,8 @@ void polca_parallel::EmAlgorithm::Reset(
     std::uniform_real_distribution<double>& uniform) {
   // generate random number for estimated_prob_
   this->has_restarted_ = true;
-  polca_parallel::GenerateNewProb(*this->rng_, uniform, this->n_outcomes_,
-                                  this->n_cluster_, this->estimated_prob_);
+  polca_parallel::GenerateNewProb(this->n_outcomes_, this->n_cluster_, uniform,
+                                  *this->rng_, this->estimated_prob_);
 }
 
 void polca_parallel::EmAlgorithm::InitPrior() {
@@ -184,8 +184,8 @@ void polca_parallel::EmAlgorithm::FinalPrior() {
   }
 }
 
-double polca_parallel::EmAlgorithm::GetPrior(std::size_t data_index,
-                                             std::size_t cluster_index) const {
+double polca_parallel::EmAlgorithm::GetPrior(
+    const std::size_t data_index, const std::size_t cluster_index) const {
   return this->prior_[cluster_index];
 }
 
@@ -209,8 +209,8 @@ void polca_parallel::EmAlgorithm::EStep() {
 }
 
 double polca_parallel::EmAlgorithm::PosteriorUnnormalize(
-    std::span<int> responses_i, double prior,
-    arma::Col<double>& estimated_prob) const {
+    std::span<const int> responses_i, double prior,
+    const arma::Col<double>& estimated_prob) const {
   return polca_parallel::PosteriorUnnormalize(responses_i, this->n_outcomes_,
                                               estimated_prob, prior);
 }
@@ -244,7 +244,8 @@ void polca_parallel::EmAlgorithm::EstimateProbability() {
   }
 }
 
-void polca_parallel::EmAlgorithm::WeightedSumProb(std::size_t cluster_index) {
+void polca_parallel::EmAlgorithm::WeightedSumProb(
+    const std::size_t cluster_index) {
   auto y = this->responses_.begin();
   // point to outcome probabilites for given cluster for the zeroth category
   arma::Col<double> estimated_prob_col =
@@ -263,7 +264,7 @@ void polca_parallel::EmAlgorithm::WeightedSumProb(std::size_t cluster_index) {
 }
 
 void polca_parallel::EmAlgorithm::NormalWeightedSumProb(
-    std::size_t cluster_index) {
+    const std::size_t cluster_index) {
   // in this implementation, normalise by n_data * prior
   //
   // note that the mean (over n data points) of posteriors is the prior
@@ -275,7 +276,7 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(
 }
 
 void polca_parallel::EmAlgorithm::NormalWeightedSumProb(
-    std::size_t cluster_index, double normaliser) {
+    const std::size_t cluster_index, double normaliser) {
   // normalise by the sum of posteriors
   // calculations can be reused as the prior is the mean of posteriors
   // from the E step
@@ -283,18 +284,17 @@ void polca_parallel::EmAlgorithm::NormalWeightedSumProb(
 }
 
 template double polca_parallel::PosteriorUnnormalize<false>(
-    std::span<int> responses_i, std::span<std::size_t> n_outcomes,
-    arma::Col<double>& estimated_prob, double prior);
+    std::span<const int> responses_i, std::span<const std::size_t> n_outcomes,
+    const arma::Col<double>& estimated_prob, double prior);
 
 template double polca_parallel::PosteriorUnnormalize<true>(
-    std::span<int> responses_i, std::span<std::size_t> n_outcomes,
-    arma::Col<double>& estimated_prob, double prior);
+    std::span<const int> responses_i, std::span<const std::size_t> n_outcomes,
+    const arma::Col<double>& estimated_prob, double prior);
 
 template <bool is_check_zero>
-double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
-                                            std::span<std::size_t> n_outcomes,
-                                            arma::Col<double>& estimated_prob,
-                                            double prior) {
+double polca_parallel::PosteriorUnnormalize(
+    std::span<const int> responses_i, std::span<const std::size_t> n_outcomes,
+    const arma::Col<double>& estimated_prob, double prior) {
   // designed for cache efficiency here
 
   // used for calculating the posterior probability up to a constant
@@ -368,8 +368,8 @@ double polca_parallel::PosteriorUnnormalize(std::span<int> responses_i,
 }
 
 void polca_parallel::GenerateNewProb(
-    std::mt19937_64& rng, std::uniform_real_distribution<double>& uniform,
-    std::span<size_t> n_outcomes, std::size_t n_cluster,
+    std::span<const size_t> n_outcomes, const std::size_t n_cluster,
+    std::uniform_real_distribution<double>& uniform, std::mt19937_64& rng,
     arma::Mat<double>& prob) {
   for (auto& prob_i : prob) {
     prob_i = uniform(rng);

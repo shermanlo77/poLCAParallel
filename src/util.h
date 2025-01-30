@@ -22,12 +22,12 @@
 
 namespace polca_parallel {
 
-class NOutcomes : public std::span<std::size_t> {
+class NOutcomes : public std::span<const std::size_t> {
  private:
   const std::size_t sum_;
 
  public:
-  NOutcomes(std::size_t* data, std::size_t size);
+  NOutcomes(const std::size_t* data, std::size_t size);
 
   [[nodiscard]] std::size_t sum() const;
 };

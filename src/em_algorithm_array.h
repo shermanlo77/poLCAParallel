@@ -301,8 +301,8 @@ class EmAlgorithmArray {
 
  protected:
   /** Set the rng of a EmAlgorithm object given the rep_index it is working on*/
-  virtual void SetFitterRng(polca_parallel::EmAlgorithm& fitter,
-                            std::size_t rep_index);
+  virtual void SetFitterRng(std::size_t rep_index,
+                            polca_parallel::EmAlgorithm& fitter);
 
   /**
    * Retrieve ownership of an rng back from a fitter

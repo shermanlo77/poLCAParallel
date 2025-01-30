@@ -251,8 +251,8 @@ class StandardError {
    * cluster, category and outcome
    */
   void CalcScoreProbsCol(std::size_t outcome_index, double prob,
-                         arma::subview_col<int>& responses_j,
-                         arma::subview_col<double>& posterior_i,
+                         const arma::subview_col<int>& responses_j,
+                         const arma::subview_col<double>& posterior_i,
                          arma::subview_col<double>& score_col) const;
 
   /**
@@ -301,13 +301,10 @@ class StandardError {
    * block matrix.
    *
    * @param probs array of probabilities to construct the block matrix with
-   * @param n_prob number of probabilities
-   * @param jacobian_ptr MODIFIED, the start of the block matrix in the Jacobian
-   * matrix, the calculated block matrix is saved in *jacobian_ptr.
-   * *jacobian_ptr is modified so that it points to the start of the next block
-   * matrix after calling this method
+   * @param jacobian_block MODIFIED, the block matrix in the Jacobian
+   * matrix
    */
-  void CalcJacobianBlock(std::span<double> probs,
+  void CalcJacobianBlock(std::span<const double> probs,
                          arma::subview<double>& jacobian_block) const;
 };
 

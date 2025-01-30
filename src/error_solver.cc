@@ -50,8 +50,8 @@ polca_parallel::InfoEigenSolver::InfoEigenSolver(
                                   info_size, jacobian_width, prior_error,
                                   prob_error, regress_coeff_error) {}
 
-void polca_parallel::InfoEigenSolver::Solve(arma::Mat<double>& score,
-                                            arma::Mat<double>& jacobian) {
+void polca_parallel::InfoEigenSolver::Solve(const arma::Mat<double>& score,
+                                            const arma::Mat<double>& jacobian) {
   arma::Mat<double> info_arma = score.t() * score;
 
   // required to ensure symmetry, especially if using a preconditioner in
@@ -80,8 +80,8 @@ void polca_parallel::InfoEigenSolver::Solve(arma::Mat<double>& score,
 }
 
 void polca_parallel::InfoEigenSolver::ExtractErrorGivenEigen(
-    arma::Col<double>& eigval_inv, arma::Mat<double>& eigvec,
-    arma::Mat<double>& jacobian) {
+    const arma::Col<double>& eigval_inv, const arma::Mat<double>& eigvec,
+    const arma::Mat<double>& jacobian) {
   // extract errors for the prior and outcome probs
   // do root columns sum of squares, faster than full matrix multiplication
   arma::Row<double> std_err = arma::vecnorm(
@@ -103,8 +103,8 @@ polca_parallel::InfoEigenRegressSolver::InfoEigenRegressSolver(
           prior_error, prob_error, regress_coeff_error) {}
 
 void polca_parallel::InfoEigenRegressSolver::ExtractErrorGivenEigen(
-    arma::Col<double>& eigval_inv, arma::Mat<double>& eigvec,
-    arma::Mat<double>& jacobian) {
+    const arma::Col<double>& eigval_inv, const arma::Mat<double>& eigvec,
+    const arma::Mat<double>& jacobian) {
   // extract errors for the prior and outcome probs
   this->InfoEigenSolver::ExtractErrorGivenEigen(eigval_inv, eigvec, jacobian);
   std::size_t size = this->n_feature_ * (this->n_cluster_ - 1);
@@ -128,8 +128,8 @@ polca_parallel::ScoreSvdSolver::ScoreSvdSolver(
                                   info_size, jacobian_width, prior_error,
                                   prob_error, regress_coeff_error) {}
 
-void polca_parallel::ScoreSvdSolver::Solve(arma::Mat<double>& score,
-                                           arma::Mat<double>& jacobian) {
+void polca_parallel::ScoreSvdSolver::Solve(const arma::Mat<double>& score,
+                                           const arma::Mat<double>& jacobian) {
   // perhaps use a preconditioner like below
   // found to be unstable / doesn't reproduce similar results
   // eg error on probabilities can be much larger than 1.0
@@ -158,8 +158,8 @@ void polca_parallel::ScoreSvdSolver::Solve(arma::Mat<double>& score,
 }
 
 void polca_parallel::ScoreSvdSolver::ExtractErrorGivenEigen(
-    arma::Col<double>& singular_inv, arma::Mat<double>& v_mat,
-    arma::Mat<double>& jacobian) {
+    const arma::Col<double>& singular_inv, const arma::Mat<double>& v_mat,
+    const arma::Mat<double>& jacobian) {
   // extract errors for the prior and outcome probs
   // do root columns sum of squares, faster than full matrix multiplication
   arma::Row<double> std_err =
@@ -181,8 +181,8 @@ polca_parallel::ScoreSvdRegressSolver::ScoreSvdRegressSolver(
                                      prob_error, regress_coeff_error) {}
 
 void polca_parallel::ScoreSvdRegressSolver::ExtractErrorGivenEigen(
-    arma::Col<double>& singular_inv, arma::Mat<double>& v_mat,
-    arma::Mat<double>& jacobian) {
+    const arma::Col<double>& singular_inv, const arma::Mat<double>& v_mat,
+    const arma::Mat<double>& jacobian) {
   // extract errors for the prior and outcome probs
   this->ScoreSvdSolver::ExtractErrorGivenEigen(singular_inv, v_mat, jacobian);
 

@@ -189,7 +189,7 @@ class Blrt {
    *   <li>dim 1: for each data point</li>
    * </ul>
    */
-  void Bootstrap(std::span<double> prior, std::span<double> prob,
+  void Bootstrap(std::span<const double> prior, std::span<const double> prob,
                  std::mt19937_64& rng, std::span<int> response) const;
 };
 

@@ -129,7 +129,8 @@ class ErrorSolver {
    *   <li>dim 1: size jacobian_width</li>
    * </ul>
    */
-  virtual void Solve(arma::Mat<double>& score, arma::Mat<double>& jacobian) = 0;
+  virtual void Solve(const arma::Mat<double>& score,
+                     const arma::Mat<double>& jacobian) = 0;
 };
 
 /**
@@ -166,7 +167,8 @@ class InfoEigenSolver : public polca_parallel::ErrorSolver {
                   std::span<double> prior_error, std::span<double> prob_error,
                   std::span<double> regress_coeff_error);
 
-  void Solve(arma::Mat<double>& score, arma::Mat<double>& jacobian) override;
+  void Solve(const arma::Mat<double>& score,
+             const arma::Mat<double>& jacobian) override;
 
  protected:
   /**
@@ -180,9 +182,9 @@ class InfoEigenSolver : public polca_parallel::ErrorSolver {
    * @param eigven eigenvectors of the information matrix
    * @param jacobian the jacobian matrix
    */
-  virtual void ExtractErrorGivenEigen(arma::Col<double>& eigval_inv,
-                                      arma::Mat<double>& eigvec,
-                                      arma::Mat<double>& jacobian);
+  virtual void ExtractErrorGivenEigen(const arma::Col<double>& eigval_inv,
+                                      const arma::Mat<double>& eigvec,
+                                      const arma::Mat<double>& jacobian);
 };
 
 /**
@@ -227,9 +229,9 @@ class InfoEigenRegressSolver : public polca_parallel::InfoEigenSolver {
                          std::span<double> regress_coeff_error);
 
  protected:
-  void ExtractErrorGivenEigen(arma::Col<double>& eigval_inv,
-                              arma::Mat<double>& eigvec,
-                              arma::Mat<double>& jacobian) override;
+  void ExtractErrorGivenEigen(const arma::Col<double>& eigval_inv,
+                              const arma::Mat<double>& eigvec,
+                              const arma::Mat<double>& jacobian) override;
 };
 
 /**
@@ -269,7 +271,8 @@ class ScoreSvdSolver : public polca_parallel::ErrorSolver {
                  std::span<double> prior_error, std::span<double> prob_error,
                  std::span<double> regress_coeff_error);
 
-  void Solve(arma::Mat<double>& score, arma::Mat<double>& jacobian) override;
+  void Solve(const arma::Mat<double>& score,
+             const arma::Mat<double>& jacobian) override;
 
   /**
    * Extract errors of interest from the SVD
@@ -283,9 +286,9 @@ class ScoreSvdSolver : public polca_parallel::ErrorSolver {
    * @param v_mat eigenvectors of the information matrix
    * @param jacobian the jacobian matrix
    */
-  virtual void ExtractErrorGivenEigen(arma::Col<double>& singular_inv,
-                                      arma::Mat<double>& v_mat,
-                                      arma::Mat<double>& jacobian);
+  virtual void ExtractErrorGivenEigen(const arma::Col<double>& singular_inv,
+                                      const arma::Mat<double>& v_mat,
+                                      const arma::Mat<double>& jacobian);
 };
 
 /**
@@ -327,9 +330,9 @@ class ScoreSvdRegressSolver : public polca_parallel::ScoreSvdSolver {
                         std::span<double> regress_coeff_error);
 
  protected:
-  void ExtractErrorGivenEigen(arma::Col<double>& singular_inv,
-                              arma::Mat<double>& v_mat_t,
-                              arma::Mat<double>& jacobian) override;
+  void ExtractErrorGivenEigen(const arma::Col<double>& singular_inv,
+                              const arma::Mat<double>& v_mat_t,
+                              const arma::Mat<double>& jacobian) override;
 };
 
 }  // namespace polca_parallel

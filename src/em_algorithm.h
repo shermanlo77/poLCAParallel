@@ -330,8 +330,8 @@ class EmAlgorithm {
    * @param cluster_index
    * @return double prior
    */
-  [[nodiscard]] virtual double GetPrior(std::size_t data_index,
-                                        std::size_t cluster_index) const;
+  [[nodiscard]] virtual double GetPrior(const std::size_t data_index,
+                                        const std::size_t cluster_index) const;
 
   /**
    * Do E step
@@ -351,8 +351,7 @@ class EmAlgorithm {
    *
    * @param data_index data point index 0, 1, 2, ..., n_data - 1
    * @param cluster_index cluster index 0, 1, 2, ..., n_cluster - 1
-   * @param estimated_prob A column view of estimated_prob_. This is modified to
-   * point to the probabilities for the next cluster. It points to a flattened
+   * @param estimated_prob A column view of estimated_prob_. A flattened
    * list in the following order
    * <ul>
    *   <li>dim 0: for each outcome</li>
@@ -360,8 +359,8 @@ class EmAlgorithm {
    * </ul>
    */
   [[nodiscard]] virtual double PosteriorUnnormalize(
-      std::span<int> responses_i, double prior,
-      arma::Col<double>& estimated_prob) const;
+      std::span<const int> responses_i, double prior,
+      const arma::Col<double>& estimated_prob) const;
 
   /**
    * Check if the likelihood is invalid
@@ -407,7 +406,7 @@ class EmAlgorithm {
    *
    * @param cluster_index which cluster to consider
    */
-  virtual void WeightedSumProb(std::size_t cluster_index);
+  virtual void WeightedSumProb(const std::size_t cluster_index);
 
   /**
    * Normalise the weighted sum following WeightedSumProb()
@@ -420,7 +419,7 @@ class EmAlgorithm {
    *
    * @param cluster_index which cluster to consider
    */
-  virtual void NormalWeightedSumProb(std::size_t cluster_index);
+  virtual void NormalWeightedSumProb(const std::size_t cluster_index);
 
   /**
    * Normalise the weighted sum following WeightedSumProb() given the normaliser
@@ -433,7 +432,8 @@ class EmAlgorithm {
    * @param normaliser the scale to divide the weighted sum by, should be the
    * sum of posteriors
    */
-  void NormalWeightedSumProb(std::size_t cluster_index, double normaliser);
+  void NormalWeightedSumProb(const std::size_t cluster_index,
+                             double normaliser);
 };
 
 /**
@@ -459,8 +459,7 @@ class EmAlgorithm {
  * performance reason, use false when the responses do not contain zero values
  * @param responses_i the responses for a given data point, length n_catgeory
  * @param n_outcomes number of outcomes for each category
- * @param estimated_prob A column view of estimated_prob_. This is modified to
- * point to the probabilities for the next cluster. It points to a flattened
+ * @param estimated_prob A column view of estimated_prob_. A flattened
  * list in the following order
  * <ul>
  *   <li>dim 0: for each outcome</li>
@@ -470,19 +469,19 @@ class EmAlgorithm {
  * @return the unnormalised posterior for this data point and cluster
  */
 template <bool is_check_zero = false>
-[[nodiscard]] double PosteriorUnnormalize(std::span<int> responses_i,
-                                          std::span<std::size_t> n_outcomes,
-                                          arma::Col<double>& estimated_prob,
-                                          double prior);
+[[nodiscard]] double PosteriorUnnormalize(
+    std::span<const int> responses_i, std::span<const std::size_t> n_outcomes,
+    const arma::Col<double>& estimated_prob, double prior);
 
 /**
  * Generate random response probabilities
  *
- * @param rng random number generator
- * @param uniform uniform (0, 1)
+
  * @param n_outcomes vector length n_category, number of outcomes for each
  * category
  * @param n_cluster number of clusters
+ * @param uniform uniform (0, 1)
+ * @param rng random number generator
  * @param prob output, matrix of random response probabilities, conditioned on
  * cluster, for each outcome, category and cluster
  * <ul>
@@ -490,10 +489,10 @@ template <bool is_check_zero = false>
  *   <li>dim 1: for each cluster</li>
  * </ul>
  */
-void GenerateNewProb(std::mt19937_64& rng,
+void GenerateNewProb(std::span<const std::size_t> n_outcomes,
+                     const std::size_t n_cluster,
                      std::uniform_real_distribution<double>& uniform,
-                     std::span<std::size_t> n_outcomes, std::size_t n_cluster,
-                     arma::Mat<double>& prob);
+                     std::mt19937_64& rng, arma::Mat<double>& prob);
 
 }  // namespace polca_parallel
 

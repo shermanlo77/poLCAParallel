@@ -58,7 +58,7 @@ polca_parallel::EmAlgorithmArraySerial::MoveRng() {
 }
 
 void polca_parallel::EmAlgorithmArraySerial::SetFitterRng(
-    polca_parallel::EmAlgorithm& fitter, std::size_t rep_index) {
+    std::size_t rep_index, polca_parallel::EmAlgorithm& fitter) {
   if (this->rng_) {
     fitter.set_rng(std::move(this->rng_));
   }

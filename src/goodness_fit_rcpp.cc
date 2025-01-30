@@ -60,8 +60,8 @@ Rcpp::List GoodnessFitRcpp(Rcpp::IntegerMatrix responses,
                            std::size_t n_obs,
                            Rcpp::IntegerVector n_outcomes_int,
                            std ::size_t n_cluster) {
-  std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
-                                             n_outcomes_int.end());
+  std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.cbegin(),
+                                             n_outcomes_int.cend());
   polca_parallel::NOutcomes n_outcomes(n_outcomes_size_t.data(),
                                        n_outcomes_size_t.size());
   std::size_t n_category = n_outcomes.size();

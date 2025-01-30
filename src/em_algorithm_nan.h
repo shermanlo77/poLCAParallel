@@ -64,18 +64,18 @@ class EmAlgorithmNanTemplate : public T {
    *
    * @copydoc EmAlgorithm::WeightedSumProb
    */
-  void WeightedSumProb(std::size_t cluster_index) override;
+  void WeightedSumProb(const std::size_t cluster_index) override;
 
   /**
    * Overridden to estimate probabilities using posterior_sum
    *
    * @copydoc EmAlgorithm::NormalWeightedSumProb
    */
-  void NormalWeightedSumProb(std::size_t cluster_index) override;
+  void NormalWeightedSumProb(const std::size_t cluster_index) override;
 
   [[nodiscard]] double PosteriorUnnormalize(
-      std::span<int> responses_i, double prior,
-      arma::Col<double>& estimated_prob) const override;
+      std::span<const int> responses_i, double prior,
+      const arma::Col<double>& estimated_prob) const override;
 };
 
 /**
@@ -162,9 +162,10 @@ class EmAlgorithmNanRegress
  * @param posterior_sum Modified to store the cumulative posterior sum for each
  * category
  */
-void NanWeightedSumProb(std::size_t cluster_index, std::span<int> responses,
-                        std::span<std::size_t> n_outcomes,
-                        arma::Mat<double>& posterior,
+void NanWeightedSumProb(const std::size_t cluster_index,
+                        std::span<const int> responses,
+                        std::span<const std::size_t> n_outcomes,
+                        const arma::Mat<double>& posterior,
                         arma::Mat<double>& estimated_prob,
                         std::vector<double>& posterior_sum);
 
@@ -189,8 +190,8 @@ void NanWeightedSumProb(std::size_t cluster_index, std::span<int> responses,
  *   <li>dim 2: for each cluster</li>
  * </ul>
  */
-void NanNormalWeightedSumProb(std::size_t cluster_index,
-                              std::span<std::size_t> n_outcomes,
+void NanNormalWeightedSumProb(const std::size_t cluster_index,
+                              std::span<const std::size_t> n_outcomes,
                               std::vector<double>& posterior_sum,
                               arma::Mat<double>& estimated_prob);
 

@@ -187,7 +187,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    */
   bool MStep() override;
 
-  void NormalWeightedSumProb(std::size_t cluster_index) override;
+  void NormalWeightedSumProb(const std::size_t cluster_index) override;
 
  private:
   /** Initalise regress_coeff_ to all zero */
@@ -233,9 +233,9 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * For different clusters, pi_u pi_v - r_u r_v
    * @return double value of an element of the Hessian
    */
-  [[nodiscard]] double CalcHessElement(std::size_t feature_index_0,
-                                       std::size_t feature_index_1,
-                                       arma::Col<double>& prior_post_inter);
+  [[nodiscard]] double CalcHessElement(
+      std::size_t feature_index_0, std::size_t feature_index_1,
+      const arma::Col<double>& prior_post_inter);
 
   /**
    * Assign an entry of the Hessian at specificed indexes

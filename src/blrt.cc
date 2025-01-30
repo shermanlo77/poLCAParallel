@@ -136,12 +136,12 @@ void polca_parallel::Blrt::RunThread() {
                 i_rep * this->n_outcomes_.sum() * this->prior_alt_.size(),
             this->n_outcomes_.sum(), this->prior_alt_.size(), false, true);
 
-        polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
-                                        this->prior_null_.size(),
+        polca_parallel::GenerateNewProb(this->n_outcomes_,
+                                        this->prior_null_.size(), uniform, *rng,
                                         init_prob_null_i);
 
-        polca_parallel::GenerateNewProb(*rng, uniform, this->n_outcomes_,
-                                        this->prior_alt_.size(),
+        polca_parallel::GenerateNewProb(this->n_outcomes_,
+                                        this->prior_alt_.size(), uniform, *rng,
                                         init_prob_alt_i);
       }
 
@@ -194,8 +194,8 @@ void polca_parallel::Blrt::RunThread() {
   }
 }
 
-void polca_parallel::Blrt::Bootstrap(std::span<double> prior,
-                                     std::span<double> prob,
+void polca_parallel::Blrt::Bootstrap(std::span<const double> prior,
+                                     std::span<const double> prob,
                                      std::mt19937_64& rng,
                                      std::span<int> response) const {
   std::uniform_int_distribution<std::size_t> prior_dist(0, prior.size() - 1);

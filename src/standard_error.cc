@@ -130,8 +130,9 @@ void polca_parallel::StandardError::CalcScoreProbs(
 }
 
 void polca_parallel::StandardError::CalcScoreProbsCol(
-    std::size_t outcome_index, double prob, arma::subview_col<int>& responses_j,
-    arma::subview_col<double>& posterior_i,
+    std::size_t outcome_index, double prob,
+    const arma::subview_col<int>& responses_j,
+    const arma::subview_col<double>& posterior_i,
     arma::subview_col<double>& score_col) const {
   auto posterior_iter = posterior_i.begin();
   auto responses_iter = responses_j.begin();
@@ -200,7 +201,8 @@ void polca_parallel::StandardError::CalcJacobianProbs(
 }
 
 void polca_parallel::StandardError::CalcJacobianBlock(
-    std::span<double> probs, arma::subview<double>& jacobian_block) const {
+    std::span<const double> probs,
+    arma::subview<double>& jacobian_block) const {
   // dev notes: possible to do outer product of probs and then add to the off
   // diagonal, but note this method will commonly be used to create small
   // block matrices (ie n_prob typically be 2 or 3, the n_outcomes)

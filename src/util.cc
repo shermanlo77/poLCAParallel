@@ -20,8 +20,8 @@
 #include <numeric>
 #include <span>
 
-polca_parallel::NOutcomes::NOutcomes(std::size_t* data, std::size_t size)
-    : std::span<std::size_t>(data, size),
+polca_parallel::NOutcomes::NOutcomes(const std::size_t* data, std::size_t size)
+    : std::span<const std::size_t>(data, size),
       sum_(std::accumulate(data, data + size, 0)) {}
 
 std::size_t polca_parallel::NOutcomes::sum() const { return this->sum_; }

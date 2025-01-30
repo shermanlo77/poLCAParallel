@@ -110,7 +110,7 @@ bool polca_parallel::EmAlgorithmRegress::MStep() {
 }
 
 void polca_parallel::EmAlgorithmRegress::NormalWeightedSumProb(
-    std::size_t cluster_index) {
+    const std::size_t cluster_index) {
   // override as the normaliser cannot be calculated using prior
   // using sum of posterior instead
   double normaliser = arma::sum(this->posterior_.unsafe_col(cluster_index));
@@ -204,7 +204,7 @@ void polca_parallel::EmAlgorithmRegress::CalcHessSubBlock(
 
 double polca_parallel::EmAlgorithmRegress::CalcHessElement(
     std::size_t feature_index_0, std::size_t feature_index_1,
-    arma::Col<double>& prior_post_inter) {
+    const arma::Col<double>& prior_post_inter) {
   return arma::sum(this->features_.unsafe_col(feature_index_0) %
                    this->features_.unsafe_col(feature_index_1) %
                    prior_post_inter);

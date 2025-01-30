@@ -119,7 +119,7 @@ bool polca_parallel::EmAlgorithmArray::get_has_restarted() const {
 }
 
 void polca_parallel::EmAlgorithmArray::SetFitterRng(
-    polca_parallel::EmAlgorithm& fitter, std::size_t rep_index) {
+    std::size_t rep_index, polca_parallel::EmAlgorithm& fitter) {
   if (this->seed_array_) {
     fitter.set_seed(this->seed_array_->at(rep_index));
   }
@@ -180,7 +180,7 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
       }
 
       // each repetition uses their own rng
-      this->SetFitterRng(*fitter, rep_index);
+      this->SetFitterRng(rep_index, *fitter);
 
       fitter->Fit();
       ln_l = fitter->get_ln_l();

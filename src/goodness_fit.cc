@@ -32,13 +32,13 @@
 #include "util.h"
 
 void polca_parallel::GetUniqueObserved(
-    std::span<int> responses, std::size_t n_data, std::size_t n_category,
+    std::span<const int> responses, std::size_t n_data, std::size_t n_category,
     std::map<std::vector<int>, Frequency>& unique_freq) {
   // iterate through each data point
   auto responses_iter = responses.begin();
   for (std::size_t i = 0; i < n_data; ++i) {
     bool fullyobserved = true;  // only considered fully observed responses
-    auto response_span_i = std::span<int>(responses_iter, n_category);
+    auto response_span_i = std::span<const int>(responses_iter, n_category);
 
     for (int response_i_j : response_span_i) {
       if (response_i_j == 0) {
@@ -64,11 +64,11 @@ void polca_parallel::GetUniqueObserved(
 }
 
 void polca_parallel::GetExpected(
-    std::span<double> prior, std::span<double> outcome_prob, std::size_t n_obs,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    std::map<std::vector<int>, Frequency>& unique_freq) {
-  arma::Mat<double> outcome_prob_arma(outcome_prob.data(), n_outcomes.sum(),
-                                      n_cluster, false, true);
+    std::span<const double> prior, std::span<double> outcome_prob,
+    std::size_t n_obs, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, std::map<std::vector<int>, Frequency>& unique_freq) {
+  const arma::Mat<double> outcome_prob_arma(
+      outcome_prob.data(), n_outcomes.sum(), n_cluster, false, true);
 
   // iterate through the map
   for (auto iter = unique_freq.begin(); iter != unique_freq.end(); ++iter) {
@@ -91,7 +91,8 @@ void polca_parallel::GetExpected(
 }
 
 std::array<double, 2> polca_parallel::GetStatistics(
-    std::map<std::vector<int>, Frequency>& unique_freq, std::size_t n_data) {
+    const std::map<std::vector<int>, Frequency>& unique_freq,
+    std::size_t n_data) {
   std::size_t n_unique = unique_freq.size();
   // store statistics for each unique response
   arma::Row<double> chi_squared_array(n_unique);
