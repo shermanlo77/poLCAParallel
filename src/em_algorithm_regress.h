@@ -70,7 +70,7 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    *   <li>dim 1: for each feature</li>
    * </ul>
    */
-  arma::Mat<double> features_;
+  const arma::Mat<double> features_;
   /** Number of features */
   const std::size_t n_feature_;
   /**
@@ -148,8 +148,9 @@ class EmAlgorithmRegress : public polca_parallel::EmAlgorithm {
    * regression coefficient in matrix form, to be multiplied to the features and
    * linked to the prior using softmax
    */
-  EmAlgorithmRegress(std::span<double> features, std::span<int> responses,
-                     std::span<double> initial_prob, std::size_t n_data,
+  EmAlgorithmRegress(std::span<const double> features,
+                     std::span<const int> responses,
+                     std::span<const double> initial_prob, std::size_t n_data,
                      std::size_t n_feature, NOutcomes n_outcomes,
                      std::size_t n_cluster, unsigned int max_iter,
                      double tolerance, std::span<double> posterior,

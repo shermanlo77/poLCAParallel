@@ -27,13 +27,14 @@
 #include "util.h"
 
 polca_parallel::StandardError::StandardError(
-    std::span<double> features, std::span<int> responses,
-    std::span<double> probs, std::span<double> prior,
+    std::span<const double> features, std::span<const int> responses,
+    std::span<const double> probs, std::span<double> prior,
     std::span<double> posterior, std::size_t n_data, std::size_t n_feature,
     polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
     std::span<double> prior_error, std::span<double> prob_error,
     std::span<double> regress_coeff_error)
-    : responses_(responses.data(), n_data, n_outcomes.size(), false, true),
+    : responses_(const_cast<int*>(responses.data()), n_data, n_outcomes.size(),
+                 false, true),
       probs_(probs),
       prior_(prior.data(), n_data, n_cluster, false, true),
       posterior_(posterior.data(), n_data, n_cluster, false, true),
@@ -134,8 +135,8 @@ void polca_parallel::StandardError::CalcScoreProbsCol(
     const arma::subview_col<int>& responses_j,
     const arma::subview_col<double>& posterior_i,
     arma::subview_col<double>& score_col) const {
-  auto posterior_iter = posterior_i.begin();
-  auto responses_iter = responses_j.begin();
+  auto posterior_iter = posterior_i.cbegin();
+  auto responses_iter = responses_j.cbegin();
 
   // boolean if the response is the same as the outcome
   // remember response is one index, not zero index
@@ -175,7 +176,7 @@ void polca_parallel::StandardError::CalcJacobianPrior(
        ++cluster_index) {
     prior[cluster_index] = this->prior_[cluster_index * this->n_data_];
   }
-  this->CalcJacobianBlock(std::span<double>(prior.begin(), prior.size()),
+  this->CalcJacobianBlock(std::span<const double>(prior.cbegin(), prior.size()),
                           jacobian_prior);
 }
 
@@ -191,7 +192,7 @@ void polca_parallel::StandardError::CalcJacobianProbs(
       auto jacobian_block =
           jacobian_probs.submat(row_start, col_start, row_start + n_outcome - 2,
                                 col_start + n_outcome - 1);
-      this->CalcJacobianBlock(std::span<double>(probs, n_outcome),
+      this->CalcJacobianBlock(std::span<const double>(probs, n_outcome),
                               jacobian_block);
       std::advance(probs, n_outcome);
       row_start += n_outcome - 1;

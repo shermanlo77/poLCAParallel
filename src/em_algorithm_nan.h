@@ -49,12 +49,13 @@ class EmAlgorithmNanTemplate : public T {
    *
    * @copydoc EmAlgorithm::EmAlgorithm
    */
-  EmAlgorithmNanTemplate(std::span<double> features, std::span<int> responses,
-                         std::span<double> initial_prob, std::size_t n_data,
-                         std::size_t n_feature, NOutcomes n_outcomes,
-                         std::size_t n_cluster, unsigned int max_iter,
-                         double tolerance, std::span<double> posterior,
-                         std::span<double> prior,
+  EmAlgorithmNanTemplate(std::span<const double> features,
+                         std::span<const int> responses,
+                         std::span<const double> initial_prob,
+                         std::size_t n_data, std::size_t n_feature,
+                         NOutcomes n_outcomes, std::size_t n_cluster,
+                         unsigned int max_iter, double tolerance,
+                         std::span<double> posterior, std::span<double> prior,
                          std::span<double> estimated_prob,
                          std::span<double> regress_coeff);
 
@@ -92,8 +93,9 @@ class EmAlgorithmNan : public EmAlgorithmNanTemplate<EmAlgorithm> {
    *
    * @copydoc EmAlgorithm::EmAlgorithm
    */
-  EmAlgorithmNan(std::span<double> features, std::span<int> responses,
-                 std::span<double> initial_prob, std::size_t n_data,
+  EmAlgorithmNan(std::span<const double> features,
+                 std::span<const int> responses,
+                 std::span<const double> initial_prob, std::size_t n_data,
                  std::size_t n_feature, NOutcomes n_outcomes,
                  std::size_t n_cluster, unsigned int max_iter, double tolerance,
                  std::span<double> posterior, std::span<double> prior,
@@ -116,12 +118,13 @@ class EmAlgorithmNanRegress
    *
    * @copydoc EmAlgorithm::EmAlgorithmRegress
    */
-  EmAlgorithmNanRegress(std::span<double> features, std::span<int> responses,
-                        std::span<double> initial_prob, std::size_t n_data,
-                        std::size_t n_feature, NOutcomes n_outcomes,
-                        std::size_t n_cluster, unsigned int max_iter,
-                        double tolerance, std::span<double> posterior,
-                        std::span<double> prior,
+  EmAlgorithmNanRegress(std::span<const double> features,
+                        std::span<const int> responses,
+                        std::span<const double> initial_prob,
+                        std::size_t n_data, std::size_t n_feature,
+                        NOutcomes n_outcomes, std::size_t n_cluster,
+                        unsigned int max_iter, double tolerance,
+                        std::span<double> posterior, std::span<double> prior,
                         std::span<double> estimated_prob,
                         std::span<double> regress_coeff);
 };

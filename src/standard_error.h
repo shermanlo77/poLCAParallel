@@ -55,7 +55,7 @@ class StandardError {
    *   <li>dim 1: for each category</li>
    * </ul>
    */
-  arma::Mat<int> responses_;
+  const arma::Mat<int> responses_;
   /**
    * Vector of probabilities for each category and response,
    * flatten list of matrices
@@ -65,7 +65,7 @@ class StandardError {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  std::span<double> probs_;
+  std::span<const double> probs_;
   /**
    * Design matrix of prior probabilities, probability data point is in
    * cluster m NOT given responses after calculations, it shall be in matrix
@@ -113,9 +113,9 @@ class StandardError {
   /** Covariance matrix of the regression coefficient */
   std::span<double> regress_coeff_error_;
   /** The size of the information matrix*/
-  std::size_t info_size_;
+  const std::size_t info_size_;
   /** The width of the Jacobian matrix*/
-  std::size_t jacobian_width_;
+  const std::size_t jacobian_width_;
   /** For smoothing the probabilities in prior, posterior and probs */
   std::unique_ptr<polca_parallel::Smoother> smoother_;
 
@@ -172,10 +172,10 @@ class StandardError {
    * </ul>
    * @param regress_coeff_error Not used
    */
-  StandardError(std::span<double> features, std::span<int> responses,
-                std::span<double> probs, std::span<double> prior,
-                std::span<double> posterior, std::size_t n_data,
-                std::size_t n_feature, NOutcomes n_outcomes,
+  StandardError(std::span<const double> features,
+                std::span<const int> responses, std::span<const double> probs,
+                std::span<double> prior, std::span<double> posterior,
+                std::size_t n_data, std::size_t n_feature, NOutcomes n_outcomes,
                 std::size_t n_cluster, std::span<double> prior_error,
                 std::span<double> prob_error,
                 std::span<double> regress_coeff_error);

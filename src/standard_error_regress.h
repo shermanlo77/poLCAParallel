@@ -101,8 +101,9 @@ class StandardErrorRegress : public polca_parallel::StandardError {
    * @param regress_coeff_error Matrix to contain the covariance matrix of the
    * regression coefficient, modified after calling Calc()
    */
-  StandardErrorRegress(std::span<double> features, std::span<int> responses,
-                       std::span<double> probs, std::span<double> prior,
+  StandardErrorRegress(std::span<const double> features,
+                       std::span<const int> responses,
+                       std::span<const double> probs, std::span<double> prior,
                        std::span<double> posterior, std::size_t n_data,
                        std::size_t n_feature, NOutcomes n_outcomes,
                        std::size_t n_cluster, std::span<double> prior_error,

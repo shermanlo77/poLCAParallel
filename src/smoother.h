@@ -115,8 +115,8 @@ class Smoother {
    * @param sum_outcomes Sum of all integers in n_outcomes
    * @param n_cluster Number of clusters
    */
-  Smoother(std::span<double> probs, std::span<double> prior,
-           std::span<double> posterior, std::size_t n_data,
+  Smoother(std::span<const double> probs, std::span<const double> prior,
+           std::span<const double> posterior, std::size_t n_data,
            NOutcomes n_outcomes, std::size_t n_cluster);
 
   /**

@@ -65,12 +65,12 @@ class EmAlgorithmArray {
   /**
    * Features to provide EmAlgorithm with. See EmAlgorithm for further details.
    */
-  std::span<double> features_;
+  std::span<const double> features_;
   /**
    * Responses to provide EmAlgorithm with. See EmAlgorithm for further details.
    * format.
    */
-  std::span<int> responses_;
+  std::span<const int> responses_;
   /** Number of data points */
   const std::size_t n_data_;
   /** Number of features */
@@ -137,7 +137,7 @@ class EmAlgorithmArray {
    * An array of initial probabilities, each repetition uses
    * n_outcomes.sum()*n_cluster probabilities
    */
-  std::span<double> initial_prob_;
+  std::span<const double> initial_prob_;
   /**
    * The latest initial value is being worked on. Accessing and writing should
    * be done with locking and unlocking n_rep_done_lock_ when using multiple
@@ -227,8 +227,9 @@ class EmAlgorithmArray {
    * form, to be multiplied to the features and linked to the prior
    * using softmax
    */
-  EmAlgorithmArray(std::span<double> features, std::span<int> responses,
-                   std::span<double> initial_prob, std::size_t n_data,
+  EmAlgorithmArray(std::span<const double> features,
+                   std::span<const int> responses,
+                   std::span<const double> initial_prob, std::size_t n_data,
                    std::size_t n_feature, NOutcomes n_outcomes,
                    std::size_t n_cluster, std::size_t n_rep,
                    std::size_t n_thread, unsigned int max_iter,

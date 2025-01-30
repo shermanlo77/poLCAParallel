@@ -33,12 +33,12 @@ template class polca_parallel::EmAlgorithmNanTemplate<
 
 template <typename T>
 polca_parallel::EmAlgorithmNanTemplate<T>::EmAlgorithmNanTemplate(
-    std::span<double> features, std::span<int> responses,
-    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    unsigned int max_iter, double tolerance, std::span<double> posterior,
-    std::span<double> prior, std::span<double> estimated_prob,
-    std::span<double> regress_coeff)
+    std::span<const double> features, std::span<const int> responses,
+    std::span<const double> initial_prob, std::size_t n_data,
+    std::size_t n_feature, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : T(features, responses, initial_prob, n_data, n_feature, n_outcomes,
         n_cluster, max_iter, tolerance, posterior, prior, estimated_prob,
         regress_coeff),
@@ -69,24 +69,24 @@ double polca_parallel::EmAlgorithmNanTemplate<T>::PosteriorUnnormalize(
 }
 
 polca_parallel::EmAlgorithmNan::EmAlgorithmNan(
-    std::span<double> features, std::span<int> responses,
-    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    unsigned int max_iter, double tolerance, std::span<double> posterior,
-    std::span<double> prior, std::span<double> estimated_prob,
-    std::span<double> regress_coeff)
+    std::span<const double> features, std::span<const int> responses,
+    std::span<const double> initial_prob, std::size_t n_data,
+    std::size_t n_feature, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : EmAlgorithmNanTemplate<EmAlgorithm>(
           features, responses, initial_prob, n_data, n_feature, n_outcomes,
           n_cluster, max_iter, tolerance, posterior, prior, estimated_prob,
           regress_coeff) {}
 
 polca_parallel::EmAlgorithmNanRegress::EmAlgorithmNanRegress(
-    std::span<double> features, std::span<int> responses,
-    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    unsigned int max_iter, double tolerance, std::span<double> posterior,
-    std::span<double> prior, std::span<double> estimated_prob,
-    std::span<double> regress_coeff)
+    std::span<const double> features, std::span<const int> responses,
+    std::span<const double> initial_prob, std::size_t n_data,
+    std::size_t n_feature, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : EmAlgorithmNanTemplate<EmAlgorithmRegress>(
           features, responses, initial_prob, n_data, n_feature, n_outcomes,
           n_cluster, max_iter, tolerance, posterior, prior, estimated_prob,

@@ -64,11 +64,12 @@ void polca_parallel::GetUniqueObserved(
 }
 
 void polca_parallel::GetExpected(
-    std::span<const double> prior, std::span<double> outcome_prob,
+    std::span<const double> prior, std::span<const double> outcome_prob,
     std::size_t n_obs, polca_parallel::NOutcomes n_outcomes,
     std::size_t n_cluster, std::map<std::vector<int>, Frequency>& unique_freq) {
   const arma::Mat<double> outcome_prob_arma(
-      outcome_prob.data(), n_outcomes.sum(), n_cluster, false, true);
+      const_cast<double*>(outcome_prob.data()), n_outcomes.sum(), n_cluster,
+      false, true);
 
   // iterate through the map
   for (auto iter = unique_freq.begin(); iter != unique_freq.end(); ++iter) {
@@ -101,7 +102,7 @@ std::array<double, 2> polca_parallel::GetStatistics(
 
   // extract and calculate statistics for each unique response
   std::size_t index = 0;
-  for (auto iter = unique_freq.begin(); iter != unique_freq.end(); ++iter) {
+  for (auto iter = unique_freq.cbegin(); iter != unique_freq.cend(); ++iter) {
     Frequency frequency = iter->second;
     double expected = frequency.expected;
     double observed = static_cast<double>(frequency.observed);

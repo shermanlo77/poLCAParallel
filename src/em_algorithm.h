@@ -74,7 +74,7 @@ class EmAlgorithm {
    *   <li>dim 1: for each data point</li>
    * </ul>
    */
-  std::span<int> responses_;
+  std::span<const int> responses_;
   /**
    * Vector of initial probabilities for each category and responses, flatten
    * list in the following order
@@ -84,7 +84,7 @@ class EmAlgorithm {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  std::span<double> initial_prob_;
+  std::span<const double> initial_prob_;
   /** Number of data points */
   const std::size_t n_data_;
   /** Vector of the number of outcomes for each category */
@@ -221,8 +221,8 @@ class EmAlgorithm {
    * </ul>
    * @param regress_coeff Not used and ignored
    */
-  EmAlgorithm(std::span<double> features, std::span<int> responses,
-              std::span<double> initial_prob, std::size_t n_data,
+  EmAlgorithm(std::span<const double> features, std::span<const int> responses,
+              std::span<const double> initial_prob, std::size_t n_data,
               std::size_t n_feature, NOutcomes n_outcomes,
               std::size_t n_cluster, unsigned int max_iter, double tolerance,
               std::span<double> posterior, std::span<double> prior,

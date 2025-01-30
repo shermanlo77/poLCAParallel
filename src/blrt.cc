@@ -27,10 +27,10 @@
 #include <thread>
 #include <vector>
 
-polca_parallel::Blrt::Blrt(std::span<double> prior_null,
-                           std::span<double> prob_null,
-                           std::span<double> prior_alt,
-                           std::span<double> prob_alt, std::size_t n_data,
+polca_parallel::Blrt::Blrt(std::span<const double> prior_null,
+                           std::span<const double> prob_null,
+                           std::span<const double> prior_alt,
+                           std::span<const double> prob_alt, std::size_t n_data,
                            polca_parallel::NOutcomes n_outcomes,
                            std::size_t n_bootstrap, std::size_t n_rep,
                            std::size_t n_thread, unsigned int max_iter,
@@ -94,7 +94,7 @@ void polca_parallel::Blrt::RunThread() {
 
   // allocate memory for all required arrays, a lot of them aren't used after
   // fitting
-  std::span<double> features;
+  std::span<const double> features;
   std::vector<double> fitted_posterior_null(this->n_data_ *
                                             this->prior_null_.size());
   std::vector<double> fitted_posterior_alt(this->n_data_ *
@@ -152,7 +152,8 @@ void polca_parallel::Blrt::RunThread() {
       // null model fit
       polca_parallel::EmAlgorithmArraySerial null_model(
           features, bootstrap_span,
-          std::span<double>(init_prob_null.begin(), init_prob_null.size()),
+          std::span<const double>(init_prob_null.cbegin(),
+                                  init_prob_null.size()),
           this->n_data_, 1, this->n_outcomes_, this->prior_null_.size(),
           this->n_rep_, this->max_iter_, this->tolerance_,
           std::span<double>(fitted_posterior_null.begin(),
@@ -169,7 +170,7 @@ void polca_parallel::Blrt::RunThread() {
       // alt model fit
       polca_parallel::EmAlgorithmArraySerial alt_model(
           features, bootstrap_span,
-          std::span<double>(init_prob_alt.begin(), init_prob_alt.size()),
+          std::span<const double>(init_prob_alt.cbegin(), init_prob_alt.size()),
           this->n_data_, 1, this->n_outcomes_, this->prior_alt_.size(),
           this->n_rep_, this->max_iter_, this->tolerance_,
           std::span<double>(fitted_posterior_alt.begin(),

@@ -50,12 +50,13 @@ template void polca_parallel::EmAlgorithmArray::FitThread<
     polca_parallel::EmAlgorithmNanRegress>();
 
 polca_parallel::EmAlgorithmArray::EmAlgorithmArray(
-    std::span<double> features, std::span<int> responses,
-    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
-    double tolerance, std::span<double> posterior, std::span<double> prior,
-    std::span<double> estimated_prob, std::span<double> regress_coeff)
+    std::span<const double> features, std::span<const int> responses,
+    std::span<const double> initial_prob, std::size_t n_data,
+    std::size_t n_feature, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, std::size_t n_rep, std::size_t n_thread,
+    unsigned int max_iter, double tolerance, std::span<double> posterior,
+    std::span<double> prior, std::span<double> estimated_prob,
+    std::span<double> regress_coeff)
     : features_(features),
       responses_(responses),
       n_data_(n_data),
@@ -200,14 +201,15 @@ void polca_parallel::EmAlgorithmArray::FitThread() {
         this->optimal_ln_l_ = ln_l;
         this->n_iter_ = fitter->get_n_iter();
 
-        std::copy(posterior.begin(), posterior.end(), this->posterior_.begin());
-        std::copy(prior.begin(), prior.end(), this->prior_.begin());
-        std::copy(estimated_prob.begin(), estimated_prob.end(),
+        std::copy(posterior.cbegin(), posterior.cend(),
+                  this->posterior_.begin());
+        std::copy(prior.cbegin(), prior.cend(), this->prior_.begin());
+        std::copy(estimated_prob.cbegin(), estimated_prob.cend(),
                   this->estimated_prob_.begin());
-        std::copy(regress_coeff.begin(), regress_coeff.end(),
+        std::copy(regress_coeff.cbegin(), regress_coeff.cend(),
                   this->regress_coeff_.begin());
         if (this->best_initial_prob_) {
-          std::copy(best_initial_prob.begin(), best_initial_prob.end(),
+          std::copy(best_initial_prob.cbegin(), best_initial_prob.cend(),
                     this->best_initial_prob_.value().begin());
         }
       }

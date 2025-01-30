@@ -38,8 +38,9 @@ namespace polca_parallel {
 class RegularisedError : public polca_parallel::StandardError {
  public:
   /** @copydoc StandardError::StandardError */
-  RegularisedError(std::span<double> features, std::span<int> responses,
-                   std::span<double> probs, std::span<double> prior,
+  RegularisedError(std::span<const double> features,
+                   std::span<const int> responses,
+                   std::span<const double> probs, std::span<double> prior,
                    std::span<double> posterior, std::size_t n_data,
                    std::size_t n_feature, NOutcomes n_outcomes,
                    std::size_t n_cluster, std::span<double> prior_error,
@@ -59,11 +60,13 @@ class RegularisedError : public polca_parallel::StandardError {
 class RegularisedRegressError : public polca_parallel::StandardErrorRegress {
  public:
   /** @copydoc StandardErrorRegress::StandardErrorRegress */
-  RegularisedRegressError(std::span<double> features, std::span<int> responses,
-                          std::span<double> probs, std::span<double> prior,
-                          std::span<double> posterior, std::size_t n_data,
-                          std::size_t n_feature, NOutcomes n_outcomes,
-                          std::size_t n_cluster, std::span<double> prior_error,
+  RegularisedRegressError(std::span<const double> features,
+                          std::span<const int> responses,
+                          std::span<const double> probs,
+                          std::span<double> prior, std::span<double> posterior,
+                          std::size_t n_data, std::size_t n_feature,
+                          NOutcomes n_outcomes, std::size_t n_cluster,
+                          std::span<double> prior_error,
                           std::span<double> prob_error,
                           std::span<double> regress_coeff_error);
 };

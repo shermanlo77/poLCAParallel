@@ -87,8 +87,8 @@ void polca_parallel::InfoEigenSolver::ExtractErrorGivenEigen(
   arma::Row<double> std_err = arma::vecnorm(
       arma::diagmat(arma::sqrt(eigval_inv)) * eigvec.t() * jacobian, 2, 0);
 
-  std::copy_n(std_err.begin(), this->n_cluster_, this->prior_error_.begin());
-  std::copy_n(std::next(std_err.begin(), this->n_cluster_),
+  std::copy_n(std_err.cbegin(), this->n_cluster_, this->prior_error_.begin());
+  std::copy_n(std::next(std_err.cbegin(), this->n_cluster_),
               this->sum_outcomes_ * this->n_cluster_,
               this->prob_error_.begin());
 }
@@ -144,7 +144,7 @@ void polca_parallel::ScoreSvdSolver::Solve(const arma::Mat<double>& score,
   // use std::numeric_limits<float>::epsilon() as there were a few cases small
   // sigular values would get through this tol
   double tol = std::max<double>(this->info_size_, this->n_data_) *
-               *singular_values.begin() *
+               singular_values[0] *
                static_cast<double>(std::numeric_limits<float>::epsilon());
   for (auto& singular_val_i : singular_values) {
     if (singular_val_i < tol) {
@@ -165,8 +165,8 @@ void polca_parallel::ScoreSvdSolver::ExtractErrorGivenEigen(
   arma::Row<double> std_err =
       arma::vecnorm(arma::diagmat(singular_inv) * v_mat.t() * jacobian, 2, 0);
 
-  std::copy_n(std_err.begin(), this->n_cluster_, this->prior_error_.begin());
-  std::copy_n(std::next(std_err.begin(), this->n_cluster_),
+  std::copy_n(std_err.cbegin(), this->n_cluster_, this->prior_error_.begin());
+  std::copy_n(std::next(std_err.cbegin(), this->n_cluster_),
               this->sum_outcomes_ * this->n_cluster_,
               this->prob_error_.begin());
 }

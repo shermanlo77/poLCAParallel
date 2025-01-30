@@ -99,16 +99,16 @@ Rcpp::List EmAlgorithmRcpp(Rcpp::NumericMatrix features,
 
   // fit using EM algorithm
   polca_parallel::EmAlgorithmArray fitter(
-      std::span<double>(features.begin(), features.size()),
-      std::span<int>(responses.begin(), responses.size()),
-      std::span<double>(initial_prob.begin(), initial_prob.size()), n_data,
-      n_feature, n_outcomes, n_cluster, n_rep, n_thread, max_iter, tolerance,
-      std::span<double>(posterior.begin(), posterior.size()),
+      std::span<const double>(features.cbegin(), features.size()),
+      std::span<const int>(responses.cbegin(), responses.size()),
+      std::span<const double>(initial_prob.cbegin(), initial_prob.size()),
+      n_data, n_feature, n_outcomes, n_cluster, n_rep, n_thread, max_iter,
+      tolerance, std::span<double>(posterior.begin(), posterior.size()),
       std::span<double>(prior.begin(), prior.size()),
       std::span<double>(estimated_prob.begin(), estimated_prob.size()),
       std::span<double>(regress_coeff.begin(), regress_coeff.size()));
 
-  std::seed_seq seed_seq(seed.begin(), seed.end());
+  std::seed_seq seed_seq(seed.cbegin(), seed.cend());
   fitter.SetSeed(seed_seq);
   fitter.set_best_initial_prob(
       std::span<double>(best_initial_prob.begin(), best_initial_prob.size()));

@@ -54,7 +54,7 @@ class Blrt {
    * Vector of probabilities, one for each cluster. Probability a data point
    * belongs to each cluster in the null model.
    */
-  std::span<double> prior_null_;
+  std::span<const double> prior_null_;
   /**
    * Vector of estimated response probabilities, conditioned on cluster, for
    * each category, for the null model, flatten list in the order
@@ -64,12 +64,12 @@ class Blrt {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  std::span<double> prob_null_;
+  std::span<const double> prob_null_;
   /**
    * Vector of probabilities, one for each cluster. Probability a data point
    * belongs to each cluster in the alt model.
    */
-  std::span<double> prior_alt_;
+  std::span<const double> prior_alt_;
   /**
    * Vector of estimated response probabilities, conditioned on cluster, for
    * each category, for the alt model, flatten list in the order
@@ -79,7 +79,7 @@ class Blrt {
    *   <li>dim 2: for each cluster</li>
    * </ul>
    */
-  std::span<double> prob_alt_;
+  std::span<const double> prob_alt_;
   /** Number of data points */
   const std::size_t n_data_;
   /** Vector of the number of outcomes for each category */
@@ -150,8 +150,8 @@ class Blrt {
    * @param ratio_array To store results, array, the log-likelihood ratio for
    * each bootstrap sample
    */
-  Blrt(std::span<double> prior_null, std::span<double> prob_null,
-       std::span<double> prior_alt, std::span<double> prob_alt,
+  Blrt(std::span<const double> prior_null, std::span<const double> prob_null,
+       std::span<const double> prior_alt, std::span<const double> prob_alt,
        std::size_t n_data, NOutcomes n_outcomes, std::size_t n_bootstrap,
        std::size_t n_rep, std::size_t n_thread, unsigned int max_iter,
        double tolerance, std::span<double> ratio_array);

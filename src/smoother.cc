@@ -22,9 +22,9 @@
 #include "RcppArmadillo.h"
 #include "util.h"
 
-polca_parallel::Smoother::Smoother(std::span<double> probs,
-                                   std::span<double> prior,
-                                   std::span<double> posterior,
+polca_parallel::Smoother::Smoother(std::span<const double> probs,
+                                   std::span<const double> prior,
+                                   std::span<const double> posterior,
                                    std::size_t n_data, NOutcomes n_outcomes,
                                    std::size_t n_cluster)
     : probs_(probs.begin(), probs.end()),

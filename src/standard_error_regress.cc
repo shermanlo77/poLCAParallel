@@ -26,8 +26,8 @@
 #include "util.h"
 
 polca_parallel::StandardErrorRegress::StandardErrorRegress(
-    std::span<double> features, std::span<int> responses,
-    std::span<double> probs, std::span<double> prior,
+    std::span<const double> features, std::span<const int> responses,
+    std::span<const double> probs, std::span<double> prior,
     std::span<double> posterior, std::size_t n_data, std::size_t n_feature,
     polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
     std::span<double> prior_error, std::span<double> prob_error,
@@ -35,7 +35,8 @@ polca_parallel::StandardErrorRegress::StandardErrorRegress(
     : polca_parallel::StandardError(
           features, responses, probs, prior, posterior, n_data, n_feature,
           n_outcomes, n_cluster, prior_error, prob_error, regress_coeff_error),
-      features_(features.data(), n_data, n_feature, false, true) {}
+      features_(const_cast<double*>(features.data()), n_data, n_feature, false,
+                true) {}
 
 std::unique_ptr<polca_parallel::ErrorSolver>
 polca_parallel::StandardErrorRegress::InitErrorSolver() {
@@ -63,7 +64,7 @@ void polca_parallel::StandardErrorRegress::CalcJacobianPrior(
   auto jacobian = jacobian_prior.begin();
   for (std::size_t j_cluster = 0; j_cluster < this->n_cluster_; ++j_cluster) {
     for (std::size_t i_cluster = 1; i_cluster < this->n_cluster_; ++i_cluster) {
-      auto feature = this->features_.begin();
+      auto feature = this->features_.cbegin();
       for (std::size_t i_feature = 0; i_feature < this->n_feature_;
            ++i_feature) {
         for (std::size_t i_data = 0; i_data < this->n_data_; ++i_data) {

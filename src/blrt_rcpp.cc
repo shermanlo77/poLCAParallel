@@ -82,8 +82,8 @@ Rcpp::NumericVector BlrtRcpp(Rcpp::NumericVector prior_null,
                              std::size_t n_bootstrap, std::size_t n_rep,
                              std::size_t n_thread, unsigned int max_iter,
                              double tolerance, Rcpp::IntegerVector seed) {
-  std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.begin(),
-                                             n_outcomes_int.end());
+  std::vector<std::size_t> n_outcomes_size_t(n_outcomes_int.cbegin(),
+                                             n_outcomes_int.cend());
   polca_parallel::NOutcomes n_outcomes(n_outcomes_size_t.data(),
                                        n_outcomes_size_t.size());
 
@@ -91,14 +91,14 @@ Rcpp::NumericVector BlrtRcpp(Rcpp::NumericVector prior_null,
   Rcpp::NumericVector ratio_array(n_bootstrap);
 
   polca_parallel::Blrt blrt(
-      std::span<double>(prior_null.begin(), prior_null.size()),
-      std::span<double>(prob_null.begin(), prob_null.size()),
-      std::span<double>(prior_alt.begin(), prior_alt.size()),
-      std::span<double>(prob_alt.begin(), prob_alt.size()), n_data, n_outcomes,
-      n_bootstrap, n_rep, n_thread, max_iter, tolerance,
+      std::span<const double>(prior_null.cbegin(), prior_null.size()),
+      std::span<const double>(prob_null.cbegin(), prob_null.size()),
+      std::span<const double>(prior_alt.cbegin(), prior_alt.size()),
+      std::span<const double>(prob_alt.cbegin(), prob_alt.size()), n_data,
+      n_outcomes, n_bootstrap, n_rep, n_thread, max_iter, tolerance,
       std::span<double>(ratio_array.begin(), ratio_array.size()));
 
-  std::seed_seq seed_seq(seed.begin(), seed.end());
+  std::seed_seq seed_seq(seed.cbegin(), seed.cend());
   blrt.SetSeed(seed_seq);
   blrt.Run();
 

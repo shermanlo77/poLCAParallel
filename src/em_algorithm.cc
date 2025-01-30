@@ -31,12 +31,12 @@
 #include "util.h"
 
 polca_parallel::EmAlgorithm::EmAlgorithm(
-    std::span<double> features, std::span<int> responses,
-    std::span<double> initial_prob, std::size_t n_data, std::size_t n_feature,
-    polca_parallel::NOutcomes n_outcomes, std::size_t n_cluster,
-    unsigned int max_iter, double tolerance, std::span<double> posterior,
-    std::span<double> prior, std::span<double> estimated_prob,
-    std::span<double> regress_coeff)
+    std::span<const double> features, std::span<const int> responses,
+    std::span<const double> initial_prob, std::size_t n_data,
+    std::size_t n_feature, polca_parallel::NOutcomes n_outcomes,
+    std::size_t n_cluster, unsigned int max_iter, double tolerance,
+    std::span<double> posterior, std::span<double> prior,
+    std::span<double> estimated_prob, std::span<double> regress_coeff)
     : responses_(responses),
       initial_prob_(initial_prob),
       n_data_(n_data),
@@ -72,7 +72,7 @@ void polca_parallel::EmAlgorithm::Fit() {
 
     // make a copy initial probabilities if requested
     if (this->best_initial_prob_) {
-      std::copy(this->estimated_prob_.begin(), this->estimated_prob_.end(),
+      std::copy(this->estimated_prob_.cbegin(), this->estimated_prob_.cend(),
                 this->best_initial_prob_.value().begin());
     }
 
@@ -176,7 +176,7 @@ void polca_parallel::EmAlgorithm::InitPrior() {
 
 void polca_parallel::EmAlgorithm::FinalPrior() {
   // Copying prior probabilities as each data point as the same prior
-  auto prior = this->prior_.begin();
+  auto prior = this->prior_.cbegin();
   std::vector<double> prior_copy(this->n_cluster_);
   std::copy(prior, std::next(prior, this->n_cluster_), prior_copy.begin());
   for (std::size_t m = 0; m < this->n_cluster_; ++m) {
@@ -309,7 +309,7 @@ double polca_parallel::PosteriorUnnormalize(
   // P(Y^{(i)} | cluster m)
   double likelihood = 1;
 
-  auto estimated_prob_it = estimated_prob.begin();
+  auto estimated_prob_it = estimated_prob.cbegin();
 
   // calculate conditioned on cluster m likelihood
   for (std::size_t n_outcome : n_outcomes) {
@@ -341,7 +341,7 @@ double polca_parallel::PosteriorUnnormalize(
     posterior = likelihood * prior;
   } else {
     double log_likelihood = 0;
-    auto estimated_prob_it_2 = estimated_prob.begin();
+    auto estimated_prob_it_2 = estimated_prob.cbegin();
     // for getting a response from responses_
     auto responses_i_it_2 = responses_i.begin();
     // calculate conditioned on cluster m likelihood
